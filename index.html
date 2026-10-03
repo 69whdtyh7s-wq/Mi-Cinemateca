@@ -186,6 +186,17 @@ th button[data-dir="desc"]::after{content:"▼"}
 .r-poster{float:right;width:92px;border-radius:8px;margin-left:12px}
 .foot a{color:var(--accent-ink)}
 .coverage{margin:0;color:var(--muted);font-size:14px}
+.warn{width:min(480px,calc(100vw - 24px))}
+.warn-body{padding:24px;display:flex;flex-direction:column;gap:10px}
+.warn-body h2{font-family:var(--font-display);font-weight:800;font-size:1.4rem;margin:0}
+.warn-body p{margin:0;line-height:1.5}
+.warn-body .hint{color:var(--muted);font-size:14px}
+.warn-body code{font-family:var(--font-data);font-size:12px}
+.warn-icon{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:rgba(192,57,43,.12);color:#c0392b;font:800 22px var(--font-display)}
+.warn .actions{margin-top:8px;align-items:center}
+.warn .spacer{flex:1}
+.btn.danger{background:#c0392b;color:#fff}
+.btn.danger:hover{background:#a93226}
 .chip-filter{align-self:flex-start;font:600 14px var(--font-body);padding:6px 14px;border-radius:999px;border:1px solid var(--teal);background:var(--teal-soft);color:var(--teal-ink);cursor:pointer}
 .chip-filter:hover{border-color:var(--teal-ink)}
 .expand-btn{align-self:flex-start;background:none;border:0;padding:4px 0;color:var(--accent-ink);font:600 14px var(--font-body);cursor:pointer}
@@ -598,6 +609,20 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
   </div>
 
   <dialog class="ficha" id="ficha" aria-label="Ficha de la película"></dialog>
+  <dialog class="ficha warn" id="confirmReset" aria-labelledby="resetTitle">
+    <div class="warn-body">
+      <div class="warn-icon" aria-hidden="true">!</div>
+      <h2 id="resetTitle">¿Borrar tus datos?</h2>
+      <p>Se eliminarán de este dispositivo tus <b id="resetCount"></b> títulos, con tus fechas y notas. No se puede deshacer.</p>
+      <p class="hint">Tus otros dispositivos, la clave y los datos descargados de TMDb no se tocan. Si tienes <code>datos.csv</code> en GitHub, se volverán a cargar al abrir la app desde allí.</p>
+      <button class="expand-btn" type="button" id="resetExport">Exportar una copia de seguridad antes</button>
+      <div class="actions">
+        <span class="spacer"></span>
+        <button class="btn ghost" type="button" id="resetCancel">Cancelar</button>
+        <button class="btn danger" type="button" id="resetConfirm">Borrar datos</button>
+      </div>
+    </div>
+  </dialog>
   <dialog class="ficha big" id="bigList" aria-label="Lista completa"></dialog>
   <p class="foot">Datos e imágenes de películas: <a href="https://www.themoviedb.org/" target="_blank" rel="noopener">TMDb</a>. Esta app usa la API de TMDb, pero no está avalada ni certificada por TMDb.<br>Cómo exportar de IMDb: abre tu lista (o "Your Ratings"), pulsa los tres puntos ⋯ → <em>Export</em>, y descarga el CSV desde "Exports". El archivo no sale de tu dispositivo.<br>Sincronizar dispositivos: si subes tu CSV al repositorio de GitHub con el nombre <code>datos.csv</code>, la app lo cargará sola en cualquier dispositivo que la abra desde GitHub Pages.</p>
 </div>
@@ -1913,9 +1938,23 @@ const drop = document.getElementById("drop");
 ["dragenter","dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
 ["dragleave","drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
 drop.addEventListener("drop", e => readFile(e.dataTransfer.files[0]));
+// Borrar datos: primero un cuadro de advertencia
 document.getElementById("reset").addEventListener("click", () => {
-  try { localStorage.removeItem(KEY); localStorage.removeItem(DATA_KEY); } catch(e) {}
-  rows = sample(); isSample = true; newKeys = new Set(); document.getElementById("msg").textContent = ""; sort = { ...DEFAULT_SORT }; shown = PAGE; buildTypes(); render();
+  const dlg = document.getElementById("confirmReset");
+  document.getElementById("resetCount").textContent = rows.length.toLocaleString("es-ES");
+  dlg.showModal();
+  document.getElementById("resetCancel").focus();
+});
+document.getElementById("confirmReset").addEventListener("click", e => {
+  const dlg = e.currentTarget;
+  if (e.target === dlg || e.target.closest("#resetCancel")){ dlg.close(); return; }
+  if (e.target.closest("#resetExport")){ document.getElementById("exportBtn").click(); return; }
+  if (e.target.closest("#resetConfirm")){
+    try { localStorage.removeItem(KEY); localStorage.removeItem(DATA_KEY); } catch(err) {}
+    rows = sample(); isSample = true; newKeys = new Set(); sort = { ...DEFAULT_SORT }; shown = PAGE; buildTypes(); render();
+    const msg = document.getElementById("msg"); msg.className = "msg"; msg.textContent = "Datos borrados de este dispositivo. Sube tu CSV para empezar de nuevo.";
+    dlg.close();
+  }
 });
 /* ---------- Píldora: copia de seguridad y filtros ---------- */
 function togglePanel(btnId, panelId){
