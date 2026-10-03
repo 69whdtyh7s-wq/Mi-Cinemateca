@@ -161,6 +161,7 @@ th button[data-dir="desc"]::after{content:"▼"}
 .ficha::backdrop{background:rgba(10,10,8,.55)}
 .ficha-close{position:sticky;top:8px;float:right;margin:8px 8px 0 0;width:36px;height:36px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:16px;cursor:pointer;z-index:1}
 .ficha-grid{display:grid;grid-template-columns:200px minmax(0,1fr);gap:20px;padding:20px}
+.ficha-poster img{cursor:zoom-in}
 .ficha-poster img,.poster-ph{width:100%;aspect-ratio:2/3;border-radius:10px;object-fit:cover;background:var(--accent-soft);display:block}
 .ficha-title{font-family:var(--font-display);font-weight:800;font-size:1.7rem;line-height:1.1;margin:0;padding-right:36px;text-wrap:balance}
 .ficha-orig{margin:4px 0 0;color:var(--muted);font-style:italic}
@@ -186,6 +187,11 @@ th button[data-dir="desc"]::after{content:"▼"}
 .r-poster{float:right;width:92px;border-radius:8px;margin-left:12px}
 .foot a{color:var(--accent-ink)}
 .coverage{margin:0;color:var(--muted);font-size:14px}
+.poster-view{border:0;padding:0;margin:0;width:100vw;height:100dvh;max-width:none;max-height:none;background:rgba(8,8,6,.94);display:none;place-items:center;cursor:zoom-out}
+.poster-view[open]{display:grid}
+.poster-view::backdrop{background:rgba(8,8,6,.94)}
+.poster-view img{max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));width:auto;height:auto;object-fit:contain;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+.pv-close{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:12px;width:40px;height:40px;border-radius:999px;border:0;background:rgba(255,255,255,.15);color:#fff;font-size:18px;cursor:pointer}
 .warn{width:min(480px,calc(100vw - 24px))}
 .warn-body{padding:24px;display:flex;flex-direction:column;gap:10px}
 .warn-body h2{font-family:var(--font-display);font-weight:800;font-size:1.4rem;margin:0}
@@ -609,6 +615,7 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
   </div>
 
   <dialog class="ficha" id="ficha" aria-label="Ficha de la película"></dialog>
+  <dialog class="poster-view" id="posterView" aria-label="Póster a pantalla completa"></dialog>
   <dialog class="ficha warn" id="confirmReset" aria-labelledby="resetTitle">
     <div class="warn-body">
       <div class="warn-icon" aria-hidden="true">!</div>
@@ -1627,7 +1634,7 @@ function fichaHTML(r, x){
   return `
     <button class="ficha-close" type="button" aria-label="Cerrar" data-close>✕</button>
     <div class="ficha-grid">
-      <div class="ficha-poster">${x?.p ? `<img src="${TMDB_IMG}w342${x.p}" alt="Póster de ${esc(r.title)}" loading="lazy">` : `<div class="poster-ph" aria-hidden="true"></div>`}</div>
+      <div class="ficha-poster">${x?.p ? `<img src="${TMDB_IMG}w342${x.p}" alt="Póster de ${esc(r.title)}" loading="lazy" data-path="${esc(x.p)}" data-title="${esc(r.title)}" title="Ver a pantalla completa">` : `<div class="poster-ph" aria-hidden="true"></div>`}</div>
       <div class="ficha-body">
         <h2 class="ficha-title">${esc(r.title)}</h2>
         ${x?.ot && x.ot !== r.title ? `<p class="ficha-orig">${esc(x.ot)}</p>` : (r.orig && r.orig !== r.title ? `<p class="ficha-orig">${esc(r.orig)}</p>` : "")}
@@ -1655,8 +1662,19 @@ async function openFicha(r){
     catch(e){ if (dlg.open) dlg.querySelector(".ficha-note").textContent = e.message; }
   }
 }
+// Póster a pantalla completa
+function openPoster(path, title){
+  const v = document.getElementById("posterView");
+  v.innerHTML = `<img src="${TMDB_IMG}w780${path}" srcset="${TMDB_IMG}w780${path} 780w, ${TMDB_IMG}original${path} 2000w" sizes="100vw" alt="Póster de ${esc(title)}">
+    <button class="pv-close" type="button" aria-label="Cerrar">✕</button>`;
+  v.showModal();
+}
+document.getElementById("posterView").addEventListener("click", e => e.currentTarget.close());
+
 document.getElementById("ficha").addEventListener("click", e => {
   const dlg = e.currentTarget;
+  const img = e.target.closest(".ficha-poster img");
+  if (img){ openPoster(img.dataset.path, img.dataset.title); return; }
   if (e.target === dlg || e.target.closest("[data-close]")) dlg.close();
   if (e.target.closest("[data-open-tmdb]")){ dlg.close(); if (document.getElementById("backupPanel").hidden) togglePanel("backupBtn", "backupPanel"); document.getElementById("tmdbKeyInput").focus(); }
 });
