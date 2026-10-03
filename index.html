@@ -563,7 +563,9 @@ function renderMade(opts = {}){
   // Años desde CUT caben a la vez; los anteriores, con scroll
   const visible = madeYears.filter(y => y >= CUT).length || madeYears.length;
   const pct = Math.max(100, madeYears.length / visible * 100);
-  document.getElementById("barInner").style.width = `max(${pct}%, ${madeYears.length * 14}px)`;
+  // Ancho mínimo por barra para que el número quepa en horizontal
+  const perBar = Math.max(14, String(Math.max(0, ...madeVals)).length * 6.5 + 5);
+  document.getElementById("barInner").style.width = `max(${pct}%, ${Math.ceil(madeYears.length * perBar)}px)`;
 
   document.getElementById("madeHint").textContent = (until
     ? `Las ${data.length} películas que habías visto hasta el final de ${until}, según su año de estreno.`
@@ -603,18 +605,10 @@ function renderMade(opts = {}){
         meta.data.forEach((bar, i) => {
           const v = vals[i]; if (!v) return;
           const t = String(v), tw = ctx.measureText(t).width, h = bar.base - bar.y;
-          if (tw + 2 <= bar.width){            // cabe en horizontal
-            const inside = h >= 16;
-            ctx.textAlign = "center"; ctx.textBaseline = inside ? "top" : "bottom";
-            ctx.fillStyle = inside ? "#000" : inkC;
-            ctx.fillText(t, bar.x, inside ? bar.y + 3 : bar.y - 3);
-          } else {                             // barra estrecha: número en vertical
-            const inside = h >= tw + 8;
-            ctx.save(); ctx.translate(bar.x, inside ? bar.y + 4 : bar.y - 3); ctx.rotate(-Math.PI / 2);
-            ctx.textAlign = inside ? "right" : "left"; ctx.textBaseline = "middle";
-            ctx.fillStyle = inside ? "#000" : inkC;
-            ctx.fillText(t, 0, 0); ctx.restore();
-          }
+          const inside = h >= 16 && tw + 2 <= bar.width;   // siempre en horizontal
+          ctx.textAlign = "center"; ctx.textBaseline = inside ? "top" : "bottom";
+          ctx.fillStyle = inside ? "#000" : inkC;
+          ctx.fillText(t, bar.x, inside ? bar.y + 3 : bar.y - 3);
         });
         ctx.restore();
       }
