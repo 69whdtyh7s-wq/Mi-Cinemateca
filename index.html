@@ -17,17 +17,17 @@ img{max-width:100%}
 /* Layout: una columna tipo "ficha de cinemateca" — cabecera, carga, filtro de tipos, pestañas (Estadísticas / Películas) */
 :root{
   --bg:#f2f2f0; --surface:#ffffff; --ink:#141414; --muted:#5e5d57; --line:#dedcd4;
-  --accent:#f5c518; --accent-ink:#7a5d00; --accent-soft:rgba(245,197,24,.2); --amber:#dfae00; --amber-soft:#f5c518; --imdb:#f5c518; --teal:#14a99a; --teal-ink:#0b7a70; --teal-soft:rgba(20,169,154,.16);
+  --accent:#d9ad4f; --accent-ink:#7d5c1c; --accent-soft:rgba(217,173,79,.2); --amber:#cfa043; --amber-soft:#d9ad4f; --imdb:#d9ad4f; --teal:#5a9a91; --teal-ink:#3d7169; --teal-soft:rgba(90,154,145,.16);
   --font-display:"Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
   --font-body:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-data:"JetBrains Mono", ui-monospace, Menlo, monospace;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#121212; --surface:#1c1c1c; --ink:#f2f2f0; --muted:#a3a29b; --line:#302f2b;
-  --accent:#f5c518; --accent-ink:#f5c518; --accent-soft:rgba(245,197,24,.14); --amber:#f5c518; --amber-soft:#f5c518; --imdb:#f5c518; --teal:#2fd1c0; --teal-ink:#2fd1c0; --teal-soft:rgba(47,209,192,.16); color-scheme:dark}}
+  --accent:#d8b464; --accent-ink:#e0bf75; --accent-soft:rgba(216,180,100,.14); --amber:#d1ad5c; --amber-soft:#d8b464; --imdb:#d8b464; --teal:#79b3aa; --teal-ink:#8cc2b9; --teal-soft:rgba(121,179,170,.15); color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#121212; --surface:#1c1c1c; --ink:#f2f2f0; --muted:#a3a29b; --line:#302f2b;
-  --accent:#f5c518; --accent-ink:#f5c518; --accent-soft:rgba(245,197,24,.14); --amber:#f5c518; --amber-soft:#f5c518; --imdb:#f5c518; --teal:#2fd1c0; --teal-ink:#2fd1c0; --teal-soft:rgba(47,209,192,.16); color-scheme:dark}
+  --accent:#d8b464; --accent-ink:#e0bf75; --accent-soft:rgba(216,180,100,.14); --amber:#d1ad5c; --amber-soft:#d8b464; --imdb:#d8b464; --teal:#79b3aa; --teal-ink:#8cc2b9; --teal-soft:rgba(121,179,170,.15); color-scheme:dark}
 
 body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5}
 .wrap{max-width:1040px;margin:0 auto;padding-inline:16px;padding-block:32px 56px;display:flex;flex-direction:column;gap:24px}
@@ -364,7 +364,7 @@ function render(){
   lineChart?.destroy();
   lineChart = new Chart(document.getElementById("lineChart"), {
     type: "line",
-    data: { labels: seenYears, datasets: [{ data: seen, borderColor: cssVar("--teal"), backgroundColor: cssVar("--teal-soft"), fill: true, tension: .3, pointRadius: 4, pointHoverRadius: 7, pointBackgroundColor: cssVar("--teal"), borderWidth: 2.5 }] },
+    data: { labels: seenYears, datasets: [{ data: seen, borderColor: cssVar("--teal"), backgroundColor: cssVar("--teal-soft"), fill: true, tension: .3, pointRadius: 2.5, pointHoverRadius: 5, pointBackgroundColor: cssVar("--teal"), pointBorderWidth: 0, borderWidth: 1.5 }] },
     options: { maintainAspectRatio: false, plugins: tip, scales: axes, onHover: hover,
       interaction: { mode: "index", intersect: false },
       onClick: (e, el) => { if (el.length) openFilms({ watched: seenYears[el[0].index] }); } }
