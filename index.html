@@ -428,7 +428,7 @@ function renderMade(opts = {}){
   barChart?.destroy();
   barChart = new Chart(document.getElementById("barChart"), {
     type: "bar",
-    data: { labels: madeYears, datasets: [{ data: madeVals, backgroundColor: amber, borderRadius: 5, borderSkipped: false, barPercentage: .92, categoryPercentage: .95 }] },
+    data: { labels: madeYears, datasets: [{ data: madeVals, backgroundColor: amber, borderRadius: 5, barPercentage: .92, categoryPercentage: .95 }] },
     options: { maintainAspectRatio: false,
       animation: { duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 700, easing: "easeInOutCubic" },
       plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${c.parsed.y} películas` } } },
@@ -581,7 +581,7 @@ function renderFilmCharts(list){
   dirChart?.destroy();
   dirChart = new Chart(document.getElementById("dirChart"), {
     type: "bar",
-    data: { labels: top.map(d => d[0]), datasets: [{ data: top.map(d => d[1]), backgroundColor: amber, borderRadius: 5, borderSkipped: false, barPercentage: .85, categoryPercentage: .9 }] },
+    data: { labels: top.map(d => d[0]), datasets: [{ data: top.map(d => d[1]), backgroundColor: amber, borderRadius: 5, barPercentage: .85, categoryPercentage: .9 }] },
     options: { indexAxis: "y", maintainAspectRatio: false, animation: smooth,
       plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${c.parsed.x} películas` } } },
       onHover: (e, el) => { e.native.target.style.cursor = el.length ? "pointer" : "default"; },
@@ -610,7 +610,7 @@ function renderFilmCharts(list){
   rateChart?.destroy();
   rateChart = new Chart(document.getElementById("rateChart"), {
     type: "bar",
-    data: { labels: scores, datasets: [{ data: counts, backgroundColor: cssVar("--teal"), borderRadius: 5, borderSkipped: false, barPercentage: .9, categoryPercentage: .9 }] },
+    data: { labels: scores, datasets: [{ data: counts, backgroundColor: cssVar("--teal"), borderRadius: 5, barPercentage: .9, categoryPercentage: .9 }] },
     options: { maintainAspectRatio: false, animation: smooth,
       plugins: { legend: { display: false }, tooltip: { callbacks: { title: c => `Nota ${c[0].label}`, label: c => `${c.parsed.y} títulos` } } },
       layout: { padding: { top: 18 } },
