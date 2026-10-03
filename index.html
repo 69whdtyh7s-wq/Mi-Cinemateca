@@ -44,7 +44,8 @@ header{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas
 header > div:first-child{grid-area:title}
 header > .pill{grid-area:pill;justify-self:end}
 header > .corner{grid-area:csv;align-self:end}
-h1{font-family:var(--font-display);font-weight:800;font-size:clamp(2rem,6vw,3rem);line-height:1;margin:0;letter-spacing:-.02em;text-wrap:balance}
+h1{display:flex;align-items:center;gap:.28em;font-family:var(--font-display);font-weight:800;font-size:clamp(2rem,6vw,3rem);line-height:1;margin:0;letter-spacing:-.02em;text-wrap:balance}
+h1 .logo{width:1.05em;height:1.05em;flex:0 0 auto}
 .sub{color:var(--muted);margin:6px 0 0}
 
 .corner{display:flex;align-items:center;gap:10px;flex-wrap:wrap;max-width:100%;justify-content:flex-end}
@@ -92,7 +93,7 @@ h1{font-family:var(--font-display);font-weight:800;font-size:clamp(2rem,6vw,3rem
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
 #stats{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:16px 32px}
 .hero{display:flex;flex-direction:column;gap:2px}
-.hero-n{font-family:var(--font-display);font-weight:800;font-size:clamp(4rem,14vw,7rem);line-height:.9;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.hero-n{font-family:var(--font-display);font-weight:800;font-size:clamp(3.2rem,11vw,5.4rem);line-height:.9;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 .hero-l{font-size:13px;text-transform:uppercase;letter-spacing:.1em;color:var(--teal-ink);font-weight:600}
 .hero-l span{display:block;text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);margin-top:2px}
 .minor{display:grid;grid-template-columns:repeat(4,minmax(0,auto));gap:12px 28px}
@@ -190,7 +191,9 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
 }
 @media (max-width: 640px){
   .wrap{padding-block:20px 40px;gap:20px}
-  header{grid-template-areas:"title pill" "csv csv";gap:12px}
+  header{grid-template-columns:auto minmax(0,1fr);grid-template-areas:"title title" "pill csv";gap:14px 12px}
+  header > .pill{justify-self:start}
+  header > .corner{align-self:center}
   h1{font-size:2.1rem}
   .corner{justify-content:flex-end}
   .drop{flex:0 1 auto}
@@ -227,7 +230,7 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
 <div class="wrap">
   <header>
     <div>
-      <h1>Mi Cinemateca</h1>
+      <h1><svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" aria-hidden="true"> <rect width="64" height="64" rx="14" fill="#5a9a91"/> <path d="M42 46 Q50 56 58 55" fill="none" stroke="#d9ad4f" stroke-width="5" stroke-linecap="round"/> <circle cx="32" cy="31" r="20" fill="#f2ead8" stroke="#231f19" stroke-width="2"/> <g fill="#5a9a91"> <circle cx="32" cy="20" r="5"/> <circle cx="42.5" cy="27.6" r="5"/> <circle cx="38.5" cy="39.9" r="5"/> <circle cx="25.5" cy="39.9" r="5"/> <circle cx="21.5" cy="27.6" r="5"/> </g> <circle cx="32" cy="31" r="3" fill="#cf8f3a"/> </svg><span>Mi Cinemateca</span></h1>
       <p class="sub">Estadísticas de lo que has visto, a partir de tu lista de IMDb.</p>
     </div>
   <div class="pill" role="toolbar" aria-label="Opciones">
