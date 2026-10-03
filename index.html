@@ -83,11 +83,11 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center}
 .chip input{accent-color:var(--accent);margin:0}
 .chip b{font-family:var(--font-data);font-weight:600;font-variant-numeric:tabular-nums}
 
-.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.tabs{display:flex;gap:4px;min-width:0;max-width:100%;border-bottom:1px solid var(--line);overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .tabs::-webkit-scrollbar{display:none}
 .tab{white-space:nowrap;flex:0 0 auto}
-.tab{font:600 16px var(--font-display);background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-1px;padding:10px 14px;color:var(--muted);cursor:pointer}
-.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tab{font:600 16px var(--font-display);background:none;border:0;padding:10px 14px 12px;color:var(--muted);cursor:pointer;box-shadow:inset 0 -3px 0 transparent}
+.tab[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 -3px 0 var(--accent)}
 .tab span{font-family:var(--font-data);font-size:12px;font-weight:400;color:var(--muted);margin-left:4px}
 .view{display:flex;flex-direction:column;gap:24px}
 
@@ -269,7 +269,9 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
   .stats{grid-template-columns:1fr 1fr}
   .minor{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:100%}
   .stat .n{font-size:1.7rem}
-  .tabs{position:sticky;top:env(safe-area-inset-top, 0px);z-index:5;background:var(--bg);margin-inline:-16px;padding-inline:16px}
+  .tabs{position:sticky;top:env(safe-area-inset-top, 0px);z-index:5;background:var(--bg);margin-inline:-16px;padding-inline:16px;scroll-padding-inline:16px;max-width:calc(100% + 32px)}
+  .tab{padding:10px 12px 12px;font-size:15px}
+  .tabs.more{-webkit-mask-image:linear-gradient(90deg,#000 80%,transparent);mask-image:linear-gradient(90deg,#000 80%,transparent)}
   .filters{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .filters .grow{grid-column:1 / -1}
   .filters .field select,.filters .field input{width:100%}
@@ -362,11 +364,11 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
 
 
   <div class="tabs" role="tablist">
-    <button class="tab" role="tab" id="tab-stats" aria-controls="view-stats" aria-selected="true" data-view="stats">Estadísticas</button>
+    <button class="tab" role="tab" id="tab-films" aria-controls="view-films" aria-selected="true" data-view="films">Películas <span id="tabCount"></span></button>
+    <button class="tab" role="tab" id="tab-stats" aria-controls="view-stats" aria-selected="false" data-view="stats">Estadísticas</button>
     <button class="tab" role="tab" id="tab-taste" aria-controls="view-taste" aria-selected="false" data-view="taste">Tus gustos</button>
     <button class="tab" role="tab" id="tab-world" aria-controls="view-world" aria-selected="false" data-view="world">Mundo</button>
     <button class="tab" role="tab" id="tab-year" aria-controls="view-year" aria-selected="false" data-view="year">Resumen del año</button>
-    <button class="tab" role="tab" id="tab-films" aria-controls="view-films" aria-selected="false" data-view="films">Películas <span id="tabCount"></span></button>
   </div>
 
   <div class="view" id="view-stats" role="tabpanel" aria-labelledby="tab-stats">
@@ -1843,7 +1845,20 @@ function showView(v){
   document.getElementById("view-taste").hidden = v !== "taste";
   document.getElementById("view-world").hidden = v !== "world";
   try { localStorage.setItem("cinemateca-tab", v); } catch(e) {}
+  // En pantallas estrechas, que la pestaña activa quede siempre a la vista
+  const bar = document.querySelector(".tabs"), t = document.querySelector(`.tab[data-view="${v}"]`);
+  if (bar.scrollWidth > bar.clientWidth){
+    const left = t.offsetLeft - bar.offsetLeft - 16, right = left + t.offsetWidth + 32;
+    if (left < bar.scrollLeft || right > bar.scrollLeft + bar.clientWidth) bar.scrollTo({ left: Math.max(0, left), behavior: motion() ? "smooth" : "auto" });
+  }
+  syncTabsFade();
 }
+function syncTabsFade(){
+  const bar = document.querySelector(".tabs");
+  bar.classList.toggle("more", bar.scrollLeft + bar.clientWidth < bar.scrollWidth - 4);
+}
+document.querySelector(".tabs").addEventListener("scroll", syncTabsFade, { passive: true });
+addEventListener("resize", syncTabsFade);
 document.querySelector(".tabs").addEventListener("click", e => { const t = e.target.closest(".tab"); if (t) showView(t.dataset.view); });
 
 /* ---------- Carga ---------- */
@@ -1939,7 +1954,7 @@ if (stored && Array.isArray(stored.rows) && stored.rows.length){
   rows = stored.rows; newKeys = new Set(stored.newKeys || []); isSample = false; buildTypes(); render();
 } else if (saved) load(saved);
 else { rows = sample(); buildTypes(); render(); }
-showView(location.hash === "#peliculas" ? "films" : (["films", "year", "taste", "world"].includes(tab) ? tab : "stats"));
+showView(location.hash === "#peliculas" ? "films" : (["stats", "films", "year", "taste", "world"].includes(tab) ? tab : "films"));
 
 // Sincronización: si el repositorio tiene datos.csv, se añaden sus películas nuevas
 if (location.protocol.startsWith("http") && !location.hostname.endsWith("claude.ai")){
