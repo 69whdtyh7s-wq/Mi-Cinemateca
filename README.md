@@ -17,4 +17,8 @@ Página web para ver estadísticas de las películas que he visto, a partir del 
 
 Al subir un CSV nuevo solo se añaden las películas que aún no estaban. Los datos se guardan únicamente en el navegador (localStorage); el CSV no se sube a ningún sitio.
 
+## Datos de internet
+
+Con una API Key gratuita de [TMDb](https://www.themoviedb.org/) (que se pega en el panel de opciones y se guarda solo en el dispositivo), cada película muestra póster, sinopsis, reparto, países, idioma y dónde verla en España, y aparecen estadísticas de países, idiomas y actores. Esta app usa la API de TMDb, pero no está avalada ni certificada por TMDb.
+
 Hecha con HTML, CSS y JavaScript, sin dependencias salvo [Chart.js](https://www.chartjs.org/) desde CDN.
