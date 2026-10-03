@@ -188,6 +188,31 @@ th button[data-dir="desc"]::after{content:"▼"}
 .r-poster{float:right;width:92px;border-radius:8px;margin-left:12px}
 .foot a{color:var(--accent-ink)}
 .coverage{margin:0;color:var(--muted);font-size:14px}
+.fav-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px 16px}
+.fav-head .hint,#favStatus{margin:0;color:var(--muted);font-size:14px}
+#favStatus:empty{display:none}
+.fav-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:16px;align-items:start}
+.fav{gap:10px}
+.fav-top{display:flex;gap:14px;align-items:center}
+.fav-photo{width:64px;height:64px;border-radius:50%;object-fit:cover;flex:0 0 auto;background:var(--teal-soft)}
+.fav-photo.ph{display:grid;place-items:center;font:800 1.5rem var(--font-display);color:var(--teal-ink)}
+.fav-info{min-width:0;flex:1}
+.fav-info h3{font-family:var(--font-display);font-weight:600;font-size:1.15rem;margin:0}
+.fav-count{margin:2px 0 0;font-size:14px}
+.fav-count b{font-family:var(--font-display);font-size:1.2rem}
+.fav-bar{height:6px;border-radius:999px;background:var(--accent-soft);margin-top:6px;overflow:hidden}
+.fav-bar span{display:block;height:100%;background:var(--teal);border-radius:999px}
+.fav-meta{margin:6px 0 0;font-size:13px;color:var(--muted)}
+.fav-detail summary{cursor:pointer;color:var(--accent-ink);font-weight:600;font-size:14px}
+.fav-detail h4{margin:12px 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.fav-films{list-style:none;margin:0;padding:0}
+.fav-films li{display:flex;flex-direction:column;padding:6px 0;border-bottom:1px solid var(--line);font-size:14px}
+.fav-films li:last-child{border-bottom:0}
+.fav-films button{all:unset;cursor:pointer;font-weight:600}
+.fav-films button:hover,.fav-films a:hover{color:var(--accent-ink);text-decoration:underline}
+.fav-films button:focus-visible{outline:2px solid var(--accent-ink);border-radius:3px}
+.fav-films a{color:var(--ink);font-weight:600;text-decoration:none}
+.fav-films span{font-size:12px;color:var(--muted)}
 .poster-view{border:0;padding:0;margin:0;width:100vw;height:100dvh;max-width:none;max-height:none;background:rgba(8,8,6,.94);display:none;place-items:center;cursor:zoom-out}
 .poster-view[open]{display:grid}
 .poster-view::backdrop{background:rgba(8,8,6,.94)}
@@ -386,6 +411,7 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
     <button class="tab" role="tab" id="tab-stats" aria-controls="view-stats" aria-selected="false" data-view="stats">Estadísticas</button>
     <button class="tab" role="tab" id="tab-taste" aria-controls="view-taste" aria-selected="false" data-view="taste">Tus gustos</button>
     <button class="tab" role="tab" id="tab-world" aria-controls="view-world" aria-selected="false" data-view="world">Mundo</button>
+    <button class="tab" role="tab" id="tab-favs" aria-controls="view-favs" aria-selected="false" data-view="favs">Favoritos</button>
     <button class="tab" role="tab" id="tab-year" aria-controls="view-year" aria-selected="false" data-view="year">Resumen del año</button>
   </div>
 
@@ -557,6 +583,20 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
         <ol class="vs" id="boxList"></ol>
       </section>
     </div>
+  </div>
+
+  <div class="view" id="view-favs" role="tabpanel" aria-labelledby="tab-favs" hidden>
+    <section class="panel" id="favEmpty">
+      <h2>Tus personas favoritas</h2>
+      <p class="hint">Sube una lista de personas de IMDb (actores, directores…) con "Elegir CSV", igual que tus películas. Para exportarla: en IMDb abre tu lista de personas, pulsa ⋯ → <em>Export</em> y descarga el CSV desde "Exports".</p>
+      <p class="hint">Verás cuántas de sus películas has visto, tu nota media a su trabajo y cuáles te faltan.</p>
+    </section>
+    <div class="fav-head" id="favHead" hidden>
+      <p class="hint" id="favSummary"></p>
+      <button class="expand-btn" type="button" id="favClear">Quitar la lista de personas</button>
+    </div>
+    <p class="hint" id="favStatus" aria-live="polite"></p>
+    <div class="fav-grid" id="favList" hidden></div>
   </div>
 
   <div class="view" id="view-year" role="tabpanel" aria-labelledby="tab-year" hidden>
@@ -1515,7 +1555,7 @@ document.getElementById("spin").addEventListener("click", spin);
 document.getElementById("exportBtn").addEventListener("click", () => {
   const msg = document.getElementById("msg");
   if (isSample){ msg.className = "msg"; msg.textContent = "Todavía no hay datos tuyos que exportar. Sube primero tu CSV."; return; }
-  const blob = new Blob([JSON.stringify({ app: "mi-cinemateca", version: 1, exported: new Date().toISOString(), rows }, null, 1)], { type: "application/json" });
+  const blob = new Blob([JSON.stringify({ app: "mi-cinemateca", version: 1, exported: new Date().toISOString(), rows, people }, null, 1)], { type: "application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = `mi-cinemateca-${new Date().toISOString().slice(0, 10)}.json`;
@@ -1728,7 +1768,7 @@ document.getElementById("tmdbSave").addEventListener("click", async () => {
   const k = document.getElementById("tmdbKeyInput").value.replace(/[\s\u200B-\u200D\uFEFF"']/g, "");
   if (k.length < 20){ setTmdbStatus("Esa clave parece incompleta. Copia la \"API Key\" (o el \"token de lectura\") completa desde tu cuenta de TMDb.", true); return; }
   tmdbKey = k; setTmdbStatus("Comprobando la clave…");
-  try { await tmdbGet("/configuration"); try { localStorage.setItem(TMDB_KEY, k); } catch(e) {} syncTmdbPanel(); setTmdbStatus("Clave guardada en este dispositivo. Ya puedes descargar los datos."); }
+  try { await tmdbGet("/configuration"); try { localStorage.setItem(TMDB_KEY, k); } catch(e) {} syncTmdbPanel(); setTmdbStatus("Clave guardada en este dispositivo. Ya puedes descargar los datos."); fetchPeople(); }
   catch(e){ tmdbKey = ""; setTmdbStatus(e instanceof TypeError ? "No se pudo conectar con TMDb. Revisa la conexión a internet y abre la app desde GitHub Pages o desde el archivo descargado." : e.message, true); }
 });
 document.getElementById("tmdbRemove").addEventListener("click", () => {
@@ -1898,6 +1938,138 @@ const pickActor = a => filterFilms(`Reparto: ${a}`, r => (xOf(r).a || []).includ
 const pickCrew = (k, n) => filterFilms(`${CREW_LABEL[k][1]}: ${n}`, r => (xOf(r)[k] || []).includes(n));
 const pickProv = p => filterFilms(`Disponible en: ${p}`, r => (xOf(r).w || []).includes(p));
 
+/* ---------- Favoritos: lista de personas de IMDb ---------- */
+const PEOPLE_KEY = "cinemateca-people";
+let people = [], personCache = {}, peopleRun = null;
+try { people = JSON.parse(localStorage.getItem(PEOPLE_KEY) || "[]"); } catch(e) {}
+idb.get("people").then(c => { if (c && typeof c === "object"){ personCache = Object.assign(c, personCache); renderFavs(); } }).catch(() => {});
+const savePeople = () => { try { localStorage.setItem(PEOPLE_KEY, JSON.stringify(people)); } catch(e) {} };
+let personSaveTimer = null;
+const savePersonCache = () => { clearTimeout(personSaveTimer); personSaveTimer = setTimeout(() => idb.set("people", personCache).catch(() => {}), 500); };
+const DEP_ES = { Acting: "Interpretación", Directing: "Dirección", Writing: "Guion", Sound: "Música", Camera: "Fotografía",
+  Production: "Producción", Editing: "Montaje", Art: "Dirección artística", "Costume & Make-Up": "Vestuario y maquillaje", "Visual Effects": "Efectos visuales", Crew: "Equipo" };
+
+// ¿Es una lista de personas? (identificadores nm… y columna Name)
+function isPeopleCSV(objs){
+  if (!objs.length) return false;
+  const keys = Object.keys(objs[0]).map(k => k.toLowerCase());
+  const constKey = Object.keys(objs[0]).find(k => k.toLowerCase() === "const");
+  return keys.includes("name") && constKey && /^nm\d+/.test(objs[0][constKey] || "");
+}
+function loadPeople(objs, name){
+  const find = (...ns) => Object.keys(objs[0]).find(k => ns.some(n => k.toLowerCase() === n.toLowerCase()));
+  const k = { id: find("Const"), name: find("Name"), known: find("Known For"), pos: find("Position"), added: find("Created"), desc: find("Description") };
+  const byId = new Map(people.map(p => [p.id, p]));
+  let added = 0;
+  objs.forEach(o => {
+    const id = o[k.id]; if (!/^nm\d+/.test(id || "")) return;
+    const p = { id, name: o[k.name] || id, known: k.known ? o[k.known] : "", pos: parseInt(k.pos ? o[k.pos] : "", 10) || 0, added: k.added ? (o[k.added] || "").slice(0, 10) : "", desc: k.desc ? o[k.desc] : "" };
+    if (byId.has(id)) Object.assign(byId.get(id), p); else { people.push(p); byId.set(id, p); added++; }
+  });
+  savePeople();
+  const msg = document.getElementById("msg"); msg.className = "msg";
+  msg.textContent = `Lista de personas cargada desde ${name}: ${added} ${added === 1 ? "nueva" : "nuevas"}, ${people.length} en total. Mira la pestaña Favoritos.`;
+  showView("favs"); renderFavs(); fetchPeople();
+}
+
+async function fetchPerson(p){
+  if (personCache[p.id]?.v === 1) return personCache[p.id];
+  const found = await tmdbGet(`/find/${p.id}`, { external_source: "imdb_id", language: "es-ES" });
+  const hit = found.person_results?.[0];
+  if (!hit){ personCache[p.id] = { v: 1, none: 1 }; savePersonCache(); return personCache[p.id]; }
+  const d = await tmdbGet(`/person/${hit.id}`, { language: "es-ES", append_to_response: "combined_credits" });
+  const credits = new Map();
+  const add = (c, job) => {
+    const kind = c.media_type; if (kind !== "movie" && kind !== "tv") return;
+    const key = `${kind}:${c.id}`, prev = credits.get(key);
+    if (prev){ if (!prev.j.includes(job)) prev.j.push(job); return; }
+    credits.set(key, { k: kind, id: c.id, ti: c.title || c.name || "", y: (c.release_date || c.first_air_date || "").slice(0, 4), v: Math.round((c.vote_average || 0) * 10) / 10, c: c.vote_count || 0, p: c.poster_path || "", j: [job] });
+  };
+  (d.combined_credits?.cast || []).forEach(c => { if (!/\b(self|himself|herself|themselves)\b/i.test(c.character || "")) add(c, "Reparto"); });
+  (d.combined_credits?.crew || []).forEach(c => {
+    const job = c.job === "Director" ? "Dirección" : c.department === "Writing" ? "Guion" : c.job === "Original Music Composer" ? "Música" : c.job === "Director of Photography" ? "Fotografía" : null;
+    if (job) add(c, job);
+  });
+  personCache[p.id] = { v: 1, t: hit.id, n: d.name || p.name, img: d.profile_path || "", dep: d.known_for_department || "", cr: [...credits.values()] };
+  savePersonCache();
+  return personCache[p.id];
+}
+
+async function fetchPeople(){
+  if (!tmdbKey || peopleRun || !people.length) return;
+  const todo = people.filter(p => personCache[p.id]?.v !== 1);
+  if (!todo.length) return;
+  const token = peopleRun = {};
+  const st = document.getElementById("favStatus");
+  let i = 0;
+  for (const p of todo){
+    if (peopleRun !== token) return;
+    try { await fetchPerson(p); }
+    catch(e){ st.textContent = e.message; peopleRun = null; return; }
+    i++; st.textContent = `Descargando datos de TMDb de tus personas: ${i} de ${todo.length}…`;
+    if (i % 5 === 0) renderFavs();
+    await new Promise(r => setTimeout(r, 150));
+  }
+  peopleRun = null; st.textContent = ""; renderFavs();
+}
+
+function renderFavs(){
+  const list = document.getElementById("favList"), empty = document.getElementById("favEmpty"), head = document.getElementById("favHead");
+  if (!list) return;
+  empty.hidden = people.length > 0; head.hidden = !people.length; list.hidden = !people.length;
+  if (!people.length) return;
+  if (!tmdbKey) document.getElementById("favStatus").textContent = "Añade tu clave de TMDb (icono del reloj) para ver cuántas películas has visto de cada persona.";
+
+  // Tus títulos, indexados por su id de TMDb
+  const seenMap = new Map();
+  counted().forEach(r => { const x = tmdbCache[imdbId(r)]; if (x && !x.none && x.t) seenMap.set(`${x.k}:${x.t}`, r); });
+  const pending = counted().filter(r => imdbId(r) && !isFresh(imdbId(r))).length;
+  const today = new Date().toISOString().slice(0, 10);
+
+  const cards = people.map(p => {
+    const x = personCache[p.id];
+    const cr = x?.cr || [];
+    const movies = cr.filter(c => c.k === "movie" && c.y && c.y <= today.slice(0, 4));
+    const seen = cr.filter(c => seenMap.has(`${c.k}:${c.id}`)).map(c => ({ c, r: seenMap.get(`${c.k}:${c.id}`) }));
+    const seenMovies = seen.filter(s => s.c.k === "movie").length;
+    const rated = seen.filter(s => s.r.mine);
+    const avg = rated.length ? rated.reduce((a, s) => a + s.r.mine, 0) / rated.length : null;
+    const missing = movies.filter(c => !seenMap.has(`movie:${c.id}`) && c.c >= 50).sort((a, b) => b.v - a.v || b.c - a.c).slice(0, 10);
+    return { p, x, seen, seenMovies, total: movies.length, avg, missing };
+  }).sort((a, b) => b.seen.length - a.seen.length || a.p.name.localeCompare(b.p.name, "es"));
+
+  const totalSeen = cards.reduce((a, c) => a + c.seen.length, 0);
+  document.getElementById("favSummary").textContent = `${people.length} personas en tu lista. ` +
+    (tmdbKey ? `Entre todas suman ${totalSeen} títulos que has visto.` : "") +
+    (pending && tmdbKey ? ` Faltan datos de TMDb de ${pending} de tus películas: descárgalos desde el panel del reloj para que el recuento sea completo.` : "");
+
+  list.innerHTML = cards.map((c, i) => {
+    const pct = c.total ? Math.min(100, Math.round(c.seenMovies / c.total * 100)) : 0;
+    const photo = c.x?.img ? `<img class="fav-photo" src="${TMDB_IMG}w185${c.x.img}" alt="" loading="lazy">` : `<span class="fav-photo ph" aria-hidden="true">${esc(c.p.name.charAt(0))}</span>`;
+    const dep = c.x?.dep ? (DEP_ES[c.x.dep] || c.x.dep) : "";
+    const stats = !c.x ? `<p class="fav-meta">${tmdbKey ? "Cargando datos…" : esc(c.p.known || "")}</p>`
+      : c.x.none ? `<p class="fav-meta">TMDb no tiene esta persona.</p>`
+      : `<p class="fav-count"><b>${c.seen.length}</b> ${c.seen.length === 1 ? "título visto" : "títulos vistos"}${c.total ? ` · ${c.seenMovies} de ${c.total} películas` : ""}</p>
+         <div class="fav-bar" title="${pct}% de sus películas"><span style="width:${pct}%"></span></div>
+         <p class="fav-meta">${[dep, c.avg != null ? `tu nota media ${fmt1(c.avg)}` : ""].filter(Boolean).join(" · ")}</p>`;
+    const detail = c.x && !c.x.none ? `
+      <details class="fav-detail">
+        <summary>Ver películas</summary>
+        ${c.seen.length ? `<h4>Has visto</h4><ul class="fav-films">${c.seen.sort((a, b) => (b.r.year || 0) - (a.r.year || 0)).map(s => `<li><button type="button" data-k="${esc(rowKey(s.r))}">${esc(s.r.title)}</button><span>${[s.r.year, s.c.j.join(", "), s.r.mine ? `tu nota ${s.r.mine}` : ""].filter(Boolean).join(" · ")}</span></li>`).join("")}</ul>` : ""}
+        ${c.missing.length ? `<h4>Te faltan (mejor valoradas en TMDb)</h4><ul class="fav-films">${c.missing.map(m => `<li><a href="https://www.themoviedb.org/movie/${m.id}" target="_blank" rel="noopener">${esc(m.ti)}</a><span>${[m.y, m.j.join(", "), m.v ? `TMDb ${fmt1(m.v)}` : ""].filter(Boolean).join(" · ")}</span></li>`).join("")}</ul>` : `<p class="fav-meta">No te falta ninguna de sus películas conocidas.</p>`}
+      </details>` : "";
+    return `<article class="fav panel"><div class="fav-top">${photo}<div class="fav-info"><h3>${esc(c.x?.n || c.p.name)}</h3>${stats}</div></div>${detail}</article>`;
+  }).join("");
+}
+document.getElementById("favList").addEventListener("click", e => {
+  const b = e.target.closest("button[data-k]"); if (!b) return;
+  const r = rows.find(x => rowKey(x) === b.dataset.k); if (r) openFicha(r);
+});
+document.getElementById("favClear").addEventListener("click", () => {
+  people = []; savePeople(); renderFavs();
+  const msg = document.getElementById("msg"); msg.className = "msg"; msg.textContent = "Lista de personas quitada.";
+});
+
 /* ---------- Pestañas ---------- */
 function showView(v){
   document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.view === v));
@@ -1906,6 +2078,8 @@ function showView(v){
   document.getElementById("view-year").hidden = v !== "year";
   document.getElementById("view-taste").hidden = v !== "taste";
   document.getElementById("view-world").hidden = v !== "world";
+  document.getElementById("view-favs").hidden = v !== "favs";
+  if (v === "favs"){ renderFavs(); fetchPeople(); }
   try { localStorage.setItem("cinemateca-tab", v); } catch(e) {}
   // En pantallas estrechas, que la pestaña activa quede siempre a la vista
   const bar = document.querySelector(".tabs"), t = document.querySelector(`.tab[data-view="${v}"]`);
@@ -1937,7 +2111,12 @@ function load(text, name, opts = {}){
       const backup = JSON.parse(trimmed);
       if (!Array.isArray(backup.rows)) throw new Error("Esta copia de seguridad no es válida.");
       incoming = backup.rows;
-    } else incoming = normalize(parseCSV(text));
+      if (Array.isArray(backup.people) && backup.people.length){ const known = new Set(people.map(p => p.id)); backup.people.forEach(p => { if (!known.has(p.id)) people.push(p); }); savePeople(); }
+    } else {
+      const objs = parseCSV(text);
+      if (isPeopleCSV(objs)){ loadPeople(objs, name || "el archivo"); return; }
+      incoming = normalize(objs);
+    }
     const fields = incoming.fields || ["pos", "type", "watchedDate", "watched", "year", "title", "orig", "url", "imdb", "mine", "runtime", "genres", "dir"];
     if (isSample || !rows){
       rows = incoming.slice(); newKeys = new Set(); updKeys = new Set();
@@ -2038,7 +2217,7 @@ if (stored && Array.isArray(stored.rows) && stored.rows.length){
   rows = stored.rows; newKeys = new Set(stored.newKeys || []); updKeys = new Set(stored.updKeys || []); isSample = false; buildTypes(); render();
 } else if (saved) load(saved);
 else { rows = sample(); buildTypes(); render(); }
-showView(location.hash === "#peliculas" ? "films" : (["stats", "films", "year", "taste", "world"].includes(tab) ? tab : "films"));
+showView(location.hash === "#peliculas" ? "films" : (["stats", "films", "year", "taste", "world", "favs"].includes(tab) ? tab : "films"));
 
 // Sincronización: si el repositorio tiene datos.csv, se añaden sus películas nuevas
 if (location.protocol.startsWith("http") && !location.hostname.endsWith("claude.ai")){
