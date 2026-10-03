@@ -188,6 +188,7 @@ th button[data-dir="desc"]::after{content:"▼"}
 .r-poster{float:right;width:92px;border-radius:8px;margin-left:12px}
 .foot a{color:var(--accent-ink)}
 .coverage{margin:0;color:var(--muted);font-size:14px}
+.storage-line{margin:0;padding-top:12px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
 .add{width:min(560px,calc(100vw - 24px))}
 .add-body{padding:20px;display:flex;flex-direction:column;gap:12px}
 .add-body h2{font-family:var(--font-display);font-weight:800;font-size:1.4rem;margin:0;padding-right:40px}
@@ -415,6 +416,7 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
       <button class="btn ghost" id="exportBtn" type="button">Exportar copia</button>
     </div>
   </div>
+  <p class="hint storage-line" id="storageLine"></p>
   <div class="backup tmdb-box">
     <div>
       <h2>Datos de internet (TMDb)</h2>
@@ -2378,7 +2380,19 @@ function togglePanel(btnId, panelId){
     document.getElementById(b).setAttribute("aria-expanded", open);
   });
 }
-document.getElementById("backupBtn").addEventListener("click", () => togglePanel("backupBtn", "backupPanel"));
+document.getElementById("backupBtn").addEventListener("click", () => { togglePanel("backupBtn", "backupPanel"); showStorage(); });
+
+// Espacio que ocupa la app en este navegador
+const fmtBytes = b => b >= 1048576 ? `${(b / 1048576).toLocaleString("es-ES", { maximumFractionDigits: 1 })} MB` : `${Math.max(1, Math.round(b / 1024))} KB`;
+async function showStorage(){
+  const el = document.getElementById("storageLine");
+  const size = v => new Blob([JSON.stringify(v ?? null)]).size;
+  const parts = [["tus películas", isSample ? 0 : size(rows)], ["datos de TMDb", size(tmdbCache)], ["personas", size(people) + size(personCache)]].filter(p => p[1] > 64);
+  let total = "";
+  try { const e = await navigator.storage?.estimate?.(); if (e?.usage) total = `En total, este sitio ocupa ${fmtBytes(e.usage)} en este navegador`; } catch(err) {}
+  el.textContent = (total || "Espacio aproximado en este navegador") + (parts.length ? `: ${parts.map(([k, b]) => `${k} ${fmtBytes(b)}`).join(", ")}.` : ".") +
+    " Las imágenes de los pósters las guarda el navegador aparte, en su caché.";
+}
 document.getElementById("filtersBtn").addEventListener("click", () => togglePanel("filtersBtn", "filtersPanel"));
 
 /* ---------- Modo oscuro ---------- */
