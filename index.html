@@ -327,7 +327,7 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
       <p class="hint" id="tmdbStatus" aria-live="polite"></p>
     </div>
     <div class="actions tmdb-actions">
-      <input id="tmdbKeyInput" type="password" autocomplete="off" spellcheck="false" placeholder="API Key de TMDb" aria-label="API Key de TMDb">
+      <input id="tmdbKeyInput" type="password" autocomplete="off" spellcheck="false" placeholder="API Key o token de TMDb" aria-label="API Key de TMDb">
       <button class="btn" id="tmdbSave" type="button">Guardar clave</button>
       <button class="btn ghost" id="tmdbRemove" type="button" hidden>Quitar clave</button>
       <button class="btn ghost" id="tmdbBulk" type="button" hidden>Descargar datos de todas</button>
@@ -1337,10 +1337,12 @@ function saveTmdbCache(){
 
 async function tmdbGet(path, params = {}){
   const u = new URL("https://api.themoviedb.org/3" + path);
-  u.searchParams.set("api_key", tmdbKey);
+  const isToken = tmdbKey.startsWith("eyJ");           // token de lectura (largo) o API Key (corta)
+  if (!isToken) u.searchParams.set("api_key", tmdbKey);
   Object.entries(params).forEach(([k, v]) => u.searchParams.set(k, v));
+  const opts = isToken ? { headers: { Authorization: `Bearer ${tmdbKey}`, accept: "application/json" } } : {};
   for (let attempt = 0; attempt < 4; attempt++){
-    const res = await fetch(u);
+    const res = await fetch(u, opts);
     if (res.status === 429){ await new Promise(r => setTimeout(r, 1500 * (attempt + 1))); continue; }
     if (res.status === 401) throw Object.assign(new Error("La clave de TMDb no es válida. Revísala en el panel de opciones."), { code: 401 });
     if (!res.ok) throw new Error(`TMDb respondió con un error (${res.status}).`);
@@ -1459,11 +1461,12 @@ function syncTmdbPanel(){
   if (!bulk) setTmdbStatus(has ? `Datos descargados de ${done} de ${all.length} películas.` : "Sin clave: la ficha mostrará solo los datos de tu CSV.");
 }
 document.getElementById("tmdbSave").addEventListener("click", async () => {
-  const k = document.getElementById("tmdbKeyInput").value.trim();
-  if (!/^[a-f0-9]{32}$/i.test(k)){ setTmdbStatus("La clave debe ser la \"API Key\" de TMDb: 32 letras y números. No uses el token largo.", true); return; }
+  // Quita espacios, saltos de línea y caracteres invisibles que se cuelan al copiar
+  const k = document.getElementById("tmdbKeyInput").value.replace(/[\s\u200B-\u200D\uFEFF"']/g, "");
+  if (k.length < 20){ setTmdbStatus("Esa clave parece incompleta. Copia la \"API Key\" (o el \"token de lectura\") completa desde tu cuenta de TMDb.", true); return; }
   tmdbKey = k; setTmdbStatus("Comprobando la clave…");
   try { await tmdbGet("/configuration"); try { localStorage.setItem(TMDB_KEY, k); } catch(e) {} syncTmdbPanel(); setTmdbStatus("Clave guardada en este dispositivo. Ya puedes descargar los datos."); }
-  catch(e){ tmdbKey = ""; setTmdbStatus(e.message, true); }
+  catch(e){ tmdbKey = ""; setTmdbStatus(e instanceof TypeError ? "No se pudo conectar con TMDb. Revisa la conexión a internet y abre la app desde GitHub Pages o desde el archivo descargado." : e.message, true); }
 });
 document.getElementById("tmdbRemove").addEventListener("click", () => {
   tmdbKey = ""; bulk = null; try { localStorage.removeItem(TMDB_KEY); } catch(e) {}
