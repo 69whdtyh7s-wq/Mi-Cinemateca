@@ -367,10 +367,27 @@ function render(){
   lineChart?.destroy();
   lineChart = new Chart(document.getElementById("lineChart"), {
     type: "line",
-    data: { labels: seenYears, datasets: [{ data: seen, borderColor: cssVar("--teal"), backgroundColor: cssVar("--teal-soft"), fill: true, tension: .3, pointRadius: 2.5, pointHoverRadius: 5, pointBackgroundColor: cssVar("--teal"), pointBorderWidth: 0, borderWidth: 1.5 }] },
+    data: { labels: seenYears, datasets: [{ data: seen, borderColor: cssVar("--teal"), backgroundColor: cssVar("--teal-soft"), fill: true, tension: 0, pointRadius: 2.5, pointHoverRadius: 5, pointBackgroundColor: cssVar("--teal"), pointBorderWidth: 0, borderWidth: 1.5 }] },
     options: { maintainAspectRatio: false, plugins: tip, scales: axes, onHover: hover,
       interaction: { mode: "index", intersect: false },
-      onClick: (e, el) => { if (el.length) openFilms({ watched: seenYears[el[0].index] }); } }
+      layout: { padding: { top: 20, left: 6, right: 6 } },
+      onClick: (e, el) => { if (el.length) openFilms({ watched: seenYears[el[0].index] }); } },
+    plugins: [{
+      id: "pointValues",
+      afterDatasetsDraw(chart){
+        const { ctx } = chart, pts = chart.getDatasetMeta(0).data, vals = chart.data.datasets[0].data;
+        ctx.save();
+        ctx.font = `600 11px ${cssVar("--font-data")}`; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+        ctx.fillStyle = cssVar("--ink");
+        pts.forEach((pt, i) => {
+          const prev = vals[i - 1] ?? vals[i], next = vals[i + 1] ?? vals[i];
+          const valley = vals[i] < prev && vals[i] < next;   // en los valles, el número va debajo
+          ctx.textBaseline = valley ? "top" : "bottom";
+          ctx.fillText(vals[i], pt.x, valley ? pt.y + 7 : pt.y - 7);
+        });
+        ctx.restore();
+      }
+    }]
   });
 
   document.getElementById("dropText").textContent = isSample ? "Estás viendo datos de ejemplo. Arrastra aquí tu CSV de IMDb o" : "Arrastra aquí tu CSV de IMDb o";
