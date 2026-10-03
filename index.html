@@ -227,15 +227,6 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
       <details><summary>Ver tabla</summary><div class="tbl"><table id="tblMade"></table></div></details>
     </section>
 
-    <section class="panel">
-      <div class="panel-head">
-        <h2>Películas según década de estreno</h2>
-        <div class="field"><label class="label" for="decUntil">Cómo estaba en</label><select id="decUntil"></select></div>
-      </div>
-      <p class="hint" id="decHint"></p>
-      <div class="chart"><canvas id="decChart" aria-label="Gráfico de barras por década de estreno"></canvas></div>
-      <details><summary>Ver tabla</summary><div class="tbl"><table id="tblDec"></table></div></details>
-    </section>
     <div class="duo">
       <section class="panel">
         <h2>Directores más vistos</h2>
@@ -248,6 +239,15 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
         <div class="chart" id="rateBox"><canvas id="rateChart" aria-label="Gráfico de distribución de tus puntuaciones"></canvas></div>
       </section>
     </div>
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Películas según década de estreno</h2>
+        <div class="field"><label class="label" for="decUntil">Cómo estaba en</label><select id="decUntil"></select></div>
+      </div>
+      <p class="hint" id="decHint"></p>
+      <div class="chart"><canvas id="decChart" aria-label="Gráfico de barras por década de estreno"></canvas></div>
+      <details><summary>Ver tabla</summary><div class="tbl"><table id="tblDec"></table></div></details>
+    </section>
   </div>
 
   <div class="view" id="view-films" role="tabpanel" aria-labelledby="tab-films" hidden>
@@ -267,7 +267,6 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
         </select></div>
         <button class="btn ghost" id="clear" type="button">Quitar filtros</button>
     </div>
-
 
     <section class="panel">
       <p class="count" id="count"></p>
