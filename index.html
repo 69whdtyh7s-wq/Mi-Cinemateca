@@ -26,17 +26,17 @@ img{max-width:100%}
 /* Layout: una columna tipo "ficha de cinemateca" — cabecera, carga, filtro de tipos, pestañas (Estadísticas / Películas) */
 :root{
   --bg:#f2f2f0; --surface:#ffffff; --ink:#141414; --muted:#5e5d57; --line:#dedcd4;
-  --accent:#d9ad4f; --accent-ink:#7d5c1c; --accent-soft:rgba(217,173,79,.2); --amber:#cfa043; --amber-soft:#d9ad4f; --imdb:#d9ad4f; --teal:#5a9a91; --teal-ink:#3d7169; --teal-soft:rgba(90,154,145,.16);
+  --accent:#d9ad4f; --accent-ink:#7d5c1c; --accent-soft:rgba(217,173,79,.2); --amber:#cfa043; --amber-soft:#d9ad4f; --imdb:#d9ad4f; --teal:#5a9a91; --teal-ink:#3d7169; --teal-soft:rgba(90,154,145,.16); --rust:#b5653a; --plum:#7d5a7a; --slate:#5d7389;
   --font-display:"Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
   --font-body:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-data:"JetBrains Mono", ui-monospace, Menlo, monospace;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#121212; --surface:#1c1c1c; --ink:#f2f2f0; --muted:#a3a29b; --line:#302f2b;
-  --accent:#d8b464; --accent-ink:#e0bf75; --accent-soft:rgba(216,180,100,.14); --amber:#d1ad5c; --amber-soft:#d8b464; --imdb:#d8b464; --teal:#79b3aa; --teal-ink:#8cc2b9; --teal-soft:rgba(121,179,170,.15); color-scheme:dark}}
+  --accent:#d8b464; --accent-ink:#e0bf75; --accent-soft:rgba(216,180,100,.14); --amber:#d1ad5c; --amber-soft:#d8b464; --imdb:#d8b464; --teal:#79b3aa; --teal-ink:#8cc2b9; --teal-soft:rgba(121,179,170,.15); --rust:#d08a5f; --plum:#b08bac; --slate:#8fa5bb; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#121212; --surface:#1c1c1c; --ink:#f2f2f0; --muted:#a3a29b; --line:#302f2b;
-  --accent:#d8b464; --accent-ink:#e0bf75; --accent-soft:rgba(216,180,100,.14); --amber:#d1ad5c; --amber-soft:#d8b464; --imdb:#d8b464; --teal:#79b3aa; --teal-ink:#8cc2b9; --teal-soft:rgba(121,179,170,.15); color-scheme:dark}
+  --accent:#d8b464; --accent-ink:#e0bf75; --accent-soft:rgba(216,180,100,.14); --amber:#d1ad5c; --amber-soft:#d8b464; --imdb:#d8b464; --teal:#79b3aa; --teal-ink:#8cc2b9; --teal-soft:rgba(121,179,170,.15); --rust:#d08a5f; --plum:#b08bac; --slate:#8fa5bb; color-scheme:dark}
 
 body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5}
 .wrap{max-width:1040px;margin:0 auto;padding-inline:max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px));padding-block:32px 56px;display:flex;flex-direction:column;gap:24px}
@@ -127,6 +127,36 @@ th button[data-dir="desc"]::after{content:"▼"}
 .more{align-self:center}
 .foot{font-size:13px;color:var(--muted)}
 .mobile-only{display:none}
+.facts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.facts li{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.facts li:last-child{border-bottom:0}
+.facts .k{color:var(--muted)}
+.facts .v{font-weight:600;text-align:right;min-width:0}
+.facts .v small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+.vs{margin:0;padding:0;list-style:none;counter-reset:vs;display:flex;flex-direction:column}
+.vs li{counter-increment:vs;display:grid;grid-template-columns:22px 1fr auto;gap:10px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+.vs li:last-child{border-bottom:0}
+.vs li::before{content:counter(vs);font-family:var(--font-data);font-size:12px;color:var(--muted)}
+.vs a{color:var(--ink);text-decoration:none;font-weight:600;min-width:0}
+.vs a:hover{color:var(--accent-ink);text-decoration:underline}
+.vs .meta{display:block;font-weight:400;font-size:12px;color:var(--muted)}
+.vs .d{font-family:var(--font-data);font-size:12px;white-space:nowrap;padding:2px 7px;border-radius:999px}
+.vs .d.up{background:var(--teal-soft);color:var(--teal-ink)}
+.vs .d.down{background:var(--accent-soft);color:var(--accent-ink)}
+.vs .empty{grid-template-columns:1fr;color:var(--muted)}
+.vs .empty::before{content:none}
+.year-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:12px}
+.year-title{font-family:var(--font-display);font-weight:800;font-size:clamp(1.8rem,5vw,2.6rem);margin:0;line-height:1}
+.year-title span{color:var(--teal-ink)}
+.stat .delta{font-family:var(--font-data);font-size:12px;color:var(--muted);margin-left:6px;font-weight:400}
+.roulette{gap:6px}
+.roulette .r-title{font-family:var(--font-display);font-weight:800;font-size:1.6rem;margin:0;line-height:1.15}
+.roulette .r-meta{color:var(--muted);margin:0}
+.roulette .actions{margin-top:8px}
+.backup{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;padding-block:16px;border-top:1px solid var(--line)}
+.backup h2{font-family:var(--font-display);font-weight:600;font-size:1.1rem;margin:0}
+.backup .hint{margin:4px 0 0;color:var(--muted);font-size:14px;max-width:60ch}
+.foot code{font-family:var(--font-data);font-size:12px}
 @media (max-width: 1024px){
   .films{min-width:0}
   .films th,.films td{padding:7px 6px}
@@ -188,7 +218,7 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
       <p id="dropText" title="Si ya tienes datos, solo se añaden las películas nuevas. Todo se guarda en este navegador.">Arrastra aquí tu CSV de IMDb o</p>
       <div class="actions">
         <label class="btn upload" for="file" tabindex="0">Elegir CSV</label>
-        <input type="file" id="file" accept=".csv,text/csv" hidden>
+        <input type="file" id="file" accept=".csv,text/csv,.json,application/json" hidden>
         <button class="btn ghost" id="reset" type="button" style="font-size:13px;padding:6px 12px;border-radius:6px" hidden>Borrar datos</button>
       </div>
     </div>
@@ -204,6 +234,7 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
 
   <div class="tabs" role="tablist">
     <button class="tab" role="tab" id="tab-stats" aria-controls="view-stats" aria-selected="true" data-view="stats">Estadísticas</button>
+    <button class="tab" role="tab" id="tab-year" aria-controls="view-year" aria-selected="false" data-view="year">Resumen del año</button>
     <button class="tab" role="tab" id="tab-films" aria-controls="view-films" aria-selected="false" data-view="films">Películas <span id="tabCount"></span></button>
   </div>
 
@@ -240,6 +271,57 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
       </section>
     </div>
     <section class="panel">
+      <h2>Horas de cine por año</h2>
+      <p class="hint" id="hoursHint"></p>
+      <div class="chart"><canvas id="hoursChart" aria-label="Gráfico de horas de cine por año"></canvas></div>
+    </section>
+
+    <div class="duo">
+      <section class="panel">
+        <h2>Géneros que más ves</h2>
+        <p class="hint" id="genreHint"></p>
+        <div class="chart" id="genreBox"><canvas id="genreChart" aria-label="Gráfico de géneros más vistos"></canvas></div>
+      </section>
+      <section class="panel">
+        <h2>Cómo cambian tus géneros</h2>
+        <p class="hint">Porcentaje de las películas de cada año que son de tus cinco géneros principales.</p>
+        <div class="chart" id="genreEvoBox"><canvas id="genreEvoChart" aria-label="Evolución de tus géneros por año"></canvas></div>
+      </section>
+    </div>
+
+    <div class="duo">
+      <section class="panel">
+        <h2>Tu ritmo por meses</h2>
+        <p class="hint" id="monthHint"></p>
+        <div class="chart"><canvas id="monthChart" aria-label="Películas vistas por mes del año"></canvas></div>
+      </section>
+      <section class="panel">
+        <h2>Rachas y media semanal</h2>
+        <ul class="facts" id="rhythmFacts"></ul>
+        <details><summary>Ver media semanal por año</summary><div class="tbl"><table id="tblWeek"></table></div></details>
+      </section>
+    </div>
+
+    <section class="panel">
+      <h2>¿Estrenos o clásicos?</h2>
+      <p class="hint" id="ageHint"></p>
+      <div class="chart"><canvas id="ageChart" aria-label="Antigüedad media de las películas al verlas, por año"></canvas></div>
+    </section>
+
+    <div class="duo">
+      <section class="panel">
+        <h2>Te gustaron más que a IMDb</h2>
+        <p class="hint" id="vsHint"></p>
+        <ol class="vs" id="vsUp"></ol>
+      </section>
+      <section class="panel">
+        <h2>Te gustaron menos que a IMDb</h2>
+        <p class="hint">Donde tu nota queda más por debajo de la media de IMDb.</p>
+        <ol class="vs" id="vsDown"></ol>
+      </section>
+    </div>
+
+    <section class="panel">
       <div class="panel-head">
         <h2>Películas según década de estreno</h2>
         <div class="field"><label class="label" for="decUntil">Cómo estaba en</label><select id="decUntil"></select></div>
@@ -247,6 +329,29 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
       <p class="hint" id="decHint"></p>
       <div class="chart"><canvas id="decChart" aria-label="Gráfico de barras por década de estreno"></canvas></div>
       <details><summary>Ver tabla</summary><div class="tbl"><table id="tblDec"></table></div></details>
+    </section>
+  </div>
+
+  <div class="view" id="view-year" role="tabpanel" aria-labelledby="tab-year" hidden>
+    <div class="year-head">
+      <h2 class="year-title" id="yearTitle"></h2>
+      <div class="field"><label class="label" for="yearSel">Año</label><select id="yearSel"></select></div>
+    </div>
+    <section class="stats" id="yearStats"></section>
+    <div class="duo">
+      <section class="panel">
+        <h2>Lo más destacado</h2>
+        <ul class="facts" id="yearFacts"></ul>
+      </section>
+      <section class="panel">
+        <h2>Tus favoritas del año</h2>
+        <p class="hint" id="yearFavHint"></p>
+        <ol class="vs" id="yearFavs"></ol>
+      </section>
+    </div>
+    <section class="panel">
+      <h2>Mes a mes</h2>
+      <div class="chart"><canvas id="yearMonthChart" aria-label="Películas vistas cada mes del año elegido"></canvas></div>
     </section>
   </div>
 
@@ -266,7 +371,9 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
           <option value="runtime:desc">Duración</option>
         </select></div>
         <button class="btn ghost" id="clear" type="button">Quitar filtros</button>
+        <button class="btn" id="spin" type="button">Película al azar</button>
     </div>
+    <section class="panel roulette" id="roulette" hidden aria-live="polite"></section>
 
     <section class="panel">
       <p class="count" id="count"></p>
@@ -280,7 +387,16 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
     </section>
   </div>
 
-  <p class="foot">Cómo exportar: en IMDb abre tu lista (o "Your Ratings"), pulsa los tres puntos ⋯ → <em>Export</em>, y descarga el CSV desde "Exports". El archivo no sale de tu dispositivo.</p>
+  <section class="backup">
+    <div>
+      <h2>Copia de seguridad</h2>
+      <p class="hint">Guarda todos tus datos en un archivo para no perderlos o para pasarlos a otro dispositivo. Para importarla, súbela con "Elegir CSV" como si fuera un CSV.</p>
+    </div>
+    <div class="actions">
+      <button class="btn ghost" id="exportBtn" type="button">Exportar copia</button>
+    </div>
+  </section>
+  <p class="foot">Cómo exportar de IMDb: abre tu lista (o "Your Ratings"), pulsa los tres puntos ⋯ → <em>Export</em>, y descarga el CSV desde "Exports". El archivo no sale de tu dispositivo.<br>Sincronizar dispositivos: si subes tu CSV al repositorio de GitHub con el nombre <code>datos.csv</code>, la app lo cargará sola en cualquier dispositivo que la abra desde GitHub Pages.</p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -354,7 +470,7 @@ function sample(){
     const n = Math.round(35 + 25 * Math.sin((y - START) / 2.2) + rnd() * 20);
     for (let i = 0; i < n; i++){
       const rel = Math.min(y, Math.round(y - Math.pow(rnd(), 2.2) * 60));
-      const m = String(1 + Math.floor(rnd() * 12)).padStart(2, "0"), dd = String(1 + Math.floor(rnd() * 28)).padStart(2, "0");
+      const m = String(1 + Math.floor(rnd() * (y === NOW ? new Date().getMonth() + 1 : 12))).padStart(2, "0"), dd = String(1 + Math.floor(rnd() * 28)).padStart(2, "0");
       r.push({ type: "Movie", watched: y, watchedDate: `${y}-${m}-${dd}`, year: rel, title: `Película de ejemplo ${n0++}`, orig: "", url: "",
         imdb: Math.round((5 + rnd() * 4) * 10) / 10, mine: rnd() > .4 ? 4 + Math.floor(rnd() * 7) : null,
         runtime: 80 + Math.floor(rnd() * 80), genres: G[Math.floor(rnd() * G.length)], dir: "Director de ejemplo" });
@@ -465,6 +581,9 @@ function render(){
   renderMade();
   renderDecades();
   renderFilmCharts(data);
+  renderExtras(data);
+  fillYearSel(data);
+  renderYear();
   fillYearSelects(data);
   renderFilms();
 }
@@ -654,7 +773,7 @@ function filtered(){
   const fy = Number(document.getElementById("fYear").value) || null;
   let list = counted().filter(r =>
     (!fw || r.watched === fw) && (!fy || r.year === fy) &&
-    (!q || `${r.title} ${r.orig} ${r.dir} ${r.genres}`.toLowerCase().includes(q)));
+    (!q || `${r.title} ${r.orig} ${r.dir} ${r.genres} ${genresOf(r).join(" ")}`.toLowerCase().includes(q)));
   const k = sort.key === "watched" ? "watchedDate" : sort.key, m = sort.dir === "asc" ? 1 : -1;
   list.sort((a, b) => {
     const x = a[k], y = b[k];
@@ -679,7 +798,7 @@ function renderFilms(){
     <td class="num c-meta" data-l="IMDb">${r.imdb ?? dash}</td>
     <td class="num c-meta" data-l="Tu nota">${r.mine ? `<span class="mine">${r.mine}</span>` : dash}</td>
     <td class="num c-meta c-run" data-l="">${r.runtime ? `${r.runtime} min` : dash}</td>
-    <td class="c-sub">${esc(r.genres) || dash}</td>
+    <td class="c-sub">${esc(genresOf(r).join(", ")) || dash}</td>
     <td class="c-sub">${esc(r.dir) || dash}</td>
     <td class="c-link">${r.url ? `<a class="imdb" href="${esc(r.url)}" target="_blank" rel="noopener" aria-label="Abrir ${esc(r.title)} en IMDb" title="Abrir en IMDb"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></a>` : dash}</td></tr>`).join("")
     : `<tr><td colspan="9" class="dim">No hay títulos con estos filtros.</td></tr>`;
@@ -797,11 +916,285 @@ function openFilms({ watched = "", year = "" }){
   document.querySelector(".tabs").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
 }
 
+/* ---------- Utilidades para los gráficos nuevos ---------- */
+const MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+const MONTHS_LONG = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+const GENRE_ES = { "Action":"Acción", "Adventure":"Aventura", "Animation":"Animación", "Biography":"Biografía", "Comedy":"Comedia", "Crime":"Crimen",
+  "Documentary":"Documental", "Drama":"Drama", "Family":"Familiar", "Fantasy":"Fantasía", "Film-Noir":"Cine negro", "History":"Historia",
+  "Horror":"Terror", "Music":"Música", "Musical":"Musical", "Mystery":"Misterio", "Romance":"Romance", "Sci-Fi":"Ciencia ficción",
+  "Sport":"Deporte", "Thriller":"Suspense", "War":"Bélica", "Western":"Western", "Short":"Corto", "News":"Noticias", "Reality-TV":"Telerrealidad",
+  "Talk-Show":"Entrevistas", "Game-Show":"Concurso", "Adult":"Adultos" };
+const genresOf = r => (r.genres || "").split(",").map(g => g.trim()).filter(Boolean).map(g => GENRE_ES[g] || g);
+const fmt1 = n => n.toFixed(1).replace(".", ",");
+const fmtInt = n => Math.round(n).toLocaleString("es-ES");
+const motion = () => matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 600;
+const charts = {};
+
+function valueLabels(opts = {}){
+  return {
+    id: "valueLabels",
+    afterDatasetsDraw(chart){
+      const { ctx } = chart, meta = chart.getDatasetMeta(0), vals = chart.data.datasets[0].data;
+      const f = opts.format || (v => v), horizontal = chart.options.indexAxis === "y";
+      ctx.save(); ctx.font = `600 11px ${cssVar("--font-data")}`;
+      meta.data.forEach((bar, i) => {
+        const v = vals[i]; if (!v) return;
+        const t = String(f(v)), tw = ctx.measureText(t).width;
+        if (horizontal){
+          const inside = bar.x - bar.base >= tw + 10;
+          ctx.textAlign = inside ? "right" : "left"; ctx.textBaseline = "middle";
+          ctx.fillStyle = inside ? (opts.insideColor || "#000") : cssVar("--ink");
+          ctx.fillText(t, inside ? bar.x - 5 : bar.x + 5, bar.y);
+        } else {
+          const inside = bar.base - bar.y >= 18 && tw + 2 <= bar.width;
+          ctx.textAlign = "center"; ctx.textBaseline = inside ? "top" : "bottom";
+          ctx.fillStyle = inside ? (opts.insideColor || "#000") : cssVar("--ink");
+          ctx.fillText(t, bar.x, inside ? bar.y + 4 : bar.y - 3);
+        }
+      });
+      ctx.restore();
+    }
+  };
+}
+
+function barChart2(key, labels, data, o = {}){
+  charts[key]?.destroy();
+  const horizontal = !!o.horizontal, grid = cssVar("--line");
+  charts[key] = new Chart(document.getElementById(o.canvas || key), {
+    type: "bar",
+    data: { labels, datasets: [{ data, backgroundColor: o.color || cssVar("--amber"), borderRadius: 5, barPercentage: .88, categoryPercentage: .9 }] },
+    options: { indexAxis: horizontal ? "y" : "x", maintainAspectRatio: false, animation: { duration: motion(), easing: "easeInOutCubic" },
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => o.tip ? o.tip(c.raw) : String(c.raw) } } },
+      layout: { padding: horizontal ? { right: 34 } : { top: 20 } },
+      onHover: o.onClick ? (e, el) => { e.native.target.style.cursor = el.length ? "pointer" : "default"; } : undefined,
+      onClick: o.onClick ? (e, el) => { if (el.length) o.onClick(el[0].index); } : undefined,
+      scales: horizontal
+        ? { x: { beginAtZero: true, grid: { color: grid }, ticks: { display: false }, border: { display: false } }, y: { grid: { display: false }, ticks: { color: cssVar("--ink"), font: { size: 12 } } } }
+        : { x: { grid: { display: false }, ticks: { font: { family: cssVar("--font-data"), size: 11 }, maxRotation: 0, autoSkip: false } }, y: { beginAtZero: true, grid: { color: grid }, ticks: { display: false }, border: { display: false } } } },
+    plugins: [valueLabels({ format: o.format, insideColor: o.insideColor })]
+  });
+}
+
+const filmLink = r => r.url ? `<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title)}</a>` : `<a>${esc(r.title)}</a>`;
+const yearsRange = () => { const ys = []; for (let y = START; y <= NOW; y++) ys.push(y); return ys; };
+
+/* ---------- Estadísticas nuevas ---------- */
+function renderExtras(data){
+  const recent = data.filter(r => r.watched && r.watched >= START);
+  const years = yearsRange();
+
+  // Horas de cine
+  const hours = years.map(y => recent.filter(r => r.watched === y).reduce((a, r) => a + (r.runtime || 0), 0) / 60);
+  const totalH = data.reduce((a, r) => a + (r.runtime || 0), 0) / 60;
+  const withRun = data.filter(r => r.runtime).length;
+  document.getElementById("hoursHint").textContent = withRun
+    ? `En total llevas ${fmtInt(totalH)} horas de cine, unos ${fmtInt(totalH / 24)} días seguidos. La duración media es de ${fmtInt(data.reduce((a, r) => a + (r.runtime || 0), 0) / withRun)} minutos.`
+    : "Este archivo no trae la duración de las películas.";
+  barChart2("hoursChart", years, hours.map(h => Math.round(h)), { color: cssVar("--teal"), format: v => `${v} h`, tip: v => `${v} horas`,
+    onClick: i => openFilms({ watched: years[i] }) });
+
+  // Géneros
+  const gCount = {};
+  data.forEach(r => genresOf(r).forEach(g => { gCount[g] = (gCount[g] || 0) + 1; }));
+  const topG = Object.entries(gCount).sort((a, b) => b[1] - a[1]).slice(0, 12);
+  document.getElementById("genreHint").textContent = topG.length
+    ? `Una película puede tener varios géneros, así que cuenta en cada uno. Toca un género para ver sus películas.`
+    : "Este archivo no trae géneros.";
+  document.getElementById("genreBox").style.height = `${Math.max(topG.length, 5) * 26 + 20}px`;
+  document.getElementById("genreEvoBox").style.height = document.getElementById("genreBox").style.height;
+  const enToEs = Object.fromEntries(Object.entries(GENRE_ES).map(([en, es]) => [es, en]));
+  barChart2("genreChart", topG.map(g => g[0]), topG.map(g => g[1]), { horizontal: true, tip: v => `${v} películas`,
+    onClick: i => { openFilms({}); document.getElementById("q").value = enToEs[topG[i][0]] || topG[i][0]; shown = PAGE; renderFilms(); } });
+
+  const top5 = topG.slice(0, 5).map(g => g[0]);
+  const palette = ["--amber", "--teal", "--rust", "--plum", "--slate"].map(cssVar);
+  const dashes = [[], [6, 4], [2, 3], [10, 3, 2, 3], [4, 4]];
+  charts.genreEvo?.destroy();
+  charts.genreEvo = new Chart(document.getElementById("genreEvoChart"), {
+    type: "line",
+    data: { labels: years, datasets: top5.map((g, i) => ({
+      label: g, borderColor: palette[i], backgroundColor: palette[i], borderWidth: 1.5, borderDash: dashes[i], pointRadius: 2, tension: 0,
+      data: years.map(y => { const L = recent.filter(r => r.watched === y); return L.length ? Math.round(L.filter(r => genresOf(r).includes(g)).length / L.length * 100) : null; })
+    })) },
+    options: { maintainAspectRatio: false, animation: { duration: motion() }, spanGaps: true,
+      interaction: { mode: "index", intersect: false },
+      plugins: { legend: { position: "bottom", labels: { boxWidth: 18, boxHeight: 2, color: cssVar("--ink"), font: { size: 12 } } },
+        tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.raw}%` } } },
+      scales: { x: { grid: { display: false }, ticks: { font: { family: cssVar("--font-data"), size: 10 }, maxRotation: 0, autoSkip: true } },
+        y: { beginAtZero: true, grid: { color: cssVar("--line") }, ticks: { callback: v => `${v}%`, font: { size: 10 } }, border: { display: false } } } }
+  });
+
+  // Ritmo por meses
+  const dated = recent.filter(r => /^\d{4}-\d{2}-\d{2}$/.test(r.watchedDate));
+  const byMonth = MONTHS.map((_, m) => dated.filter(r => Number(r.watchedDate.slice(5, 7)) === m + 1).length);
+  const bestM = byMonth.indexOf(Math.max(...byMonth));
+  document.getElementById("monthHint").textContent = dated.length
+    ? `Todas las películas vistas desde ${START}, según el mes. Tu mes más cinéfilo es ${MONTHS_LONG[bestM]}.`
+    : "No hay fechas para calcular el ritmo.";
+  barChart2("monthChart", MONTHS, byMonth, { color: cssVar("--teal"), tip: v => `${v} películas` });
+
+  // Rachas: semanas seguidas con al menos una película
+  const dayN = d => Math.floor(Date.UTC(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8, 10)) / 864e5);
+  const weekN = d => Math.floor((dayN(d) + 3) / 7);           // semanas que empiezan en lunes
+  const weeks = [...new Set(dated.map(r => weekN(r.watchedDate)))].sort((a, b) => a - b);
+  let best = { len: 0 }, run = { start: weeks[0], len: weeks.length ? 1 : 0 };
+  for (let i = 1; i <= weeks.length; i++){
+    if (i < weeks.length && weeks[i] === weeks[i - 1] + 1) run.len++;
+    else { if (run.len > best.len) best = { ...run, end: weeks[i - 1] }; run = { start: weeks[i], len: 1 }; }
+  }
+  const weekDate = (w, off = 0) => new Date((w * 7 - 3 + off) * 864e5).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+  const days = {}; dated.forEach(r => { days[r.watchedDate] = (days[r.watchedDate] || 0) + 1; });
+  const bestDay = Object.entries(days).sort((a, b) => b[1] - a[1])[0];
+  const dow = [0, 0, 0, 0, 0, 0, 0]; dated.forEach(r => { dow[(dayN(r.watchedDate) + 3) % 7]++; });
+  const DOW = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"];
+  const weekly = years.map(y => {
+    const n = recent.filter(r => r.watched === y).length;
+    const wks = y === NOW ? Math.max(1, (Date.now() - Date.UTC(NOW, 0, 1)) / 864e5 / 7) : 52.18;
+    return { y, n, w: n / wks };
+  });
+  const bestW = weekly.reduce((a, b) => b.w > a.w ? b : a, weekly[0]);
+  document.getElementById("rhythmFacts").innerHTML = dated.length ? [
+    ["Racha más larga", `${best.len} ${best.len === 1 ? "semana" : "semanas"} seguidas<small>del ${weekDate(best.start)} al ${weekDate(best.end, 6)}</small>`],
+    ["Media semanal desde " + START, `${fmt1(recent.length / weekly.reduce((a, b) => a + (b.y === NOW ? Math.max(1, (Date.now() - Date.UTC(NOW, 0, 1)) / 864e5 / 7) : 52.18), 0))} películas`],
+    ["Año con mejor media", `${bestW.y}<small>${fmt1(bestW.w)} películas por semana</small>`],
+    ["Día de la semana favorito", `${DOW[dow.indexOf(Math.max(...dow))]}`],
+    ["Día con más películas", bestDay ? `${bestDay[1]}<small>${new Date(bestDay[0] + "T12:00").toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" })}</small>` : "—"]
+  ].map(([k, v]) => `<li><span class="k">${k}</span><span class="v">${v}</span></li>`).join("") : `<li><span class="k">No hay fechas suficientes.</span></li>`;
+  document.getElementById("tblWeek").innerHTML = "<tr><th>Año</th><th>Películas</th><th>Por semana</th></tr>" +
+    weekly.slice().reverse().map(w => `<tr><td>${w.y}</td><td>${w.n}</td><td>${fmt1(w.w)}</td></tr>`).join("");
+
+  // Antigüedad al verlas
+  const aged = recent.filter(r => r.year && r.watched >= r.year);
+  const ages = aged.map(r => r.watched - r.year).sort((a, b) => a - b);
+  const avgAge = years.map(y => { const L = aged.filter(r => r.watched === y); return L.length ? Math.round(L.reduce((a, r) => a + r.watched - r.year, 0) / L.length * 10) / 10 : null; });
+  const median = ages.length ? ages[Math.floor(ages.length / 2)] : 0;
+  const fresh = ages.filter(a => a <= 1).length, classic = ages.filter(a => a >= 30).length;
+  document.getElementById("ageHint").textContent = ages.length
+    ? `Años que tenía de media cada película cuando la viste. La mitad de lo que ves tiene ${median} años o menos; el ${Math.round(fresh / ages.length * 100)}% son estrenos (del año o del anterior) y el ${Math.round(classic / ages.length * 100)}% tiene 30 años o más.`
+    : "No hay datos suficientes.";
+  charts.age?.destroy();
+  charts.age = new Chart(document.getElementById("ageChart"), {
+    type: "line",
+    data: { labels: years, datasets: [{ data: avgAge, borderColor: cssVar("--amber"), backgroundColor: cssVar("--accent-soft"), fill: true, tension: 0, borderWidth: 1.5, pointRadius: 2.5, pointBackgroundColor: cssVar("--amber"), pointBorderWidth: 0, spanGaps: true }] },
+    options: { maintainAspectRatio: false, animation: { duration: motion() }, layout: { padding: { top: 20, left: 6, right: 6 } },
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${fmt1(c.raw)} años de media` } } },
+      scales: { x: { grid: { display: false }, ticks: { font: { family: cssVar("--font-data"), size: 11 }, maxRotation: 0 } },
+        y: { beginAtZero: true, grid: { color: cssVar("--line") }, ticks: { display: false }, border: { display: false } } } },
+    plugins: [{ id: "ageVals", afterDatasetsDraw(chart){
+      const { ctx } = chart, pts = chart.getDatasetMeta(0).data, v = chart.data.datasets[0].data;
+      ctx.save(); ctx.font = `600 11px ${cssVar("--font-data")}`; ctx.textAlign = "center"; ctx.textBaseline = "bottom"; ctx.fillStyle = cssVar("--ink");
+      pts.forEach((p, i) => { if (v[i] != null) ctx.fillText(Math.round(v[i]), p.x, p.y - 6); });
+      ctx.restore();
+    } }]
+  });
+
+  // Tu nota frente a IMDb
+  const both = data.filter(r => r.mine && r.imdb).map(r => ({ r, d: r.mine - r.imdb }));
+  const avgD = both.length ? both.reduce((a, b) => a + b.d, 0) / both.length : 0;
+  document.getElementById("vsHint").textContent = both.length
+    ? `Comparando ${both.length} películas que has puntuado: de media, tu nota está ${fmt1(Math.abs(avgD))} puntos ${avgD >= 0 ? "por encima" : "por debajo"} de la de IMDb.`
+    : "Necesitas tus puntuaciones (columna \"Your Rating\") para esta comparación.";
+  const li = x => `<li><span>${filmLink(x.r)}<span class="meta">Tú ${x.r.mine} · IMDb ${fmt1(x.r.imdb)}${x.r.year ? ` · ${x.r.year}` : ""}</span></span><span class="d ${x.d >= 0 ? "up" : "down"}">${x.d >= 0 ? "+" : "−"}${fmt1(Math.abs(x.d))}</span></li>`;
+  const none = `<li class="empty">Sin datos.</li>`;
+  document.getElementById("vsUp").innerHTML = both.filter(x => x.d > 0).sort((a, b) => b.d - a.d || b.r.mine - a.r.mine).slice(0, 10).map(li).join("") || none;
+  document.getElementById("vsDown").innerHTML = both.filter(x => x.d < 0).sort((a, b) => a.d - b.d || a.r.mine - b.r.mine).slice(0, 10).map(li).join("") || none;
+}
+
+/* ---------- Resumen del año ---------- */
+function fillYearSel(data){
+  const el = document.getElementById("yearSel"), cur = el.value;
+  const ys = [...new Set(data.map(r => r.watched).filter(y => y && y >= START))].sort((a, b) => b - a);
+  el.innerHTML = ys.map(y => `<option value="${y}">${y}</option>`).join("");
+  el.value = ys.includes(Number(cur)) ? cur : (ys[0] ?? "");
+}
+document.getElementById("yearSel").addEventListener("change", () => renderYear());
+
+function topOf(list, keyFn){
+  const c = {}; list.forEach(r => keyFn(r).forEach(k => { c[k] = (c[k] || 0) + 1; }));
+  return Object.entries(c).sort((a, b) => b[1] - a[1])[0];
+}
+
+function renderYear(){
+  const all = counted();
+  const Y = Number(document.getElementById("yearSel").value);
+  const title = document.getElementById("yearTitle");
+  if (!Y){ title.textContent = "Sin datos todavía"; return; }
+  const L = all.filter(r => r.watched === Y), P = all.filter(r => r.watched === Y - 1);
+  title.innerHTML = `Tu año <span>${Y}</span>`;
+  const mins = L.reduce((a, r) => a + (r.runtime || 0), 0);
+  const wks = Y === NOW ? Math.max(1, (Date.now() - Date.UTC(NOW, 0, 1)) / 864e5 / 7) : 52.18;
+  const rated = L.filter(r => r.mine);
+  const delta = P.length ? Math.round((L.length - P.length) / P.length * 100) : null;
+  document.getElementById("yearStats").innerHTML = [
+    [L.length, "películas", delta != null ? `${delta >= 0 ? "+" : "−"}${Math.abs(delta)}% vs ${Y - 1}` : ""],
+    [fmtInt(mins / 60), "horas de cine", ""],
+    [fmt1(L.length / wks), "por semana", ""],
+    [rated.length ? fmt1(rated.reduce((a, r) => a + r.mine, 0) / rated.length) : "—", "tu nota media", ""]
+  ].map(([n, l, d]) => `<div class="stat"><div class="n">${n}${d ? `<span class="delta">${d}</span>` : ""}</div><div class="l">${l}</div></div>`).join("");
+
+  const dir = topOf(L, r => (r.dir || "").split(",").map(d => d.trim()).filter(Boolean));
+  const gen = topOf(L, genresOf);
+  const oldest = L.filter(r => r.year).sort((a, b) => a.year - b.year)[0];
+  const longest = L.filter(r => r.runtime).sort((a, b) => b.runtime - a.runtime)[0];
+  const premieres = L.filter(r => r.year === Y).length;
+  const mCount = MONTHS.map((_, m) => L.filter(r => Number((r.watchedDate || "").slice(5, 7)) === m + 1).length);
+  const bestM = mCount.indexOf(Math.max(...mCount));
+  const ages = L.filter(r => r.year).map(r => Y - r.year);
+  document.getElementById("yearFacts").innerHTML = [
+    ["Director del año", dir ? `${esc(dir[0])}<small>${dir[1]} ${dir[1] === 1 ? "película" : "películas"}</small>` : "—"],
+    ["Género del año", gen ? `${esc(gen[0])}<small>${gen[1]} películas</small>` : "—"],
+    ["Mes más cinéfilo", L.length ? `${MONTHS_LONG[bestM]}<small>${mCount[bestM]} películas</small>` : "—"],
+    ["Estrenos de ese año", `${premieres}<small>${L.length ? Math.round(premieres / L.length * 100) : 0}% de lo que viste</small>`],
+    ["Antigüedad media", ages.length ? `${fmt1(ages.reduce((a, b) => a + b, 0) / ages.length)} años` : "—"],
+    ["La más antigua", oldest ? `${filmLink(oldest)}<small>${oldest.year}</small>` : "—"],
+    ["La más larga", longest ? `${filmLink(longest)}<small>${longest.runtime} min</small>` : "—"]
+  ].map(([k, v]) => `<li><span class="k">${k}</span><span class="v">${v}</span></li>`).join("");
+
+  const favs = rated.slice().sort((a, b) => b.mine - a.mine || (b.imdb || 0) - (a.imdb || 0)).slice(0, 5);
+  document.getElementById("yearFavHint").textContent = rated.length ? `Las mejor puntuadas por ti entre las ${rated.length} que puntuaste en ${Y}.` : `No puntuaste ninguna película en ${Y}.`;
+  document.getElementById("yearFavs").innerHTML = favs.map(r => `<li><span>${filmLink(r)}<span class="meta">${[r.year, (r.dir || "").split(",")[0]].filter(Boolean).join(" · ")}</span></span><span class="d up">${r.mine}</span></li>`).join("") || `<li class="empty">Sin puntuaciones.</li>`;
+
+  barChart2("yearMonthChart", MONTHS, mCount, { color: cssVar("--teal"), tip: v => `${v} películas`,
+    onClick: () => openFilms({ watched: Y }) });
+}
+
+/* ---------- Ruleta ---------- */
+function spin(){
+  const list = filtered(), box = document.getElementById("roulette");
+  box.hidden = false;
+  if (!list.length){ box.innerHTML = `<p class="r-meta">No hay películas con estos filtros.</p>`; return; }
+  const r = list[Math.floor(Math.random() * list.length)];
+  box.innerHTML = `<span class="label">Tu película al azar</span>
+    <p class="r-title">${esc(r.title)}</p>
+    <p class="r-meta">${[r.year, r.dir, genresOf(r).join(", "), r.runtime ? `${r.runtime} min` : ""].filter(Boolean).map(esc).join(" · ")}</p>
+    <p class="r-meta">${[r.mine ? `Tu nota: ${r.mine}` : "", r.imdb ? `IMDb: ${fmt1(r.imdb)}` : "", r.watchedDate ? `Vista el ${r.watchedDate.split("-").reverse().join("/")}` : ""].filter(Boolean).join(" · ")}</p>
+    <div class="actions">
+      <button class="btn" type="button" id="spinAgain">Otra</button>
+      ${r.url ? `<a class="btn ghost" href="${esc(r.url)}" target="_blank" rel="noopener">Ver en IMDb</a>` : ""}
+    </div>`;
+  document.getElementById("spinAgain").addEventListener("click", spin);
+}
+document.getElementById("spin").addEventListener("click", spin);
+
+/* ---------- Copia de seguridad ---------- */
+document.getElementById("exportBtn").addEventListener("click", () => {
+  const msg = document.getElementById("msg");
+  if (isSample){ msg.className = "msg"; msg.textContent = "Todavía no hay datos tuyos que exportar. Sube primero tu CSV."; return; }
+  const blob = new Blob([JSON.stringify({ app: "mi-cinemateca", version: 1, exported: new Date().toISOString(), rows }, null, 1)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `mi-cinemateca-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  msg.className = "msg"; msg.textContent = `Copia exportada con ${rows.length} títulos.`;
+});
+
 /* ---------- Pestañas ---------- */
 function showView(v){
   document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.view === v));
   document.getElementById("view-stats").hidden = v !== "stats";
   document.getElementById("view-films").hidden = v !== "films";
+  document.getElementById("view-year").hidden = v !== "year";
   try { localStorage.setItem("cinemateca-tab", v); } catch(e) {}
 }
 document.querySelector(".tabs").addEventListener("click", e => { const t = e.target.closest(".tab"); if (t) showView(t.dataset.view); });
@@ -811,10 +1204,20 @@ function save(){
   try { localStorage.setItem(DATA_KEY, JSON.stringify({ rows, newKeys: [...newKeys] })); localStorage.removeItem(KEY); } catch(e) {}
 }
 
-function load(text, name){
+function load(text, name, opts = {}){
   const msg = document.getElementById("msg");
   try {
-    const incoming = normalize(parseCSV(text));
+    let incoming;
+    const trimmed = text.trim();
+    if (trimmed.startsWith("{")){
+      const backup = JSON.parse(trimmed);
+      if (!Array.isArray(backup.rows)) throw new Error("Esta copia de seguridad no es válida.");
+      incoming = backup.rows;
+    } else incoming = normalize(parseCSV(text));
+    if (opts.quiet && !isSample && rows){
+      const have = new Set(rows.map(rowKey));
+      if (!incoming.some(r => !have.has(rowKey(r)))) return;   // nada nuevo en el repositorio
+    }
     if (isSample || !rows){
       rows = incoming; newKeys = new Set();
       msg.textContent = name ? `Cargado: ${name} (${rows.length} títulos)` : "";
@@ -877,7 +1280,13 @@ if (stored && Array.isArray(stored.rows) && stored.rows.length){
   rows = stored.rows; newKeys = new Set(stored.newKeys || []); isSample = false; buildTypes(); render();
 } else if (saved) load(saved);
 else { rows = sample(); buildTypes(); render(); }
-showView(location.hash === "#peliculas" ? "films" : (tab === "films" ? "films" : "stats"));
+showView(location.hash === "#peliculas" ? "films" : (["films", "year"].includes(tab) ? tab : "stats"));
+
+// Sincronización: si el repositorio tiene datos.csv, se añaden sus películas nuevas
+if (location.protocol.startsWith("http") && !location.hostname.endsWith("claude.ai")){
+  fetch("datos.csv", { cache: "no-store" }).then(r => r.ok ? r.text() : null)
+    .then(t => { if (t && t.includes(",")) load(t, "datos.csv de GitHub", { quiet: true }); }).catch(() => {});
+}
 </script>
 </body>
 </html>
