@@ -1475,7 +1475,37 @@ document.getElementById("exportBtn").addEventListener("click", () => {
 const TMDB_KEY = "cinemateca-tmdb-key", TMDB_CACHE = "cinemateca-tmdb";
 const TMDB_IMG = "https://image.tmdb.org/t/p/";
 let tmdbKey = "", tmdbCache = {}, tmdbSaveTimer = null, bulk = null;
-try { tmdbKey = localStorage.getItem(TMDB_KEY) || ""; tmdbCache = JSON.parse(localStorage.getItem(TMDB_CACHE) || "{}"); } catch(e) {}
+try { tmdbKey = localStorage.getItem(TMDB_KEY) || ""; } catch(e) {}
+
+// Almacén grande del navegador (IndexedDB): admite muchos más datos que localStorage (≈5 MB en Safari)
+const idb = (() => {
+  let dbp = null;
+  const open = () => dbp || (dbp = new Promise((res, rej) => {
+    const rq = indexedDB.open("mi-cinemateca", 1);
+    rq.onupgradeneeded = () => rq.result.createObjectStore("kv");
+    rq.onsuccess = () => res(rq.result);
+    rq.onerror = () => rej(rq.error);
+  }));
+  const tx = (mode, fn) => open().then(db => new Promise((res, rej) => {
+    const t = db.transaction("kv", mode), st = t.objectStore("kv"), out = fn(st);
+    t.oncomplete = () => res(out && out.result); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error);
+  }));
+  return { get: k => tx("readonly", st => st.get(k)), set: (k, v) => tx("readwrite", st => st.put(v, k)) };
+})();
+
+// Cargar la caché de TMDb (y mover la antigua de localStorage si existía)
+idb.get("tmdb").then(c => {
+  if (c && typeof c === "object") tmdbCache = Object.assign(c, tmdbCache);
+  else {
+    try { const old = localStorage.getItem(TMDB_CACHE); if (old) tmdbCache = Object.assign(JSON.parse(old), tmdbCache); } catch(e) {}
+  }
+  try { localStorage.removeItem(TMDB_CACHE); } catch(e) {}
+  if (Object.keys(tmdbCache).length) { saveTmdbCache(); if (rows){ renderWorld(); renderYear(); renderFilms(); syncTmdbPanel(); } }
+}).catch(() => {
+  try { tmdbCache = Object.assign(JSON.parse(localStorage.getItem(TMDB_CACHE) || "{}"), tmdbCache); } catch(e) {}
+});
+// Pedir al navegador que no borre estos datos por falta de uso (Safari puede hacerlo)
+try { navigator.storage?.persist?.(); } catch(e) {}
 const regionName = (() => { try { const d = new Intl.DisplayNames(["es"], { type: "region" }); return c => { try { return d.of(c); } catch(e) { return c; } }; } catch(e) { return c => c; } })();
 const langName = (() => { try { const d = new Intl.DisplayNames(["es"], { type: "language" }); return c => { try { const n = d.of(c); return n.charAt(0).toUpperCase() + n.slice(1); } catch(e) { return c; } }; } catch(e) { return c => c; } })();
 const imdbId = r => r.id || ((r.url || "").match(/tt\d+/) || [])[0] || "";
@@ -1483,8 +1513,10 @@ const imdbId = r => r.id || ((r.url || "").match(/tt\d+/) || [])[0] || "";
 function saveTmdbCache(){
   clearTimeout(tmdbSaveTimer);
   tmdbSaveTimer = setTimeout(() => {
-    try { localStorage.setItem(TMDB_CACHE, JSON.stringify(tmdbCache)); }
-    catch(e){ setTmdbStatus("El navegador no tiene más espacio para guardar datos de TMDb.", true); }
+    idb.set("tmdb", tmdbCache).catch(() => {
+      try { localStorage.setItem(TMDB_CACHE, JSON.stringify(tmdbCache)); }
+      catch(e){ setTmdbStatus("El navegador no tiene más espacio para guardar datos de TMDb. Si usas una ventana privada, abre la app en una normal.", true); }
+    });
   }, 600);
 }
 
