@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cinemateca">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f2f2f0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
 <meta property="og:image" content="social-preview.png">
 <style>
 *,*::before,*::after{box-sizing:border-box}
@@ -33,13 +39,13 @@ img{max-width:100%}
   --accent:#d8b464; --accent-ink:#e0bf75; --accent-soft:rgba(216,180,100,.14); --amber:#d1ad5c; --amber-soft:#d8b464; --imdb:#d8b464; --teal:#79b3aa; --teal-ink:#8cc2b9; --teal-soft:rgba(121,179,170,.15); color-scheme:dark}
 
 body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5}
-.wrap{max-width:1040px;margin:0 auto;padding-inline:16px;padding-block:32px 56px;display:flex;flex-direction:column;gap:24px}
+.wrap{max-width:1040px;margin:0 auto;padding-inline:max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px));padding-block:32px 56px;display:flex;flex-direction:column;gap:24px}
 header{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:16px}
 h1{font-family:var(--font-display);font-weight:800;font-size:clamp(2rem,6vw,3rem);line-height:1;margin:0;letter-spacing:-.02em;text-wrap:balance}
 .sub{color:var(--muted);margin:6px 0 0}
 
 .corner{display:flex;align-items:center;gap:10px;flex-wrap:wrap;max-width:100%}
-.theme-btn{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.theme-btn{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
 .theme-btn:hover{border-color:var(--accent)}
 .theme-btn:focus-visible{outline:3px solid var(--accent-ink);outline-offset:2px}
 .theme-btn .sun{display:none}
@@ -84,7 +90,7 @@ h1{font-family:var(--font-display);font-weight:800;font-size:clamp(2rem,6vw,3rem
 .chart{position:relative;height:320px}
 .chart.scroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
 .chart-inner{position:relative;height:100%;min-width:100%}
-.duo{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr));gap:24px}
+.duo{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:24px}
 .panel-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:12px}
 details summary{cursor:pointer;color:var(--accent-ink);font-weight:600;font-size:14px}
 .tbl{overflow-x:auto;margin-top:10px}
@@ -97,7 +103,7 @@ th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;le
 .filters{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
 .field{display:flex;flex-direction:column;gap:4px;min-width:0}
 .field.grow{flex:1 1 240px}
-.field input,.field select{font:15px var(--font-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0}
+.field input,.field select{font:16px var(--font-body);-webkit-appearance:none;appearance:none;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0}
 .count{font-size:14px;color:var(--muted);margin:0}
 .films{min-width:760px}
 .films td{font-family:var(--font-body);font-size:14px;vertical-align:top}
@@ -120,6 +126,49 @@ th button[data-dir="desc"]::after{content:"▼"}
 .mine{display:inline-block;min-width:1.8em;text-align:center;padding:1px 6px;border-radius:6px;background:var(--amber-soft);color:#000;font-weight:600}
 .more{align-self:center}
 .foot{font-size:13px;color:var(--muted)}
+.mobile-only{display:none}
+@media (max-width: 1024px){
+  .films{min-width:0}
+  .films th,.films td{padding:7px 6px}
+  .films td{font-size:13px}
+}
+button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+@media (hover: none){
+  .drop{border:0;padding:0;background:none}
+  .drop p{display:none}
+  .films a.imdb{width:38px;height:38px}
+}
+@media (max-width: 640px){
+  .wrap{padding-block:20px 40px;gap:20px}
+  header{flex-direction:column;align-items:stretch;gap:12px}
+  h1{font-size:2.1rem}
+  .corner{justify-content:space-between}
+  .drop{flex:0 1 auto}
+  .panel{padding:16px;border-radius:12px}
+  .chart{height:260px}
+  .stats{grid-template-columns:1fr 1fr}
+  .stat .n{font-size:1.7rem}
+  .tabs{position:sticky;top:env(safe-area-inset-top, 0px);z-index:5;background:var(--bg);margin-inline:-16px;padding-inline:16px}
+  .filters{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .filters .grow{grid-column:1 / -1}
+  .filters .field select,.filters .field input{width:100%}
+  .filters #clear{align-self:end;height:42px}
+  .mobile-only{display:flex}
+  /* La tabla se convierte en tarjetas */
+  .films{min-width:0}
+  .films thead{display:none}
+  .films,.films tbody{display:block}
+  .films tr{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;padding:12px 2px;border-bottom:1px solid var(--line)}
+  .films tbody tr:hover{background:none}
+  .films td{border:0;padding:0;text-align:left}
+  .films .c-title{order:0;flex:1 1 calc(100% - 56px);font-size:15px}
+  .films .c-link{order:1;flex:0 0 auto;align-self:center}
+  .films .c-meta{order:2;font-size:12px;color:var(--muted)}
+  .films .c-meta::before{content:attr(data-l) " ";font-family:var(--font-body);text-transform:uppercase;letter-spacing:.06em;font-size:10px}
+  .films .c-sub{order:3;flex:1 1 100%;font-size:13px;color:var(--muted)}
+  .films .c-sub + .c-sub{margin-top:-2px}
+  .tbl{margin-top:0}
+}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 </style>
 </head>
@@ -184,6 +233,16 @@ th button[data-dir="desc"]::after{content:"▼"}
         <div class="field grow"><label class="label" for="q">Buscar</label><input id="q" type="search" placeholder="Título, director o género"></div>
         <div class="field"><label class="label" for="fWatched">Vista en</label><select id="fWatched"></select></div>
         <div class="field"><label class="label" for="fYear">Estrenada en</label><select id="fYear"></select></div>
+        <div class="field mobile-only"><label class="label" for="sortSel">Ordenar por</label><select id="sortSel">
+          <option value="watched:desc">Vistas recientes</option>
+          <option value="watched:asc">Vistas antiguas</option>
+          <option value="title:asc">Título (A–Z)</option>
+          <option value="year:desc">Estreno reciente</option>
+          <option value="year:asc">Estreno antiguo</option>
+          <option value="imdb:desc">Nota IMDb</option>
+          <option value="mine:desc">Tu nota</option>
+          <option value="runtime:desc">Duración</option>
+        </select></div>
         <button class="btn ghost" id="clear" type="button">Quitar filtros</button>
     </div>
 
@@ -511,6 +570,8 @@ function fillYearSelects(data){
 }
 
 function renderHead(){
+  const ss = document.getElementById("sortSel"), v = `${sort.key}:${sort.dir}`;
+  if ([...ss.options].some(o => o.value === v)) ss.value = v;
   document.getElementById("filmHead").innerHTML = COLS.map(c => c.nosort ? `<th>${c.label}</th>` :
     `<th class="${c.num ? "num" : ""}" aria-sort="${sort.key === c.key ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}"><button type="button" data-key="${c.key}" ${sort.key === c.key ? `data-dir="${sort.dir}"` : ""}>${c.label}</button></th>`).join("");
 }
@@ -540,15 +601,15 @@ function renderFilms(){
   document.getElementById("count").textContent = `${n} ${n === 1 ? "título" : "títulos"}` + (n > shown ? ` · mostrando ${shown}` : "");
   const dash = '<span class="dim">—</span>';
   document.getElementById("filmBody").innerHTML = n ? list.slice(0, shown).map(r => `<tr>
-    <td><strong>${esc(r.title)}</strong>${newKeys.has(rowKey(r)) ? ' <span class="new">nueva</span>' : ""}${r.orig && r.orig !== r.title ? `<span class="orig">${esc(r.orig)}</span>` : ""}</td>
-    <td class="num">${r.year ?? dash}</td>
-    <td class="num">${r.watchedDate ? esc(r.watchedDate.split("-").reverse().join("/")) : dash}</td>
-    <td class="num">${r.imdb ?? dash}</td>
-    <td class="num">${r.mine ? `<span class="mine">${r.mine}</span>` : dash}</td>
-    <td class="num">${r.runtime ? `${r.runtime} min` : dash}</td>
-    <td>${esc(r.genres) || dash}</td>
-    <td>${esc(r.dir) || dash}</td>
-    <td>${r.url ? `<a class="imdb" href="${esc(r.url)}" target="_blank" rel="noopener" aria-label="Abrir ${esc(r.title)} en IMDb" title="Abrir en IMDb"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></a>` : dash}</td></tr>`).join("")
+    <td class="c-title"><strong>${esc(r.title)}</strong>${newKeys.has(rowKey(r)) ? ' <span class="new">nueva</span>' : ""}${r.orig && r.orig !== r.title ? `<span class="orig">${esc(r.orig)}</span>` : ""}</td>
+    <td class="num c-meta" data-l="Estreno">${r.year ?? dash}</td>
+    <td class="num c-meta" data-l="Vista">${r.watchedDate ? esc(r.watchedDate.split("-").reverse().join("/")) : dash}</td>
+    <td class="num c-meta" data-l="IMDb">${r.imdb ?? dash}</td>
+    <td class="num c-meta" data-l="Tu nota">${r.mine ? `<span class="mine">${r.mine}</span>` : dash}</td>
+    <td class="num c-meta c-run" data-l="">${r.runtime ? `${r.runtime} min` : dash}</td>
+    <td class="c-sub">${esc(r.genres) || dash}</td>
+    <td class="c-sub">${esc(r.dir) || dash}</td>
+    <td class="c-link">${r.url ? `<a class="imdb" href="${esc(r.url)}" target="_blank" rel="noopener" aria-label="Abrir ${esc(r.title)} en IMDb" title="Abrir en IMDb"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></a>` : dash}</td></tr>`).join("")
     : `<tr><td colspan="9" class="dim">No hay títulos con estos filtros.</td></tr>`;
   document.getElementById("more").hidden = n <= shown;
   renderFilmCharts(list);
@@ -647,6 +708,9 @@ document.getElementById("filmHead").addEventListener("click", e => {
   shown = PAGE; renderFilms();
 });
 ["q", "fWatched", "fYear"].forEach(id => document.getElementById(id).addEventListener("input", () => { shown = PAGE; renderFilms(); }));
+document.getElementById("sortSel").addEventListener("change", e => {
+  const [key, dir] = e.target.value.split(":"); sort = { key, dir }; shown = PAGE; renderFilms();
+});
 document.getElementById("more").addEventListener("click", () => { shown += PAGE; renderFilms(); });
 document.getElementById("clear").addEventListener("click", () => {
   document.getElementById("q").value = ""; document.getElementById("fWatched").value = ""; document.getElementById("fYear").value = "";
