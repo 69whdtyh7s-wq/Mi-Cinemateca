@@ -182,6 +182,7 @@ th button[data-dir="desc"]::after{content:"▼"}
 .vs li.with-poster > .d{grid-column:4}
 .r-poster{float:right;width:92px;border-radius:8px;margin-left:12px}
 .foot a{color:var(--accent-ink)}
+.coverage{margin:0;color:var(--muted);font-size:14px}
 @media (max-width: 640px){
   .ficha-grid{grid-template-columns:110px minmax(0,1fr);gap:12px 14px;padding:16px}
   .ficha-title{font-size:1.3rem}
@@ -339,6 +340,7 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
   <div class="tabs" role="tablist">
     <button class="tab" role="tab" id="tab-stats" aria-controls="view-stats" aria-selected="true" data-view="stats">Estadísticas</button>
     <button class="tab" role="tab" id="tab-taste" aria-controls="view-taste" aria-selected="false" data-view="taste">Tus gustos</button>
+    <button class="tab" role="tab" id="tab-world" aria-controls="view-world" aria-selected="false" data-view="world">Mundo</button>
     <button class="tab" role="tab" id="tab-year" aria-controls="view-year" aria-selected="false" data-view="year">Resumen del año</button>
     <button class="tab" role="tab" id="tab-films" aria-controls="view-films" aria-selected="false" data-view="films">Películas <span id="tabCount"></span></button>
   </div>
@@ -438,10 +440,17 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
       </section>
     </div>
 
+  </div>
+
+  <div class="view" id="view-world" role="tabpanel" aria-labelledby="tab-world" hidden>
     <section class="panel" id="worldEmpty">
-      <h2>Países, idiomas y actores</h2>
+      <h2>Datos de TMDb</h2>
       <p class="hint"></p>
+      <div class="actions"><button class="btn" type="button" id="worldOpenPanel">Abrir panel de TMDb</button></div>
     </section>
+
+    <p class="hint world coverage" id="worldCoverage" hidden></p>
+
     <div class="duo world" hidden>
       <section class="panel">
         <h2>Países de tus películas</h2>
@@ -454,11 +463,56 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
         <div class="chart" id="langBox"><canvas id="langChart" aria-label="Idiomas originales de tus películas"></canvas></div>
       </section>
     </div>
+
+    <section class="panel world" hidden>
+      <h2>Cine en otros idiomas</h2>
+      <p class="hint" id="foreignHint"></p>
+      <div class="chart"><canvas id="foreignChart" aria-label="Porcentaje de películas no habladas en inglés por año"></canvas></div>
+    </section>
+
     <section class="panel world" hidden>
       <h2>Actores que más ves</h2>
       <p class="hint" id="actorHint"></p>
       <div class="chart" id="actorBox"><canvas id="actorChart" aria-label="Actores que más aparecen en tus películas"></canvas></div>
     </section>
+
+    <section class="panel world" hidden>
+      <div class="panel-head">
+        <h2>Detrás de la cámara</h2>
+        <div class="field"><label class="label" for="crewSel">Ver</label><select id="crewSel">
+          <option value="wr">Guionistas</option>
+          <option value="mu">Compositores</option>
+          <option value="ph">Directores de fotografía</option>
+          <option value="co">Productoras</option>
+        </select></div>
+      </div>
+      <p class="hint" id="crewHint"></p>
+      <div class="chart" id="crewBox"><canvas id="crewChart" aria-label="Equipo técnico que más se repite en tus películas"></canvas></div>
+    </section>
+
+    <div class="duo world" hidden>
+      <section class="panel">
+        <h2>Sagas</h2>
+        <p class="hint" id="sagaHint"></p>
+        <ol class="vs" id="sagaList"></ol>
+      </section>
+      <section class="panel">
+        <h2>Dónde verlas ahora</h2>
+        <p class="hint" id="provHint"></p>
+        <div class="chart" id="provBox"><canvas id="provChart" aria-label="Plataformas de suscripción en España donde están tus películas"></canvas></div>
+      </section>
+    </div>
+
+    <div class="duo world" hidden>
+      <section class="panel">
+        <h2>Dinero en pantalla</h2>
+        <ul class="facts" id="moneyFacts"></ul>
+      </section>
+      <section class="panel">
+        <h2>Las más taquilleras que has visto</h2>
+        <ol class="vs" id="boxList"></ol>
+      </section>
+    </div>
   </div>
 
   <div class="view" id="view-year" role="tabpanel" aria-labelledby="tab-year" hidden>
@@ -1351,11 +1405,14 @@ async function tmdbGet(path, params = {}){
   throw new Error("TMDb está recibiendo demasiadas consultas. Prueba en un momento.");
 }
 
+const crewBy = (d, fn) => [...new Set((d.credits?.crew || []).filter(fn).map(c => c.name))];
+const isFresh = id => { const c = tmdbCache[id]; return !!c && (c.none || c.v2); };
+
 // Descarga y resume los datos de una película (por su identificador de IMDb)
 async function fetchTmdb(r){
   const id = imdbId(r);
   if (!id || !tmdbKey) return null;
-  if (tmdbCache[id]) return tmdbCache[id];
+  if (isFresh(id)) return tmdbCache[id];
   const found = await tmdbGet(`/find/${id}`, { external_source: "imdb_id", language: "es-ES" });
   const hit = found.movie_results?.[0] ? { kind: "movie", ...found.movie_results[0] } : found.tv_results?.[0] ? { kind: "tv", ...found.tv_results[0] } : null;
   if (!hit){ tmdbCache[id] = { none: 1 }; saveTmdbCache(); return tmdbCache[id]; }
@@ -1369,7 +1426,13 @@ async function fetchTmdb(r){
     v: d.vote_average ? Math.round(d.vote_average * 10) / 10 : 0,
     b: d.budget || 0, rv: d.revenue || 0,
     w: (es?.flatrate || []).map(p => p.provider_name).slice(0, 6),
-    wl: es?.link || ""
+    wl: es?.link || "",
+    wr: crewBy(d, c => c.department === "Writing").slice(0, 4),
+    mu: crewBy(d, c => c.job === "Original Music Composer" || c.job === "Music").slice(0, 2),
+    ph: crewBy(d, c => c.job === "Director of Photography").slice(0, 2),
+    co: (d.production_companies || []).map(c => c.name).slice(0, 4),
+    sg: d.belongs_to_collection ? { id: d.belongs_to_collection.id, n: d.belongs_to_collection.name } : null,
+    v2: 1
   };
   tmdbCache[id] = x; saveTmdbCache();
   return x;
@@ -1386,6 +1449,11 @@ function fichaHTML(r, x){
     ["País", x?.c?.length ? x.c.map(regionName).join(", ") : ""],
     ["Idioma original", x?.l ? langName(x.l) : ""],
     ["Reparto", x?.a?.length ? x.a.join(", ") : ""],
+    ["Guion", x?.wr?.length ? x.wr.join(", ") : ""],
+    ["Música", x?.mu?.length ? x.mu.join(", ") : ""],
+    ["Fotografía", x?.ph?.length ? x.ph.join(", ") : ""],
+    ["Productoras", x?.co?.length ? x.co.join(", ") : ""],
+    ["Saga", x?.sg?.n || ""],
     ["Presupuesto", money(x?.b)], ["Recaudación", money(x?.rv)]
   ].filter(f => f[1]);
   const scores = [
@@ -1424,7 +1492,7 @@ async function openFicha(r){
   const id = imdbId(r);
   dlg.innerHTML = fichaHTML(r, tmdbCache[id]);
   if (!dlg.open) dlg.showModal();
-  if (tmdbKey && id && !tmdbCache[id]){
+  if (tmdbKey && id && !isFresh(id)){
     try { const x = await fetchTmdb(r); if (dlg.open) dlg.innerHTML = fichaHTML(r, x); }
     catch(e){ if (dlg.open) dlg.querySelector(".ficha-note").textContent = e.message; }
   }
@@ -1451,7 +1519,7 @@ document.getElementById("filmBody").addEventListener("keydown", e => {
 function setTmdbStatus(t, err){ const el = document.getElementById("tmdbStatus"); el.textContent = t; el.classList.toggle("err", !!err); }
 function syncTmdbPanel(){
   const has = !!tmdbKey, all = counted ? counted().filter(r => imdbId(r)) : [];
-  const done = all.filter(r => tmdbCache[imdbId(r)]).length;
+  const done = all.filter(r => isFresh(imdbId(r))).length;
   document.getElementById("tmdbKeyInput").value = has ? "••••••••••••" : "";
   document.getElementById("tmdbKeyInput").disabled = has;
   document.getElementById("tmdbSave").hidden = has;
@@ -1475,7 +1543,7 @@ document.getElementById("tmdbRemove").addEventListener("click", () => {
 document.getElementById("tmdbBulk").addEventListener("click", () => { if (bulk){ bulk = null; syncTmdbPanel(); } else runBulk(); });
 
 async function runBulk(){
-  const todo = counted().filter(r => imdbId(r) && !tmdbCache[imdbId(r)]);
+  const todo = counted().filter(r => imdbId(r) && !isFresh(imdbId(r)));
   const total = counted().filter(r => imdbId(r)).length;
   const token = bulk = {};
   syncTmdbPanel();
@@ -1496,37 +1564,128 @@ async function runBulk(){
   renderWorld(); renderYear();
 }
 
-/* ---------- Estadísticas con datos de TMDb ---------- */
+/* ---------- Estadísticas con datos de TMDb (pestaña Mundo) ---------- */
+let worldItems = [];
 function renderWorld(){
   const data = counted().filter(r => imdbId(r));
-  const withX = data.map(r => tmdbCache[imdbId(r)]).filter(x => x && !x.none);
+  worldItems = data.map(r => ({ r, x: tmdbCache[imdbId(r)] })).filter(o => o.x && !o.x.none);
+  const withX = worldItems.map(o => o.x);
   const box = document.getElementById("worldEmpty");
   const has = withX.length > 0;
   box.hidden = has;
   document.querySelectorAll(".world").forEach(el => { el.hidden = !has; });
   if (!has){
     box.querySelector("p").textContent = tmdbKey
-      ? "Descarga los datos de TMDb desde el panel de opciones (icono del reloj) para ver los países, idiomas y actores de tus películas."
-      : "Añade tu clave de TMDb en el panel de opciones (icono del reloj) para ver los países, idiomas y actores de tus películas.";
+      ? "Ya tienes la clave de TMDb. Descarga los datos de tus películas para ver aquí países, idiomas, actores, guionistas, sagas, plataformas y taquilla."
+      : "Añade tu clave de TMDb para ver aquí países, idiomas, actores, guionistas, sagas, plataformas y taquilla de tus películas.";
     return;
   }
-  const cover = `Con datos de ${withX.length} de ${data.length} películas.`;
-  const count = (fn) => { const c = {}; withX.forEach(x => fn(x).forEach(k => { if (k) c[k] = (c[k] || 0) + 1; })); return Object.entries(c).sort((a, b) => b[1] - a[1]); };
-  const countries = count(x => x.c || []).slice(0, 12);
-  const langs = count(x => [x.l]).slice(0, 10);
-  const actors = count(x => x.a || []).slice(0, 15);
-  document.getElementById("countryHint").textContent = `Una película puede ser de varios países. ${cover}`;
-  document.getElementById("langHint").textContent = `Idioma original de cada película. ${cover}`;
-  document.getElementById("actorHint").textContent = `Contando los 8 primeros del reparto de cada película. Toca uno para ver sus películas. ${cover}`;
+  const pending = data.filter(r => !isFresh(imdbId(r))).length;
+  document.getElementById("worldCoverage").textContent = `Con datos de TMDb de ${withX.length} de ${data.length} películas.` +
+    (pending ? ` Faltan ${pending}: descárgalas desde el panel del reloj para completar las estadísticas.` : "");
+
+  const count = fn => { const c = {}; withX.forEach(x => fn(x).forEach(k => { if (k) c[k] = (c[k] || 0) + 1; })); return Object.entries(c).sort((a, b) => b[1] - a[1]); };
   const h = n => `${Math.max(n, 5) * 26 + 20}px`;
-  document.getElementById("countryBox").style.height = h(countries.length);
-  document.getElementById("langBox").style.height = h(countries.length);
+  const toSearch = name => { openFilms({}); document.getElementById("q").value = name; shown = PAGE; renderFilms(); };
+
+  // Países e idiomas
+  const countries = count(x => x.c || []);
+  const langs = count(x => [x.l]);
+  const topC = countries.slice(0, 12), topL = langs.slice(0, 12);
+  document.getElementById("countryHint").textContent = `Has visto cine de ${countries.length} países. Una película puede ser de varios.`;
+  document.getElementById("langHint").textContent = `Películas en ${langs.length} idiomas originales distintos.`;
+  document.getElementById("countryBox").style.height = h(Math.max(topC.length, topL.length));
+  document.getElementById("langBox").style.height = h(Math.max(topC.length, topL.length));
+  barChart2("countryChart", topC.map(c => regionName(c[0])), topC.map(c => c[1]), { horizontal: true, color: cssVar("--teal"), tip: v => `${v} películas` });
+  barChart2("langChart", topL.map(l => langName(l[0])), topL.map(l => l[1]), { horizontal: true, tip: v => `${v} películas` });
+
+  // Cine no anglosajón por año
+  const years = yearsRange();
+  const pct = years.map(y => { const L = worldItems.filter(o => o.r.watched === y); return L.length ? Math.round(L.filter(o => o.x.l && o.x.l !== "en").length / L.length * 100) : null; });
+  const allPct = Math.round(withX.filter(x => x.l && x.l !== "en").length / withX.length * 100);
+  document.getElementById("foreignHint").textContent = `Porcentaje de películas vistas cada año cuyo idioma original no es el inglés. En total, el ${allPct}%.`;
+  charts.foreign?.destroy();
+  charts.foreign = new Chart(document.getElementById("foreignChart"), {
+    type: "line",
+    data: { labels: years, datasets: [{ data: pct, borderColor: cssVar("--teal"), backgroundColor: cssVar("--teal-soft"), fill: true, tension: 0, borderWidth: 1.5, pointRadius: 2.5, pointBackgroundColor: cssVar("--teal"), pointBorderWidth: 0, spanGaps: true }] },
+    options: { maintainAspectRatio: false, animation: { duration: motion() }, layout: { padding: { top: 20, left: 6, right: 6 } },
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${c.raw}% en otros idiomas` } } },
+      scales: { x: { grid: { display: false }, ticks: { font: { family: cssVar("--font-data"), size: 11 }, maxRotation: 0 } },
+        y: { beginAtZero: true, max: 100, grid: { color: cssVar("--line") }, ticks: { display: false }, border: { display: false } } } },
+    plugins: [{ id: "pctVals", afterDatasetsDraw(chart){
+      const { ctx } = chart, pts = chart.getDatasetMeta(0).data, v = chart.data.datasets[0].data;
+      ctx.save(); ctx.font = `600 11px ${cssVar("--font-data")}`; ctx.textAlign = "center"; ctx.textBaseline = "bottom"; ctx.fillStyle = cssVar("--ink");
+      pts.forEach((p, i) => { if (v[i] != null) ctx.fillText(`${v[i]}%`, p.x, p.y - 6); });
+      ctx.restore();
+    } }]
+  });
+
+  // Actores
+  const actors = count(x => x.a || []).slice(0, 15);
+  document.getElementById("actorHint").textContent = "Contando los 8 primeros del reparto de cada película. Toca uno para ver sus películas.";
   document.getElementById("actorBox").style.height = h(actors.length);
-  barChart2("countryChart", countries.map(c => regionName(c[0])), countries.map(c => c[1]), { horizontal: true, color: cssVar("--teal"), tip: v => `${v} películas` });
-  barChart2("langChart", langs.map(l => langName(l[0])), langs.map(l => l[1]), { horizontal: true, tip: v => `${v} películas` });
-  barChart2("actorChart", actors.map(a => a[0]), actors.map(a => a[1]), { horizontal: true, color: cssVar("--teal"), tip: v => `${v} películas`,
-    onClick: i => { openFilms({}); document.getElementById("q").value = actors[i][0]; shown = PAGE; renderFilms(); } });
+  barChart2("actorChart", actors.map(a => a[0]), actors.map(a => a[1]), { horizontal: true, color: cssVar("--teal"), tip: v => `${v} películas`, onClick: i => toSearch(actors[i][0]) });
+
+  // Detrás de la cámara
+  renderCrew();
+
+  // Sagas
+  const sagas = {};
+  worldItems.forEach(o => { if (o.x.sg){ const k = o.x.sg.id; (sagas[k] = sagas[k] || { n: o.x.sg.n, films: [] }).films.push(o.r); } });
+  const sagaList = Object.values(sagas).sort((a, b) => b.films.length - a.films.length || a.n.localeCompare(b.n, "es"));
+  document.getElementById("sagaHint").textContent = sagaList.length
+    ? `Has visto películas de ${sagaList.length} sagas. Estas son las que más has seguido.`
+    : "Ninguna de tus películas pertenece a una saga.";
+  document.getElementById("sagaList").innerHTML = sagaList.slice(0, 10).map(sg => {
+    const fs = sg.films.slice().sort((a, b) => (a.year || 0) - (b.year || 0));
+    return `<li><span>${esc(sg.n.replace(/ - Colección$| \(Colección\)$|: Colección$/i, ""))}<span class="meta">${fs.map(f => esc(f.title)).join(" · ")}</span></span><span class="d up">${sg.films.length}</span></li>`;
+  }).join("") || `<li class="empty">Sin sagas.</li>`;
+
+  // Plataformas
+  const provs = count(x => x.w || []).slice(0, 10);
+  const onAny = withX.filter(x => x.w?.length).length;
+  document.getElementById("provHint").textContent = provs.length
+    ? `${onAny} de tus películas están ahora en alguna plataforma de suscripción en España, por si quieres volver a verlas. Fuente: JustWatch a través de TMDb.`
+    : "No hay datos de plataformas para tus películas.";
+  document.getElementById("provBox").style.height = h(provs.length);
+  barChart2("provChart", provs.map(p => p[0]), provs.map(p => p[1]), { horizontal: true, tip: v => `${v} películas` });
+
+  // Dinero
+  const withBud = worldItems.filter(o => o.x.b > 0), withRev = worldItems.filter(o => o.x.rv > 0);
+  const sum = (L, k) => L.reduce((a, o) => a + o.x[k], 0);
+  const big = (n) => n >= 1e9 ? `${(n / 1e9).toLocaleString("es-ES", { maximumFractionDigits: 1 })} mil millones $` : `${Math.round(n / 1e6).toLocaleString("es-ES")} millones $`;
+  const maxBud = withBud.slice().sort((a, b) => b.x.b - a.x.b)[0];
+  const minBud = withBud.filter(o => o.x.b >= 1000).sort((a, b) => a.x.b - b.x.b)[0];
+  const hit = worldItems.filter(o => o.x.b >= 1e5 && o.x.rv > 0).sort((a, b) => b.x.rv / b.x.b - a.x.rv / a.x.b)[0];
+  document.getElementById("moneyFacts").innerHTML = (withRev.length || withBud.length) ? [
+    ["Taquilla total de lo que has visto", withRev.length ? `${big(sum(withRev, "rv"))}<small>${withRev.length} películas con datos</small>` : "—"],
+    ["Presupuesto medio", withBud.length ? `${big(sum(withBud, "b") / withBud.length)}<small>${withBud.length} películas con datos</small>` : "—"],
+    ["La más cara", maxBud ? `${filmLink(maxBud.r)}<small>${big(maxBud.x.b)}</small>` : "—"],
+    ["La más modesta", minBud ? `${filmLink(minBud.r)}<small>${minBud.x.b.toLocaleString("es-ES")} $</small>` : "—"],
+    ["El mayor éxito", hit ? `${filmLink(hit.r)}<small>recaudó ${Math.round(hit.x.rv / hit.x.b)} veces su presupuesto</small>` : "—"]
+  ].map(([k, v]) => `<li><span class="k">${k}</span><span class="v">${v}</span></li>`).join("") : `<li><span class="k">TMDb no tiene datos de presupuesto ni taquilla para estas películas.</span></li>`;
+  document.getElementById("boxList").innerHTML = withRev.slice().sort((a, b) => b.x.rv - a.x.rv).slice(0, 10)
+    .map(o => `<li><span>${filmLink(o.r)}<span class="meta">${[o.r.year, o.x.b ? `presupuesto ${big(o.x.b)}` : ""].filter(Boolean).join(" · ")}</span></span><span class="d down">${big(o.x.rv)}</span></li>`).join("") || `<li class="empty">Sin datos de taquilla.</li>`;
 }
+
+const CREW_LABEL = { wr: ["guionistas", "Guion"], mu: ["compositores", "Música"], ph: ["directores de fotografía", "Fotografía"], co: ["productoras", "Productora"] };
+function renderCrew(){
+  const k = document.getElementById("crewSel").value;
+  const c = {}; worldItems.forEach(o => (o.x[k] || []).forEach(n => { c[n] = (c[n] || 0) + 1; }));
+  const top = Object.entries(c).sort((a, b) => b[1] - a[1]).slice(0, 15);
+  const old = worldItems.filter(o => !o.x.v2).length;
+  document.getElementById("crewHint").textContent = top.length
+    ? `Los ${CREW_LABEL[k][0]} que más se repiten en tus películas.` + (old ? ` ${old} películas se descargaron antes de añadir estos datos: pulsa "Continuar descarga" en el panel del reloj para completarlas.` : "")
+    : `Todavía no hay datos de ${CREW_LABEL[k][0]}. Pulsa "Continuar descarga" en el panel del reloj.`;
+  document.getElementById("crewBox").style.height = `${Math.max(top.length, 5) * 26 + 20}px`;
+  barChart2("crewChart", top.map(t => t[0]), top.map(t => t[1]), { horizontal: true, tip: v => `${v} películas` });
+}
+document.getElementById("crewSel").addEventListener("change", renderCrew);
+document.getElementById("worldOpenPanel").addEventListener("click", () => {
+  if (document.getElementById("backupPanel").hidden) togglePanel("backupBtn", "backupPanel");
+  document.getElementById("backupPanel").scrollIntoView({ behavior: motion() ? "smooth" : "auto" });
+  if (!tmdbKey) document.getElementById("tmdbKeyInput").focus();
+});
 
 /* ---------- Pestañas ---------- */
 function showView(v){
@@ -1535,6 +1694,7 @@ function showView(v){
   document.getElementById("view-films").hidden = v !== "films";
   document.getElementById("view-year").hidden = v !== "year";
   document.getElementById("view-taste").hidden = v !== "taste";
+  document.getElementById("view-world").hidden = v !== "world";
   try { localStorage.setItem("cinemateca-tab", v); } catch(e) {}
 }
 document.querySelector(".tabs").addEventListener("click", e => { const t = e.target.closest(".tab"); if (t) showView(t.dataset.view); });
@@ -1632,7 +1792,7 @@ if (stored && Array.isArray(stored.rows) && stored.rows.length){
   rows = stored.rows; newKeys = new Set(stored.newKeys || []); isSample = false; buildTypes(); render();
 } else if (saved) load(saved);
 else { rows = sample(); buildTypes(); render(); }
-showView(location.hash === "#peliculas" ? "films" : (["films", "year", "taste"].includes(tab) ? tab : "stats"));
+showView(location.hash === "#peliculas" ? "films" : (["films", "year", "taste", "world"].includes(tab) ? tab : "stats"));
 
 // Sincronización: si el repositorio tiene datos.csv, se añaden sus películas nuevas
 if (location.protocol.startsWith("http") && !location.hostname.endsWith("claude.ai")){
