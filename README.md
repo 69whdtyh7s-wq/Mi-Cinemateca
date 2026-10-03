@@ -1,3 +1,5 @@
+<img src="icon.svg" width="96" alt="Icono de Mi Cinemateca: una bobina de película">
+
 # Mi Cinemateca
 
 Página web para ver estadísticas de las películas que he visto, a partir del CSV que exporta IMDb.
