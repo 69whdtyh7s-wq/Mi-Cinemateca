@@ -183,6 +183,24 @@ th button[data-dir="desc"]::after{content:"▼"}
 .r-poster{float:right;width:92px;border-radius:8px;margin-left:12px}
 .foot a{color:var(--accent-ink)}
 .coverage{margin:0;color:var(--muted);font-size:14px}
+.expand-btn{align-self:flex-start;background:none;border:0;padding:4px 0;color:var(--accent-ink);font:600 14px var(--font-body);cursor:pointer}
+.expand-btn:hover{text-decoration:underline}
+.expand-btn:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px;border-radius:4px}
+.big{width:min(640px,calc(100vw - 24px))}
+.big-head{padding:20px 20px 8px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;background:var(--surface);z-index:0}
+.big-head h2{font-family:var(--font-display);font-weight:800;font-size:1.5rem;margin:0;padding-right:40px}
+.big-head .hint{margin:0;color:var(--muted);font-size:14px}
+.big-head input{font:16px var(--font-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-top:4px}
+.big-list{list-style:none;margin:0;padding:4px 20px 20px}
+.big-list li > *{all:unset;box-sizing:border-box;display:grid;grid-template-columns:2.4em minmax(0,1fr) minmax(60px,32%) 3em;gap:10px;align-items:center;width:100%;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
+.big-list li > button{cursor:pointer}
+.big-list li > button:hover .bl-name{color:var(--accent-ink);text-decoration:underline}
+.big-list li > button:focus-visible{outline:2px solid var(--accent-ink);outline-offset:-2px}
+.bl-rank{font-family:var(--font-data);font-size:12px;color:var(--muted)}
+.bl-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bl-bar{height:8px;border-radius:999px;background:var(--accent-soft);overflow:hidden}
+.bl-bar span{display:block;height:100%;background:var(--amber);border-radius:999px}
+.bl-n{font-family:var(--font-data);font-size:13px;text-align:right;font-variant-numeric:tabular-nums}
 @media (max-width: 640px){
   .ficha-grid{grid-template-columns:110px minmax(0,1fr);gap:12px 14px;padding:16px}
   .ficha-title{font-size:1.3rem}
@@ -571,6 +589,7 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
   </div>
 
   <dialog class="ficha" id="ficha" aria-label="Ficha de la película"></dialog>
+  <dialog class="ficha big" id="bigList" aria-label="Lista completa"></dialog>
   <p class="foot">Datos e imágenes de películas: <a href="https://www.themoviedb.org/" target="_blank" rel="noopener">TMDb</a>. Esta app usa la API de TMDb, pero no está avalada ni certificada por TMDb.<br>Cómo exportar de IMDb: abre tu lista (o "Your Ratings"), pulsa los tres puntos ⋯ → <em>Export</em>, y descarga el CSV desde "Exports". El archivo no sale de tu dispositivo.<br>Sincronizar dispositivos: si subes tu CSV al repositorio de GitHub con el nombre <code>datos.csv</code>, la app lo cargará sola en cualquier dispositivo que la abra desde GitHub Pages.</p>
 </div>
 
@@ -948,13 +967,72 @@ function renderHead(){
     `<th class="${c.num ? "num" : ""}" aria-sort="${sort.key === c.key ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}"><button type="button" data-key="${c.key}" ${sort.key === c.key ? `data-dir="${sort.dir}"` : ""}>${c.label}</button></th>`).join("");
 }
 
+function searchText(r){
+  const x = (typeof tmdbCache !== "undefined" && tmdbCache[imdbId(r)]) || {};
+  return [r.title, r.orig, r.dir, r.genres, genresOf(r).join(" "), (x.a || []).join(" "), (x.wr || []).join(" "),
+    (x.mu || []).join(" "), (x.ph || []).join(" "), (x.co || []).join(" "), x.sg?.n || ""].join(" ").toLowerCase();
+}
+function searchFilms(text){ openFilms({}); document.getElementById("q").value = text; shown = PAGE; renderFilms(); }
+
+/* ---------- Ver la lista completa de un gráfico ---------- */
+const EXPAND = {};
+function setExpand(canvasId, title, entries, onPick){
+  EXPAND[canvasId] = { title, entries, onPick };
+  const canvas = document.getElementById(canvasId), box = canvas.parentElement;
+  if (!canvas.dataset.exp){
+    canvas.dataset.exp = "1";
+    canvas.style.cursor = "zoom-in";
+    canvas.addEventListener("click", () => openExpand(canvasId));
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "expand-btn"; btn.dataset.for = canvasId;
+    btn.addEventListener("click", () => openExpand(canvasId));
+    box.insertAdjacentElement("afterend", btn);
+  }
+  const btn = document.querySelector(`.expand-btn[data-for="${canvasId}"]`);
+  btn.textContent = `Ver la lista completa (${entries.length})`;
+  btn.hidden = !entries.length;
+}
+function openExpand(canvasId){
+  const e = EXPAND[canvasId]; if (!e || !e.entries.length) return;
+  const dlg = document.getElementById("bigList"), max = e.entries[0][1];
+  dlg.innerHTML = `
+    <button class="ficha-close" type="button" aria-label="Cerrar" data-close>✕</button>
+    <div class="big-head">
+      <h2>${esc(e.title)}</h2>
+      <p class="hint">${e.entries.length} en total.${e.onPick ? " Toca uno para ver sus películas." : ""}</p>
+      <input type="search" id="bigFilter" placeholder="Buscar en la lista" aria-label="Buscar en la lista">
+    </div>
+    <ol class="big-list">${e.entries.map(([label, n], i) => `
+      <li data-label="${esc(String(label).toLowerCase())}">
+        ${e.onPick ? `<button type="button" data-i="${i}">` : "<div>"}
+          <span class="bl-rank">${i + 1}</span>
+          <span class="bl-name">${esc(label)}</span>
+          <span class="bl-bar"><span style="width:${Math.max(2, n / max * 100)}%"></span></span>
+          <span class="bl-n">${n}</span>
+        ${e.onPick ? "</button>" : "</div>"}
+      </li>`).join("")}</ol>`;
+  dlg.querySelector("#bigFilter").addEventListener("input", ev => {
+    const q = ev.target.value.trim().toLowerCase();
+    dlg.querySelectorAll(".big-list li").forEach(li => { li.hidden = !!q && !li.dataset.label.includes(q); });
+  });
+  dlg.dataset.key = canvasId;
+  if (!dlg.open) dlg.showModal();
+  dlg.scrollTop = 0;
+}
+document.getElementById("bigList").addEventListener("click", ev => {
+  const dlg = ev.currentTarget;
+  if (ev.target === dlg || ev.target.closest("[data-close]")){ dlg.close(); return; }
+  const b = ev.target.closest("button[data-i]"); if (!b) return;
+  const e = EXPAND[dlg.dataset.key]; dlg.close(); e.onPick(e.entries[+b.dataset.i][0]);
+});
+
 function filtered(){
   const q = document.getElementById("q").value.trim().toLowerCase();
   const fw = Number(document.getElementById("fWatched").value) || null;
   const fy = Number(document.getElementById("fYear").value) || null;
   let list = counted().filter(r =>
     (!fw || r.watched === fw) && (!fy || r.year === fy) &&
-    (!q || `${r.title} ${r.orig} ${r.dir} ${r.genres} ${genresOf(r).join(" ")}`.toLowerCase().includes(q)));
+    (!q || searchText(r).includes(q)));
   const k = sort.key === "watched" ? "watchedDate" : sort.key, m = sort.dir === "asc" ? 1 : -1;
   list.sort((a, b) => {
     const x = a[k], y = b[k];
@@ -1027,7 +1105,7 @@ function renderFilmCharts(list){
   list.forEach(r => (r.dir || "").split(",").map(d => d.trim()).filter(Boolean).forEach(d => { dirs[d] = (dirs[d] || 0) + 1; }));
   const top = Object.entries(dirs).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "es")).slice(0, TOP_DIRS);
   document.getElementById("dirHint").textContent = top.length
-    ? `Los ${top.length} de los que más películas has visto. Toca uno para ver sus películas.`
+    ? `Los ${top.length} de los que más películas has visto. Toca el gráfico para ver la lista completa.`
     : "Este archivo no trae directores.";
   document.getElementById("dirBox").style.height = `${Math.max(top.length, 5) * 26 + 20}px`;
   dirChart?.destroy();
@@ -1036,18 +1114,12 @@ function renderFilmCharts(list){
     data: { labels: top.map(d => d[0]), datasets: [{ data: top.map(d => d[1]), backgroundColor: amber, borderRadius: 5, barPercentage: .85, categoryPercentage: .9 }] },
     options: { indexAxis: "y", maintainAspectRatio: false, animation: smooth,
       plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${c.parsed.x} películas` } } },
-      onHover: (e, el) => { e.native.target.style.cursor = el.length ? "pointer" : "default"; },
-      onClick: (e, el) => {
-        if (!el.length) return;
-        openFilms({});
-        document.getElementById("q").value = top[el[0].index][0];
-        shown = PAGE; renderFilms();
-      },
       layout: { padding: { right: 28 } },
       scales: { x: { beginAtZero: true, grid: { color: grid }, ticks: { display: false }, border: { display: false } },
         y: { grid: { display: false }, ticks: { font: { size: 12 }, color: inkC } } } },
     plugins: [valuePlugin(true)]
   });
+  setExpand("dirChart", "Directores más vistos", Object.entries(dirs).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "es")), searchFilms);
 
   // Puntuaciones 1–10
   const scores = Array.from({ length: 10 }, (_, i) => i + 1);
@@ -1179,13 +1251,13 @@ function renderExtras(data){
   data.forEach(r => genresOf(r).forEach(g => { gCount[g] = (gCount[g] || 0) + 1; }));
   const topG = Object.entries(gCount).sort((a, b) => b[1] - a[1]).slice(0, 12);
   document.getElementById("genreHint").textContent = topG.length
-    ? `Una película puede tener varios géneros, así que cuenta en cada uno. Toca un género para ver sus películas.`
+    ? `Una película puede tener varios géneros, así que cuenta en cada uno. Toca el gráfico para ver la lista completa.`
     : "Este archivo no trae géneros.";
   document.getElementById("genreBox").style.height = `${Math.max(topG.length, 5) * 26 + 20}px`;
   document.getElementById("genreEvoBox").style.height = document.getElementById("genreBox").style.height;
   const enToEs = Object.fromEntries(Object.entries(GENRE_ES).map(([en, es]) => [es, en]));
-  barChart2("genreChart", topG.map(g => g[0]), topG.map(g => g[1]), { horizontal: true, tip: v => `${v} películas`,
-    onClick: i => { openFilms({}); document.getElementById("q").value = enToEs[topG[i][0]] || topG[i][0]; shown = PAGE; renderFilms(); } });
+  barChart2("genreChart", topG.map(g => g[0]), topG.map(g => g[1]), { horizontal: true, tip: v => `${v} películas` });
+  setExpand("genreChart", "Géneros que más ves", Object.entries(gCount).sort((a, b) => b[1] - a[1]), g => searchFilms(enToEs[g] || g));
 
   const top5 = topG.slice(0, 5).map(g => g[0]);
   const palette = ["--amber", "--teal", "--rust", "--plum", "--slate"].map(cssVar);
@@ -1598,6 +1670,8 @@ function renderWorld(){
   document.getElementById("langBox").style.height = h(Math.max(topC.length, topL.length));
   barChart2("countryChart", topC.map(c => regionName(c[0])), topC.map(c => c[1]), { horizontal: true, color: cssVar("--teal"), tip: v => `${v} películas` });
   barChart2("langChart", topL.map(l => langName(l[0])), topL.map(l => l[1]), { horizontal: true, tip: v => `${v} películas` });
+  setExpand("countryChart", "Países de tus películas", countries.map(c => [regionName(c[0]), c[1]]));
+  setExpand("langChart", "Idiomas originales", langs.map(l => [langName(l[0]), l[1]]));
 
   // Cine no anglosajón por año
   const years = yearsRange();
@@ -1621,10 +1695,11 @@ function renderWorld(){
   });
 
   // Actores
-  const actors = count(x => x.a || []).slice(0, 15);
-  document.getElementById("actorHint").textContent = "Contando los 8 primeros del reparto de cada película. Toca uno para ver sus películas.";
+  const allActors = count(x => x.a || []), actors = allActors.slice(0, 15);
+  document.getElementById("actorHint").textContent = "Contando los 8 primeros del reparto de cada película. Toca el gráfico para ver la lista completa.";
   document.getElementById("actorBox").style.height = h(actors.length);
-  barChart2("actorChart", actors.map(a => a[0]), actors.map(a => a[1]), { horizontal: true, color: cssVar("--teal"), tip: v => `${v} películas`, onClick: i => toSearch(actors[i][0]) });
+  barChart2("actorChart", actors.map(a => a[0]), actors.map(a => a[1]), { horizontal: true, color: cssVar("--teal"), tip: v => `${v} películas` });
+  setExpand("actorChart", "Actores que más ves", allActors, searchFilms);
 
   // Detrás de la cámara
   renderCrew();
@@ -1642,13 +1717,14 @@ function renderWorld(){
   }).join("") || `<li class="empty">Sin sagas.</li>`;
 
   // Plataformas
-  const provs = count(x => x.w || []).slice(0, 10);
+  const allProvs = count(x => x.w || []), provs = allProvs.slice(0, 10);
   const onAny = withX.filter(x => x.w?.length).length;
   document.getElementById("provHint").textContent = provs.length
     ? `${onAny} de tus películas están ahora en alguna plataforma de suscripción en España, por si quieres volver a verlas. Fuente: JustWatch a través de TMDb.`
     : "No hay datos de plataformas para tus películas.";
   document.getElementById("provBox").style.height = h(provs.length);
   barChart2("provChart", provs.map(p => p[0]), provs.map(p => p[1]), { horizontal: true, tip: v => `${v} películas` });
+  setExpand("provChart", "Plataformas donde están tus películas", allProvs);
 
   // Dinero
   const withBud = worldItems.filter(o => o.x.b > 0), withRev = worldItems.filter(o => o.x.rv > 0);
@@ -1672,13 +1748,14 @@ const CREW_LABEL = { wr: ["guionistas", "Guion"], mu: ["compositores", "Música"
 function renderCrew(){
   const k = document.getElementById("crewSel").value;
   const c = {}; worldItems.forEach(o => (o.x[k] || []).forEach(n => { c[n] = (c[n] || 0) + 1; }));
-  const top = Object.entries(c).sort((a, b) => b[1] - a[1]).slice(0, 15);
+  const all = Object.entries(c).sort((a, b) => b[1] - a[1]), top = all.slice(0, 15);
   const old = worldItems.filter(o => !o.x.v2).length;
   document.getElementById("crewHint").textContent = top.length
     ? `Los ${CREW_LABEL[k][0]} que más se repiten en tus películas.` + (old ? ` ${old} películas se descargaron antes de añadir estos datos: pulsa "Continuar descarga" en el panel del reloj para completarlas.` : "")
     : `Todavía no hay datos de ${CREW_LABEL[k][0]}. Pulsa "Continuar descarga" en el panel del reloj.`;
   document.getElementById("crewBox").style.height = `${Math.max(top.length, 5) * 26 + 20}px`;
   barChart2("crewChart", top.map(t => t[0]), top.map(t => t[1]), { horizontal: true, tip: v => `${v} películas` });
+  setExpand("crewChart", CREW_LABEL[k][0].charAt(0).toUpperCase() + CREW_LABEL[k][0].slice(1), all, searchFilms);
 }
 document.getElementById("crewSel").addEventListener("change", renderCrew);
 document.getElementById("worldOpenPanel").addEventListener("click", () => {
