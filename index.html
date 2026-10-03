@@ -476,7 +476,7 @@ function fillUntil(data){
   const years = [...new Set(data.map(r => r.watched).filter(Boolean))].sort((a, b) => b - a);
   ["madeUntil", "decUntil"].forEach(id => {
     const el = document.getElementById(id), cur = el.value;
-    el.innerHTML = `<option value="">Hoy (todas)</option>` + years.filter(y => y < NOW).map(y => `<option value="${y}">Fin de ${y}</option>`).join("");
+    el.innerHTML = `<option value="">Hoy (todas)</option>` + years.filter(y => y < NOW).map(y => `<option value="${y}">${y}</option>`).join("");
     el.value = years.includes(Number(cur)) && Number(cur) < NOW ? cur : "";
   });
 }
