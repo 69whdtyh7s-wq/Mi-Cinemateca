@@ -134,6 +134,7 @@ th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;le
 .films a{color:var(--ink);font-weight:600;text-decoration:none}
 .films a:hover{color:var(--accent-ink);text-decoration:underline}
 .films strong{font-weight:600}
+.new.upd{background:var(--accent-soft);color:var(--accent-ink)}
 .t-wrap{display:flex;align-items:center;gap:10px;min-width:0}
 .t-wrap > div{min-width:0}
 .thumb{flex:0 0 auto;width:32px;height:48px;border-radius:4px;object-fit:cover;background:var(--accent-soft);display:block}
@@ -641,6 +642,7 @@ const NOW = new Date().getFullYear();
 const KEY = "cinemateca-csv";
 const PAGE = 100;
 const DEFAULT_SORT = { key: "watched", dir: "desc" };
+let updKeys = new Set(), dataVer = 0;
 let rows = null, isSample = true, lineChart, barChart, selected = null, newKeys = new Set();
 let sort = { ...DEFAULT_SORT }, shown = PAGE;
 const DATA_KEY = "cinemateca-data";
@@ -680,7 +682,7 @@ function normalize(objs){
     imdb: find("IMDb Rating"), mine: find("Your Rating"), runtime: find("Runtime (mins)"), genres: find("Genres"), dir: find("Directors")
   };
   if (!k.year || !k.date) throw new Error("No parece un CSV de IMDb: faltan las columnas \"Year\" y \"Created\" o \"Date Rated\".");
-  return objs.map(o => {
+  const out = objs.map(o => {
     const d = (o[k.date] || (k.date2 ? o[k.date2] : "")).slice(0, 10);
     const wy = parseInt(d.slice(0, 4), 10);
     const id = k.id ? o[k.id] : "";
@@ -694,6 +696,23 @@ function normalize(objs){
       genres: k.genres ? o[k.genres] : "", dir: k.dir ? o[k.dir] : ""
     };
   });
+  // Campos que este archivo trae de verdad
+  out.fields = Object.entries({ pos: k.pos, type: k.type, watchedDate: k.date, watched: k.date, year: k.year, title: k.title,
+    orig: k.orig, url: k.url, imdb: k.imdb, mine: k.mine, runtime: k.runtime, genres: k.genres, dir: k.dir }).filter(([, c]) => c).map(([f]) => f);
+  return out;
+}
+
+// Compara una película ya guardada con la del archivo nuevo y aplica los cambios
+const FIELD_ES = { mine: "tu nota", imdb: "nota de IMDb", watchedDate: "fecha", title: "título", orig: "título original", year: "año",
+  runtime: "duración", genres: "géneros", dir: "dirección", type: "tipo" };
+function applyChanges(old, inc, fields){
+  const changed = [];
+  fields.forEach(f => {
+    const a = old[f] ?? null, b = inc[f] ?? null;
+    if (f === "pos" || f === "watched" || f === "url") { if (b !== null && b !== "" && a !== b) old[f] = b; return; }
+    if (String(a ?? "") !== String(b ?? "")){ old[f] = b; changed.push(f); }
+  });
+  return changed;
 }
 
 function sample(){
@@ -1109,7 +1128,7 @@ function renderFilms(){
   document.getElementById("count").textContent = `${n} ${n === 1 ? "título" : "títulos"}` + (n > shown ? ` · mostrando ${shown}` : "");
   const dash = '<span class="dim">—</span>';
   document.getElementById("filmBody").innerHTML = n ? list.slice(0, shown).map(r => `<tr data-k="${esc(rowKey(r))}" tabindex="0">
-    <td class="c-title"><div class="t-wrap">${thumb(r)}<div><strong>${esc(r.title)}</strong>${newKeys.has(rowKey(r)) ? ' <span class="new">nueva</span>' : ""}${r.orig && r.orig !== r.title ? `<span class="orig">${esc(r.orig)}</span>` : ""}</div></div></td>
+    <td class="c-title"><div class="t-wrap">${thumb(r)}<div><strong>${esc(r.title)}</strong>${newKeys.has(rowKey(r)) ? ' <span class="new">nueva</span>' : updKeys.has(rowKey(r)) ? ' <span class="new upd">actualizada</span>' : ""}${r.orig && r.orig !== r.title ? `<span class="orig">${esc(r.orig)}</span>` : ""}</div></div></td>
     <td class="num c-meta" data-l="Estreno">${r.year ?? dash}</td>
     <td class="num c-meta" data-l="Vista">${r.watchedDate ? esc(r.watchedDate.split("-").reverse().join("/")) : dash}</td>
     <td class="num c-meta" data-l="IMDb">${r.imdb ?? dash}</td>
@@ -1129,7 +1148,7 @@ const TOP_DIRS = 15;
 let chartSig = "";
 function renderFilmCharts(list){
   // Solo redibujar si cambia el conjunto de títulos (no al ordenar o "mostrar más")
-  const sig = [rows.length, [...selected].join(), cssVar("--amber")].join("|");
+  const sig = [rows.length, dataVer, [...selected].join(), cssVar("--amber")].join("|");
   if (sig === chartSig && dirChart) return;
   chartSig = sig;
   const font = cssVar("--font-data"), grid = cssVar("--line"), amber = cssVar("--amber"), inkC = cssVar("--ink");
@@ -1906,7 +1925,7 @@ document.querySelector(".tabs").addEventListener("click", e => { const t = e.tar
 
 /* ---------- Carga ---------- */
 function save(){
-  try { localStorage.setItem(DATA_KEY, JSON.stringify({ rows, newKeys: [...newKeys] })); localStorage.removeItem(KEY); } catch(e) {}
+  try { localStorage.setItem(DATA_KEY, JSON.stringify({ rows, newKeys: [...newKeys], updKeys: [...updKeys] })); localStorage.removeItem(KEY); } catch(e) {}
 }
 
 function load(text, name, opts = {}){
@@ -1919,24 +1938,32 @@ function load(text, name, opts = {}){
       if (!Array.isArray(backup.rows)) throw new Error("Esta copia de seguridad no es válida.");
       incoming = backup.rows;
     } else incoming = normalize(parseCSV(text));
-    if (opts.quiet && !isSample && rows){
-      const have = new Set(rows.map(rowKey));
-      if (!incoming.some(r => !have.has(rowKey(r)))) return;   // nada nuevo en el repositorio
-    }
+    const fields = incoming.fields || ["pos", "type", "watchedDate", "watched", "year", "title", "orig", "url", "imdb", "mine", "runtime", "genres", "dir"];
     if (isSample || !rows){
-      rows = incoming; newKeys = new Set();
+      rows = incoming.slice(); newKeys = new Set(); updKeys = new Set();
       msg.textContent = name ? `Cargado: ${name} (${rows.length} títulos)` : "";
     } else {
-      const have = new Set(rows.map(rowKey));
-      const fresh = incoming.filter(r => !have.has(rowKey(r)));
+      const byKey = new Map(rows.map(r => [rowKey(r), r]));
+      const fresh = [], updated = [], what = {};
+      incoming.forEach(inc => {
+        const old = byKey.get(rowKey(inc));
+        if (!old){ fresh.push(inc); return; }
+        const ch = applyChanges(old, inc, fields);
+        if (ch.length){ updated.push(old); ch.forEach(f => { what[f] = (what[f] || 0) + 1; }); }
+      });
+      if (opts.quiet && !fresh.length && !updated.length) return;   // nada nuevo en el repositorio
       rows = rows.concat(fresh);
       newKeys = new Set(fresh.map(rowKey));
-      msg.textContent = fresh.length
-        ? `${fresh.length} ${fresh.length === 1 ? "película nueva añadida" : "películas nuevas añadidas"} desde ${name}. Ahora tienes ${rows.length} títulos.`
-        : `No hay películas nuevas en ${name}. Sigues con ${rows.length} títulos.`;
+      updKeys = new Set(updated.map(rowKey));
+      const parts = [];
+      if (fresh.length) parts.push(`${fresh.length} ${fresh.length === 1 ? "película nueva" : "películas nuevas"}`);
+      if (updated.length) parts.push(`${updated.length} ${updated.length === 1 ? "actualizada" : "actualizadas"} (${Object.entries(what).sort((a, b) => b[1] - a[1]).map(([f, n]) => `${FIELD_ES[f] || f}: ${n}`).join(", ")})`);
+      msg.textContent = parts.length
+        ? `Desde ${name}: ${parts.join(" y ")}. Ahora tienes ${rows.length} títulos.`
+        : `No hay cambios en ${name}. Sigues con ${rows.length} títulos.`;
     }
     msg.className = "msg";
-    isSample = false; save();
+    isSample = false; dataVer++; save();
     sort = { ...DEFAULT_SORT }; shown = PAGE; buildTypes(); render();
   } catch(e){
     msg.className = "msg err"; msg.textContent = e.message;
@@ -1969,7 +1996,7 @@ document.getElementById("confirmReset").addEventListener("click", e => {
   if (e.target.closest("#resetExport")){ document.getElementById("exportBtn").click(); return; }
   if (e.target.closest("#resetConfirm")){
     try { localStorage.removeItem(KEY); localStorage.removeItem(DATA_KEY); } catch(err) {}
-    rows = sample(); isSample = true; newKeys = new Set(); sort = { ...DEFAULT_SORT }; shown = PAGE; buildTypes(); render();
+    rows = sample(); isSample = true; newKeys = new Set(); updKeys = new Set(); dataVer++; sort = { ...DEFAULT_SORT }; shown = PAGE; buildTypes(); render();
     const msg = document.getElementById("msg"); msg.className = "msg"; msg.textContent = "Datos borrados de este dispositivo. Sube tu CSV para empezar de nuevo.";
     dlg.close();
   }
@@ -2008,7 +2035,7 @@ syncThemeBtn();
 let stored = null, saved = null, tab = null;
 try { stored = JSON.parse(localStorage.getItem(DATA_KEY) || "null"); saved = localStorage.getItem(KEY); tab = localStorage.getItem("cinemateca-tab"); } catch(e) {}
 if (stored && Array.isArray(stored.rows) && stored.rows.length){
-  rows = stored.rows; newKeys = new Set(stored.newKeys || []); isSample = false; buildTypes(); render();
+  rows = stored.rows; newKeys = new Set(stored.newKeys || []); updKeys = new Set(stored.updKeys || []); isSample = false; buildTypes(); render();
 } else if (saved) load(saved);
 else { rows = sample(); buildTypes(); render(); }
 showView(location.hash === "#peliculas" ? "films" : (["stats", "films", "year", "taste", "world"].includes(tab) ? tab : "films"));
