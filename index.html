@@ -95,7 +95,7 @@ h1{font-family:var(--font-display);font-weight:800;font-size:clamp(2rem,6vw,3rem
 .hero-n{font-family:var(--font-display);font-weight:800;font-size:clamp(4rem,14vw,7rem);line-height:.9;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 .hero-l{font-size:13px;text-transform:uppercase;letter-spacing:.1em;color:var(--teal-ink);font-weight:600}
 .hero-l span{display:block;text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);margin-top:2px}
-.minor{display:grid;grid-template-columns:repeat(3,minmax(0,auto));gap:12px 28px}
+.minor{display:grid;grid-template-columns:repeat(4,minmax(0,auto));gap:12px 28px}
 .minor .stat{border-top-width:2px}
 .minor .stat .n{font-size:1.3rem}
 .minor .stat .l{font-size:11px}
@@ -197,7 +197,7 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
   .panel{padding:16px;border-radius:12px}
   .chart{height:260px}
   .stats{grid-template-columns:1fr 1fr}
-  .minor{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;width:100%}
+  .minor{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:100%}
   .stat .n{font-size:1.7rem}
   .tabs{position:sticky;top:env(safe-area-inset-top, 0px);z-index:5;background:var(--bg);margin-inline:-16px;padding-inline:16px}
   .filters{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -572,6 +572,7 @@ function render(){
     `<div class="hero"><div class="hero-n">${total.toLocaleString("es-ES")}</div>
       <div class="hero-l">títulos vistos${total !== rows.length ? `<span>de ${rows.length.toLocaleString("es-ES")} en el archivo, según los filtros</span>` : ""}</div></div>
     <div class="minor">` + [
+    [(data.reduce((a, r) => a + (r.runtime || 0), 0) / 1440).toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }), "días de cine"],
     [sinceStart, `vistas desde ${START}`],
     [total ? seenYears[best] : "—", `año con más (${total ? seen[best] : 0})`],
     [topMade ?? "—", "año de estreno favorito"]
