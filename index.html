@@ -248,6 +248,12 @@ body.no-data .view{display:none!important}
 .pop.sheet{overscroll-behavior:contain;touch-action:pan-y}
 .pop.sheet.dragging{transition:none}
 .pop.sheet.settling{transition:transform .22s cubic-bezier(.2,.8,.2,1)}
+/* Deslizar hacia abajo para recargar (app en pantalla de inicio) */
+.ptr{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 6px);z-index:60;width:40px;height:40px;margin-left:-20px;border-radius:50%;background:var(--surface);color:var(--accent-ink);border:1px solid var(--line);box-shadow:0 4px 14px rgba(0,0,0,.15);display:grid;place-items:center;transform:translateY(-70px);opacity:0;pointer-events:none}
+.ptr.back{transition:transform .25s ease,opacity .25s}
+.ptr.ready{background:var(--accent);color:#000}
+.ptr.spin svg{animation:ptrspin .8s linear infinite}
+@keyframes ptrspin{to{transform:rotate(360deg)}}
 .pop-backdrop{position:fixed;inset:0;z-index:39;background:transparent}
 body.pop-open .pop-backdrop{background:rgba(10,10,8,.4)}
 body.pop-open{overflow:hidden}
@@ -601,6 +607,7 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
 
   <!-- Ventanas flotantes de la píldora -->
   <div class="pop-backdrop" id="popBackdrop" hidden></div>
+  <div class="ptr" id="ptr" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></div>
 
   <div class="pop" id="themePanel" role="dialog" aria-label="Apariencia" hidden>
     <div class="pop-head"><h2>Apariencia</h2><button class="pop-close" type="button" data-pop-close aria-label="Cerrar">✕</button></div>
@@ -1217,6 +1224,53 @@ function fillUntil(data){
     el.value = years.includes(Number(cur)) && Number(cur) < NOW ? cur : "";
   });
 }
+/* Deslizar hacia abajo desde arriba del todo para recargar.
+   Solo en la app abierta desde la pantalla de inicio: en Safari normal ya existe ese gesto. */
+(() => {
+  const standalone = navigator.standalone === true || matchMedia("(display-mode: standalone)").matches;
+  if (!standalone || !("ontouchstart" in window)) return;
+  const ind = document.getElementById("ptr"), svg = ind.querySelector("svg"), LIMIT = 70;
+  let y0 = null, x0 = 0, pull = 0, active = false, busy = false;
+  const blocked = () => busy || document.body.classList.contains("pop-open") || document.querySelector("dialog[open]");
+  const show = p => {
+    ind.classList.remove("back");
+    ind.style.opacity = String(Math.min(1, p / 40));
+    ind.style.transform = `translateY(${Math.min(p, LIMIT + 20) - 50}px)`;
+    svg.style.transform = `rotate(${p * 3}deg)`;
+    ind.classList.toggle("ready", p >= LIMIT);
+  };
+  const hide = () => { ind.classList.add("back"); ind.classList.remove("ready"); ind.style.opacity = "0"; ind.style.transform = ""; };
+  document.addEventListener("touchstart", e => {
+    y0 = null; active = false; pull = 0;
+    if (blocked() || e.touches.length > 1 || window.scrollY > 0) return;
+    y0 = e.touches[0].clientY; x0 = e.touches[0].clientX;
+  }, { passive: true });
+  document.addEventListener("touchmove", e => {
+    if (y0 == null) return;
+    const dy = e.touches[0].clientY - y0, dx = e.touches[0].clientX - x0;
+    if (!active){
+      if (dy > 8 && dy > Math.abs(dx) * 1.5 && window.scrollY <= 0) active = true;
+      else if (Math.abs(dx) > 8 || dy < -4){ y0 = null; return; }
+      else return;
+    }
+    e.preventDefault();
+    pull = Math.max(0, dy * 0.55);
+    show(pull);
+  }, { passive: false });
+  const end = () => {
+    if (!active){ y0 = null; return; }
+    active = false; y0 = null;
+    if (pull >= LIMIT){
+      busy = true;
+      ind.classList.add("spin", "ready"); ind.style.transform = `translateY(${LIMIT - 40}px)`; svg.style.transform = "";
+      document.getElementById("reloadBtn").click();
+    } else hide();
+    pull = 0;
+  };
+  document.addEventListener("touchend", end);
+  document.addEventListener("touchcancel", end);
+})();
+
 /* Recordar qué secciones de Stats están plegadas */
 ["sgFilms", "sgArtists"].forEach(id => {
   const d = document.getElementById(id);
@@ -1988,6 +2042,7 @@ const idb = (() => {
       rq.onsuccess = () => { const c = rq.result; if (c){ out[c.key] = c.value; c.continue(); } };
       t.oncomplete = () => res(out); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error);
     })),
+    countPeople: () => tx("people", "readonly", st => st.count()),
     putPeople: entries => tx("people", "readwrite", st => { entries.forEach(([k, v]) => { if (v) st.put(v, k); else st.delete(k); }); })
   };
 })();
@@ -3270,14 +3325,16 @@ async function showStorage(){
   const tmdbFilms = size(tmdbCache), tmdbPeople = size(personCache), peopleList = size(people);
   const nFilms = Object.values(tmdbCache).filter(x => x && !x.none).length, nPeople = Object.values(personCache).filter(x => x && !x.none).length;
   const tmdbTotal = tmdbFilms + tmdbPeople;
-  let site = null;
+  let site = null, savedPeople = null;
   try { const e = await navigator.storage?.estimate?.(); if (e?.usage) site = e.usage; } catch(err) {}
+  try { savedPeople = await idb.countPeople(); } catch(err) {}
   const row = (k, v, cls = "") => `<tr class="${cls}"><td>${k}</td><td>${v}</td></tr>`;
   document.getElementById("storageTable").innerHTML =
     row("Tus películas", `${fmtBytes(films)}`) +
     row("Tu lista de personas", fmtBytes(peopleList)) +
     row(`Datos de TMDb · películas (${nFilms})`, fmtBytes(tmdbFilms)) +
     row(`Datos de TMDb · personas (${nPeople})`, fmtBytes(tmdbPeople)) +
+    row("Artistas ya guardados en este dispositivo", savedPeople == null ? "—" : `${savedPeople} de ${people.length}`) +
     row("Total de TMDb", fmtBytes(tmdbTotal), "strong") +
     row("Total de la app", fmtBytes(films + peopleList + tmdbTotal), "strong");
   document.getElementById("storageNote").textContent = "Las imágenes de los pósters y las fotos no cuentan aquí: el navegador las guarda aparte, en su caché temporal, y las borra solo cuando necesita espacio.";
