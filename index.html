@@ -316,6 +316,17 @@ body.pop-open{overflow:hidden}
   .person .score b{font-size:1.1rem}
   .person-bio,.person-section{padding-inline:16px}
   .poster-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 10px}
+  /* Artistas en tarjetas: dos por fila, foto arriba */
+  .fav-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .fav.panel{padding:0;overflow:hidden;gap:0}
+  .fav-top{flex-direction:column;align-items:stretch;gap:0;padding:0;border-radius:0}
+  .fav-top .fav-photo{width:100%;height:auto;aspect-ratio:3/4;border-radius:0}
+  .fav-top .fav-photo.ph{font-size:2.6rem}
+  .fav-info{padding:10px 10px 12px}
+  .fav-info h3{font-size:1rem;line-height:1.2}
+  .fav-count{font-size:12px}
+  .fav-count b{font-size:1.05rem}
+  .fav-meta{font-size:11px;margin-top:4px}
 }
 .fav-photo{width:64px;height:64px;border-radius:50%;object-fit:cover;flex:0 0 auto;background:var(--teal-soft)}
 .fav-photo.ph{display:grid;place-items:center;font:800 1.5rem var(--font-display);color:var(--teal-ink)}
@@ -726,7 +737,7 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
 
   <div class="view" id="view-favs" role="tabpanel" aria-labelledby="tab-favs" hidden>
     <div class="fav-search">
-      <input type="search" id="favQ" placeholder="Buscar artista (en tu lista o en TMDb para añadirlo)" aria-label="Buscar persona" autocomplete="off">
+      <input type="search" id="favQ" placeholder="Buscar o añadir artista" aria-label="Buscar persona" autocomplete="off">
       <ul class="add-results" id="favResults" hidden></ul>
     </div>
     <section class="panel" id="favEmpty">
@@ -2217,7 +2228,7 @@ function renderFavs(){
   const list = document.getElementById("favList"), empty = document.getElementById("favEmpty"), head = document.getElementById("favHead");
   if (!list) return;
   empty.hidden = people.length > 0; head.hidden = !people.length; list.hidden = !people.length;
-  document.getElementById("favQ").placeholder = tmdbKey ? "Buscar artista (en tu lista o en TMDb para añadirlo)" : "Buscar en tu lista";
+  document.getElementById("favQ").placeholder = tmdbKey ? "Buscar o añadir artista" : "Buscar en tu lista";
   if (!people.length) return;
   if (!tmdbKey) document.getElementById("favStatus").textContent = "Añade tu clave de TMDb (icono de ajustes) para ver cuántas películas has visto de cada persona.";
 
