@@ -225,6 +225,12 @@ body.no-data .view{display:none!important}
 .pop{position:fixed;z-index:40;width:min(340px,calc(100vw - 24px));max-height:calc(100dvh - 120px);overflow:auto;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.18),0 2px 6px rgba(0,0,0,.08);padding:14px 14px 16px;display:flex;flex-direction:column;gap:6px}
 .pop.wide{width:min(440px,calc(100vw - 24px))}
 .pop.sheet{left:0;right:0;bottom:0;top:auto;width:100%;max-height:88dvh;border-radius:18px 18px 0 0;padding-bottom:calc(18px + env(safe-area-inset-bottom,0px))}
+.sheet-grab{display:none}
+.pop.sheet .sheet-grab{display:block;flex-shrink:0;width:42px;height:5px;border-radius:999px;background:var(--line);margin:-4px auto 6px;position:relative}
+.pop.sheet .sheet-grab::before{content:"";position:absolute;inset:-14px -40px}
+.pop.sheet{overscroll-behavior:contain;touch-action:pan-y}
+.pop.sheet.dragging{transition:none}
+.pop.sheet.settling{transition:transform .22s cubic-bezier(.2,.8,.2,1)}
 .pop-backdrop{position:fixed;inset:0;z-index:39;background:transparent}
 body.pop-open .pop-backdrop{background:rgba(10,10,8,.4)}
 body.pop-open{overflow:hidden}
@@ -480,10 +486,13 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
 }
 @media (max-width: 640px){
   .wrap{padding-block:20px 40px;gap:20px}
-  header{grid-template-columns:auto minmax(0,1fr);grid-template-areas:"title title" "pill csv";gap:14px 12px}
-  header > .pill{justify-self:start}
-  header > .corner{align-self:center}
-  h1{font-size:2.1rem}
+  header{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"h1 pill" "sub sub" "csv csv";align-items:center;gap:10px 10px}
+  header > div:first-child{display:contents}
+  header h1{grid-area:h1;min-width:0}
+  header .sub{grid-area:sub;margin:0}
+  header > .pill{grid-area:pill;justify-self:end;align-self:center}
+  header > .corner{grid-area:csv;align-self:center}
+  h1{font-size:clamp(1rem,5.4vw,1.6rem);white-space:nowrap}
   .corner{justify-content:flex-end}
   .drop{flex:0 1 auto}
   .panel{padding:16px;border-radius:12px}
@@ -2991,6 +3000,48 @@ function togglePanel(btnId, panelId, forceOpen){
   if (anyOpen && panelId === "themePanel") syncThemeOpts();
 }
 const closePops = () => togglePanel(null, null);
+// Hojas del móvil: deslizar hacia abajo para cerrar
+document.querySelectorAll(".pop").forEach(pop => {
+  const g = document.createElement("div"); g.className = "sheet-grab"; g.setAttribute("aria-hidden", "true");
+  pop.prepend(g);
+  let y0 = 0, t0 = 0, dy = 0, drag = false, track = false;
+  const bd = document.getElementById("popBackdrop");
+  pop.addEventListener("touchstart", e => {
+    if (!pop.classList.contains("sheet") || e.touches.length > 1) return;
+    if (e.target.closest("input[type=range], select, textarea")) return;
+    y0 = e.touches[0].clientY; t0 = performance.now(); dy = 0; drag = false;
+    track = pop.scrollTop <= 0 || !!e.target.closest(".sheet-grab, .pop-head");
+  }, { passive: true });
+  pop.addEventListener("touchmove", e => {
+    if (!track) return;
+    const d = e.touches[0].clientY - y0;
+    if (!drag){
+      if (d > 6 && (pop.scrollTop <= 0 || e.target.closest(".sheet-grab, .pop-head"))){ drag = true; pop.classList.remove("settling"); pop.classList.add("dragging"); }
+      else if (d < -6){ track = false; return; }
+      else return;
+    }
+    e.preventDefault();
+    dy = Math.max(0, d);
+    pop.style.transform = `translateY(${dy}px)`;
+    bd.style.opacity = String(Math.max(0, 1 - dy / (pop.offsetHeight || 400)));
+  }, { passive: false });
+  const end = () => {
+    if (!drag){ track = false; return; }
+    drag = track = false;
+    pop.classList.remove("dragging"); pop.classList.add("settling");
+    const fast = dy > 40 && dy / Math.max(1, performance.now() - t0) > 0.5;
+    if (dy > Math.min(110, pop.offsetHeight * 0.25) || fast){
+      pop.style.transform = `translateY(${pop.offsetHeight + 20}px)`;
+      bd.style.transition = "opacity .22s"; bd.style.opacity = "0";
+      setTimeout(() => { closePops(); pop.classList.remove("settling"); pop.style.transform = ""; bd.style.opacity = ""; bd.style.transition = ""; }, 220);
+    } else {
+      pop.style.transform = ""; bd.style.opacity = "";
+      setTimeout(() => pop.classList.remove("settling"), 240);
+    }
+  };
+  pop.addEventListener("touchend", end);
+  pop.addEventListener("touchcancel", end);
+});
 document.getElementById("popBackdrop").addEventListener("click", closePops);
 document.addEventListener("click", e => {
   if (e.target.closest("[data-pop-close]")) closePops();
