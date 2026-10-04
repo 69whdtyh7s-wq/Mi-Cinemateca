@@ -334,13 +334,14 @@ body.pop-open{overflow:hidden}
 .rating button:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
 .err-text{color:#c0392b;margin:0;font-size:14px}
 .err-text:empty{display:none}
-.fav-search{position:relative;display:flex;flex-direction:column;gap:6px}
-.fav-search input{font:16px var(--font-body);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
-.fav-search .add-results{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:4px 8px}
-.fav-search .add-results em{margin-left:auto;font-style:normal;font-weight:600;font-size:13px;color:var(--accent-ink);white-space:nowrap}
-.fav-search .add-results button:disabled{cursor:default;opacity:.6}
-.fav-search .add-results img{border-radius:50%;width:40px;height:40px}
-.fav-search .add-results .thumb{width:40px;height:40px;border-radius:50%}
+.fav-search{position:relative;display:flex;gap:8px;align-items:center}
+.fav-search .seg.acts button{padding:9px 12px}
+.person-results em{margin-left:auto;font-style:normal;font-weight:600;font-size:13px;color:var(--accent-ink);white-space:nowrap}
+.person-results button:disabled{cursor:default;opacity:.6}
+.person-results img{border-radius:50%;width:40px;height:40px}
+.person-results .thumb{width:40px;height:40px;border-radius:50%}
+.fav-none{grid-column:1 / -1;display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.fav-search input{font:16px var(--font-body);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;flex:1;min-width:0}
 .fav{position:relative}
 .fav-remove{position:absolute;top:10px;right:10px;width:28px;height:28px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--muted);cursor:pointer;font-size:12px}
 .fav-remove:hover{color:#c0392b;border-color:#c0392b}
@@ -880,12 +881,14 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
 
   <div class="view" id="view-favs" role="tabpanel" aria-labelledby="tab-favs" hidden>
     <div class="fav-search">
-      <input type="search" id="favQ" placeholder="Buscar o añadir artista" aria-label="Buscar persona" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
-      <ul class="add-results" id="favResults" hidden></ul>
+      <input type="search" id="favQ" placeholder="Buscar en tus artistas" aria-label="Buscar en tus artistas" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+      <div class="seg acts" role="group" aria-label="Acciones">
+        <button type="button" id="favAddBtn" title="Añadir artista" aria-label="Añadir artista"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+      </div>
     </div>
     <section class="panel" id="favEmpty">
       <h2>Tus artistas</h2>
-      <p class="hint">Busca arriba a cualquier actor, director o guionista para añadirlo, o sube una lista de personas de IMDb con "Elegir CSV", igual que tus películas. Para exportarla: en IMDb abre tu lista de personas, pulsa ⋯ → <em>Export</em> y descarga el CSV desde "Exports".</p>
+      <p class="hint">Pulsa <b>+</b> para buscar en TMDb a cualquier actor, director o guionista y añadirlo, o sube una lista de personas de IMDb con "Elegir CSV", igual que tus películas. Para exportarla: en IMDb abre tu lista de personas, pulsa ⋯ → <em>Export</em> y descarga el CSV desde "Exports".</p>
       <p class="hint">Verás cuántas de sus películas has visto, tu nota media a su trabajo y cuáles te faltan.</p>
     </section>
     <div class="fav-head" id="favHead" hidden>
@@ -972,6 +975,14 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
 
   <dialog class="ficha" id="ficha" aria-label="Ficha de la película"></dialog>
   <dialog class="ficha person" id="personDlg" aria-label="Ficha de la persona"></dialog>
+  <dialog class="ficha add" id="addPersonDlg" aria-labelledby="apTitle">
+    <button class="ficha-close" type="button" aria-label="Cerrar" data-close>✕</button>
+    <div class="add-body">
+      <h2 id="apTitle">Añadir artista</h2>
+      <input type="search" id="apQ" placeholder="Nombre del actor, director…" aria-label="Buscar artista en TMDb" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+      <ul class="add-results person-results" id="favResults"></ul>
+    </div>
+  </dialog>
   <dialog class="ficha add" id="addDlg" aria-labelledby="addTitle">
     <button class="ficha-close" type="button" aria-label="Cerrar" data-close>✕</button>
     <div class="add-body">
@@ -2605,7 +2616,7 @@ function renderFavs(){
   const list = document.getElementById("favList"), empty = document.getElementById("favEmpty"), head = document.getElementById("favHead");
   if (!list) return;
   empty.hidden = people.length > 0; head.hidden = !people.length; list.hidden = !people.length;
-  document.getElementById("favQ").placeholder = tmdbKey ? "Buscar o añadir artista" : "Buscar en tu lista";
+  document.getElementById("favAddBtn").closest(".seg").hidden = !tmdbKey;
   if (!people.length) return;
   if (!tmdbKey) document.getElementById("favStatus").textContent = "Añade tu clave de TMDb (icono de ajustes) para ver cuántas películas has visto de cada persona.";
 
@@ -2634,7 +2645,7 @@ function renderFavs(){
 
   const fq = (document.getElementById("favQ").value || "").trim().toLowerCase();
   const shownCards = fq ? cards.filter(c => (c.x?.n || c.p.name).toLowerCase().includes(fq)) : cards;
-  list.innerHTML = (shownCards.length ? "" : `<p class="hint">Nadie de tu lista coincide con "${esc(fq)}".</p>`) + shownCards.map((c, i) => {
+  list.innerHTML = (shownCards.length ? "" : `<div class="fav-none"><p class="hint">Nadie de tu lista coincide con "${esc(fq)}".</p>${tmdbKey ? `<button type="button" class="btn ghost" data-add-person="${esc(document.getElementById("favQ").value.trim())}">Buscar "${esc(document.getElementById("favQ").value.trim())}" en TMDb para añadirlo</button>` : ""}</div>`) + shownCards.map((c, i) => {
     const pct = c.total ? Math.min(100, Math.round(c.seenMovies / c.total * 100)) : 0;
     const photo = c.x?.img ? `<img class="fav-photo" src="${TMDB_IMG}w185${c.x.img}" alt="" loading="lazy">` : `<span class="fav-photo ph" aria-hidden="true">${esc(c.p.name.charAt(0))}</span>`;
     const dep = c.x?.dep ? (DEP_ES[c.x.dep] || c.x.dep) : "";
@@ -2656,21 +2667,33 @@ document.getElementById("favList").addEventListener("click", e => {
   const b = e.target.closest("button[data-k]"); if (!b) return;
   const r = rows.find(x => rowKey(x) === b.dataset.k); if (r) openFicha(r);
 });
-// Buscador: filtra tu lista y busca en TMDb para añadir
+// Buscador de la pestaña: solo filtra tu lista. Añadir artistas nuevos va aparte, con el botón +
+document.getElementById("favQ").addEventListener("input", () => renderFavs());
 let favTimer = null;
-document.getElementById("favQ").addEventListener("input", e => {
-  renderFavs();
+function openAddPerson(q = ""){
+  const dlg = document.getElementById("addPersonDlg"), inp = document.getElementById("apQ");
+  inp.value = q; document.getElementById("favResults").innerHTML = "";
+  dlg.showModal();
+  inp.focus({ preventScroll: true });            // en el mismo toque, para que el iPhone abra el teclado
+  if (q) searchPeople(q);
+}
+document.getElementById("favAddBtn").addEventListener("click", () => openAddPerson());
+document.getElementById("favList").addEventListener("click", e => { const b = e.target.closest("[data-add-person]"); if (b) openAddPerson(b.dataset.addPerson); });
+document.getElementById("apQ").addEventListener("input", e => {
   clearTimeout(favTimer);
   const q = e.target.value.trim();
   favTimer = setTimeout(() => searchPeople(q), 350);
 });
+document.getElementById("addPersonDlg").addEventListener("click", e => {
+  if (e.target === e.currentTarget || e.target.closest("[data-close]")) e.currentTarget.close();
+});
 async function searchPeople(q){
   const box = document.getElementById("favResults");
-  if (!tmdbKey || q.length < 2){ box.hidden = true; box.innerHTML = ""; return; }
-  box.hidden = false; box.innerHTML = `<li class="dim">Buscando en TMDb…</li>`;
+  if (!tmdbKey || q.length < 2){ box.innerHTML = ""; return; }
+  box.innerHTML = `<li class="dim">Buscando en TMDb…</li>`;
   try {
     const res = await tmdbGet("/search/person", { query: q, language: "es-ES", include_adult: "false" });
-    if (document.getElementById("favQ").value.trim() !== q) return;
+    if (document.getElementById("apQ").value.trim() !== q) return;
     const inList = new Set(people.map(p => String(p.tmdb || personCache[p.id]?.t || "")));
     const items = (res.results || []).slice(0, 8);
     box._items = items;
@@ -2692,7 +2715,8 @@ document.getElementById("favResults").addEventListener("click", async e => {
   const id = imdb || `tmdbp-${r.id}`;
   if (!people.some(p => p.id === id)) people.push({ id, tmdb: r.id, name: r.name, known: (r.known_for || []).map(k => k.title || k.name).filter(Boolean).join(", "), pos: 0, added: todayISO(), desc: "" });
   savePeople();
-  document.getElementById("favQ").value = ""; document.getElementById("favResults").hidden = true;
+  document.getElementById("addPersonDlg").close();
+  document.getElementById("favQ").value = "";
   renderFavs(); fetchPeople();
   const m = document.getElementById("msg"); m.className = "msg"; m.textContent = `${r.name} añadido a Artistas.`;
 });
