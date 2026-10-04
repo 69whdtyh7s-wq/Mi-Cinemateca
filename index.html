@@ -203,6 +203,8 @@ th button[data-dir="desc"]::after{content:"▼"}
 .seg.acts button{color:var(--ink)}
 .seg.acts button:hover{background:var(--surface)}
 .seg.acts button:active{transform:scale(.96)}
+.seg button span{display:none}
+.seg button{padding:7px 12px}
 .seg button:focus-visible{outline:2px solid var(--accent-ink);outline-offset:1px}
 .film-cards{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
 .pg-item .pg-ph{display:grid;place-items:center;padding:10px;text-align:center;box-sizing:border-box}
@@ -379,7 +381,6 @@ body.pop-open{overflow:hidden}
   .person .score b{font-size:1.1rem}
   .person-bio,.person-section{padding-inline:16px}
   .poster-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 10px}
-  .seg button span{display:none}
   .fav-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
   .fav-grid.as-list{grid-template-columns:1fr}
 }
