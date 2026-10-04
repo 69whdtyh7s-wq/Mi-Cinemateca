@@ -188,6 +188,17 @@ th button[data-dir="desc"]::after{content:"▼"}
 .r-poster{float:right;width:92px;border-radius:8px;margin-left:12px}
 .foot a{color:var(--accent-ink)}
 .coverage{margin:0;color:var(--muted);font-size:14px}
+.list-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.list-head .count{margin:0}
+.seg{display:inline-flex;padding:3px;border-radius:10px;background:var(--bg);border:1px solid var(--line);gap:2px}
+.seg button{display:inline-flex;align-items:center;gap:6px;border:0;background:none;color:var(--muted);font:600 13px var(--font-body);padding:6px 10px;border-radius:7px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.seg button:focus-visible{outline:2px solid var(--accent-ink);outline-offset:1px}
+.film-cards{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
+.pg-item .pg-ph{display:grid;place-items:center;padding:10px;text-align:center;box-sizing:border-box}
+.pg-ph span{font:600 12px var(--font-body);color:var(--muted);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.pg-tag{position:absolute;top:6px;left:6px;font:600 10px var(--font-data);font-style:normal;text-transform:uppercase;letter-spacing:.06em;padding:2px 6px;border-radius:999px;background:var(--teal);color:#fff}
+.pg-tag.upd{background:var(--accent);color:#000}
 body.no-data .view{display:none!important}
 .welcome{gap:12px;max-width:720px}
 .welcome h2{font-family:var(--font-display);font-weight:800;font-size:1.6rem}
@@ -333,6 +344,7 @@ body.pop-open{overflow:hidden}
   .person .score b{font-size:1.1rem}
   .person-bio,.person-section{padding-inline:16px}
   .poster-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 10px}
+  .seg button span{display:none}
   .fav-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 }
 .fav-photo{width:64px;height:64px;border-radius:50%;object-fit:cover;flex:0 0 auto;background:var(--teal-soft)}
@@ -825,8 +837,15 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
     <section class="panel roulette" id="roulette" hidden aria-live="polite"></section>
 
     <section class="panel">
-      <p class="count" id="count"></p>
-      <div class="tbl">
+      <div class="list-head">
+        <p class="count" id="count"></p>
+        <div class="seg" role="group" aria-label="Forma de ver la lista">
+          <button type="button" data-layout="list" aria-pressed="true" title="Lista"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><span>Lista</span></button>
+          <button type="button" data-layout="cards" aria-pressed="false" title="Tarjetas"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="9" rx="1"/><rect x="3" y="15" width="7" height="6" rx="1"/><rect x="14" y="15" width="7" height="6" rx="1"/></svg><span>Tarjetas</span></button>
+        </div>
+      </div>
+      <div class="poster-grid film-cards" id="filmCards" hidden></div>
+      <div class="tbl" id="filmTable">
         <table class="films">
           <thead><tr id="filmHead"></tr></thead>
           <tbody id="filmBody"></tbody>
@@ -1358,6 +1377,17 @@ function thumb(r){
   const x = typeof tmdbCache !== "undefined" ? tmdbCache[imdbId(r)] : null;
   return x?.p ? `<img class="thumb" src="https://image.tmdb.org/t/p/w92${x.p}" alt="" loading="lazy" decoding="async">` : `<span class="thumb thumb-ph" aria-hidden="true"></span>`;
 }
+let layout = "list";
+try { layout = localStorage.getItem("cinemateca-layout") === "cards" ? "cards" : "list"; } catch(e) {}
+document.querySelector(".seg").addEventListener("click", e => {
+  const b = e.target.closest("[data-layout]"); if (!b) return;
+  layout = b.dataset.layout; try { localStorage.setItem("cinemateca-layout", layout); } catch(err) {}
+  renderFilms();
+});
+document.getElementById("filmCards").addEventListener("click", e => {
+  const b = e.target.closest("[data-k]"); if (!b) return;
+  const r = rows.find(x => rowKey(x) === b.dataset.k); if (r) openFicha(r);
+});
 function renderFilms(){
   renderChip();
   renderHead();
@@ -1377,6 +1407,18 @@ function renderFilms(){
     <td class="c-link">${r.url ? `<a class="imdb" href="${esc(r.url)}" target="_blank" rel="noopener" aria-label="Abrir ${esc(r.title)} en IMDb" title="Abrir en IMDb"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></a>` : dash}</td></tr>`).join("")
     : `<tr><td colspan="9" class="dim">No hay títulos con estos filtros.</td></tr>`;
   document.getElementById("more").hidden = n <= shown;
+  // Vista en tarjetas
+  const cards = layout === "cards";
+  document.getElementById("filmTable").hidden = cards;
+  document.getElementById("filmCards").hidden = !cards;
+  document.querySelectorAll(".seg [data-layout]").forEach(b => b.setAttribute("aria-pressed", b.dataset.layout === layout));
+  if (cards){
+    document.getElementById("filmCards").innerHTML = n ? list.slice(0, shown).map(r => {
+      const x = typeof tmdbCache !== "undefined" ? tmdbCache[imdbId(r)] : null;
+      const tag = newKeys.has(rowKey(r)) ? '<i class="pg-tag">nueva</i>' : updKeys.has(rowKey(r)) ? '<i class="pg-tag upd">actualizada</i>' : "";
+      return `<button type="button" class="pg-item" data-k="${esc(rowKey(r))}">${x?.p ? `<img src="${TMDB_IMG}w185${x.p}" alt="" loading="lazy" decoding="async">` : `<span class="pg-ph" aria-hidden="true"><span>${esc(r.title)}</span></span>`}${tag}<b>${esc(r.title)}</b><small>${[r.year, r.watchedDate ? r.watchedDate.split("-").reverse().join("/") : ""].filter(Boolean).join(" · ")}</small>${r.mine ? `<em>${r.mine}</em>` : ""}</button>`;
+    }).join("") : `<p class="hint">No hay títulos con estos filtros.</p>`;
+  }
 }
 
 /* ---------- Gráficos de la pestaña Películas ---------- */
