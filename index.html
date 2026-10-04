@@ -113,6 +113,9 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center}
 .chart-inner{position:relative;height:100%;min-width:100%}
 .duo{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:24px}
 .panel-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:12px}
+.head-tools{display:flex;flex-wrap:wrap;align-items:end;gap:12px}
+.seg.mode{align-self:end;margin-bottom:2px}
+.seg.mode button{padding:7px 14px}
 details summary{cursor:pointer;color:var(--accent-ink);font-weight:600;font-size:14px}
 .tbl{overflow-x:auto;margin-top:10px}
 table{border-collapse:collapse;font-family:var(--font-data);font-size:13px;font-variant-numeric:tabular-nums;width:100%}
@@ -670,12 +673,20 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
     </section>
     <section class="panel">
       <div class="panel-head">
-        <h2>Películas según año de estreno</h2>
-        <div class="field"><label class="label" for="madeUntil">Cómo estaba en</label><select id="madeUntil"></select></div>
+        <h2 id="madeTitle">Películas según año de estreno</h2>
+        <div class="head-tools">
+          <div class="seg mode" id="madeMode" role="group" aria-label="Agrupar por">
+            <button type="button" data-mode="year" aria-pressed="true">Años</button>
+            <button type="button" data-mode="dec" aria-pressed="false">Décadas</button>
+          </div>
+          <div class="field"><label class="label" for="madeUntil">Cómo estaba en</label><select id="madeUntil"></select></div>
+        </div>
       </div>
       <p class="hint" id="madeHint">Cuántas de las que viste se estrenaron en cada año, de la más reciente a la más antigua. Los años anteriores a 1960 se ven deslizando hacia la derecha; toca una barra para ver esas películas.</p>
       <div class="chart scroll" id="barScroll"><div class="chart-inner" id="barInner"><canvas id="barChart" aria-label="Gráfico de barras por año de estreno"></canvas></div></div>
-      <details><summary>Ver tabla</summary><div class="tbl"><table id="tblMade"></table></div></details>
+      <div class="chart" id="decBox" hidden><canvas id="decChart" aria-label="Gráfico de barras por década de estreno"></canvas></div>
+      <details id="madeDetails"><summary>Ver tabla</summary><div class="tbl"><table id="tblMade"></table></div></details>
+      <details id="decDetails" hidden><summary>Ver tabla</summary><div class="tbl"><table id="tblDec"></table></div></details>
     </section>
 
     <section class="panel">
@@ -715,15 +726,6 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
       </div>
     </section>
 
-    <section class="panel">
-      <div class="panel-head">
-        <h2>Películas según década de estreno</h2>
-        <div class="field"><label class="label" for="decUntil">Cómo estaba en</label><select id="decUntil"></select></div>
-      </div>
-      <p class="hint" id="decHint"></p>
-      <div class="chart"><canvas id="decChart" aria-label="Gráfico de barras por década de estreno"></canvas></div>
-      <details><summary>Ver tabla</summary><div class="tbl"><table id="tblDec"></table></div></details>
-    </section>
   </div>
 
   <div class="view" id="view-taste" role="tabpanel" aria-labelledby="tab-taste" hidden>
@@ -1192,19 +1194,37 @@ const CUT = 1960;   // años anteriores quedan fuera de la vista inicial
 
 function fillUntil(data){
   const years = [...new Set(data.map(r => r.watched).filter(Boolean))].sort((a, b) => b - a);
-  ["madeUntil", "decUntil"].forEach(id => {
+  ["madeUntil"].forEach(id => {
     const el = document.getElementById(id), cur = el.value;
     el.innerHTML = `<option value="">Hoy (todas)</option>` + years.filter(y => y < NOW).map(y => `<option value="${y}">${y}</option>`).join("");
     el.value = years.includes(Number(cur)) && Number(cur) < NOW ? cur : "";
   });
 }
-document.getElementById("decUntil").addEventListener("change", () => renderDecades({ smooth: true }));
+/* Selector Años / Décadas en el mismo gráfico */
+let madeMode = "year";   // al abrir la app, siempre por años
+function applyMadeMode(){
+  const dec = madeMode === "dec";
+  document.querySelectorAll("#madeMode [data-mode]").forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === madeMode));
+  document.getElementById("madeTitle").textContent = dec ? "Películas según década de estreno" : "Películas según año de estreno";
+  document.getElementById("barScroll").hidden = dec;
+  document.getElementById("madeDetails").hidden = dec;
+  document.getElementById("decBox").hidden = !dec;
+  document.getElementById("decDetails").hidden = !dec;
+}
+function setMadeMode(m){
+  if (m === madeMode) return;
+  madeMode = m;
+  applyMadeMode();
+  if (m === "dec"){ decChart?.destroy(); decChart = null; renderDecades(); } else { barChart?.destroy(); barChart = null; renderMade(); }
+}
+document.getElementById("madeMode").addEventListener("click", e => { const b = e.target.closest("[data-mode]"); if (b) setMadeMode(b.dataset.mode); });
+applyMadeMode();
 
 /* ---------- Gráfico por década de estreno ---------- */
 let decChart;
 function renderDecades(opts = {}){
   const all = counted();
-  const until = Number(document.getElementById("decUntil").value) || null;
+  const until = Number(document.getElementById("madeUntil").value) || null;
   const data = until ? all.filter(r => r.watched && r.watched <= until) : all;
 
   // Eje fijo con todas las décadas, de la más reciente a la más antigua
@@ -1217,7 +1237,7 @@ function renderDecades(opts = {}){
   const labels = decades.map(d => `${d}s`);
   const total = vals.reduce((a, b) => a + b, 0);
 
-  document.getElementById("decHint").textContent = (until
+  if (madeMode === "dec") document.getElementById("madeHint").textContent = (until
     ? `Las ${total} películas que habías visto hasta el final de ${until}, agrupadas por década de estreno.`
     : `Cuántas de las ${total} películas que viste se estrenaron en cada década.`) + " Toca una barra para ver los años de esa década.";
   document.getElementById("tblDec").innerHTML = "<tr><th>Década</th><th>Películas</th><th>%</th></tr>" +
@@ -1240,10 +1260,13 @@ function renderDecades(opts = {}){
       onHover: (e, el) => { e.native.target.style.cursor = el.length ? "pointer" : "default"; },
       onClick: (e, el) => {
         if (!el.length) return;
+        // Pasa a la vista por años, situada en esa década
         const d = decades[el[0].index], sc = document.getElementById("barScroll");
-        const bars = barChart?.getDatasetMeta(0).data, idx = barChart?.data.labels.indexOf(d + 9 > NOW ? NOW : d + 9);
-        document.getElementById("barScroll").closest(".panel").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
-        if (bars && idx >= 0) sc.scrollLeft = Math.max(0, bars[idx].x - 20);
+        setMadeMode("year");
+        requestAnimationFrame(() => {
+          const bars = barChart?.getDatasetMeta(0).data, idx = barChart?.data.labels.indexOf(d + 9 > NOW ? NOW : d + 9);
+          if (bars && idx >= 0) sc.scrollLeft = Math.max(0, bars[idx].x - 20);
+        });
       },
       layout: { padding: { top: 22 } },
       scales: { x: { grid: { display: false }, ticks: { font: { size: 12, family: font } } },
@@ -1265,7 +1288,7 @@ function renderDecades(opts = {}){
     }]
   });
 }
-document.getElementById("madeUntil").addEventListener("change", () => renderMade({ smooth: true }));
+document.getElementById("madeUntil").addEventListener("change", () => { renderMade({ smooth: true }); renderDecades({ smooth: true }); });
 
 function renderMade(opts = {}){
   const all = counted();
@@ -1287,7 +1310,7 @@ function renderMade(opts = {}){
   const perBar = Math.max(14, String(Math.max(0, ...madeVals)).length * 6.5 + 5);
   document.getElementById("barInner").style.width = `max(${pct}%, ${Math.ceil(madeYears.length * perBar)}px)`;
 
-  document.getElementById("madeHint").textContent = (until
+  if (madeMode === "year") document.getElementById("madeHint").textContent = (until
     ? `Las ${data.length} películas que habías visto hasta el final de ${until}, según su año de estreno.`
     : `Cuántas de las ${data.length} películas que viste se estrenaron en cada año.`) +
     ` Los años anteriores a ${CUT} se ven deslizando hacia la derecha; toca una barra para ver esas películas.`;
@@ -2813,7 +2836,7 @@ function makeScrubber(selectId){
   sync();
   return sync;
 }
-const scrubSyncs = ["madeUntil", "decUntil", "yearSel"].map(makeScrubber);
+const scrubSyncs = ["madeUntil", "yearSel"].map(makeScrubber);
 
 /* ---------- Stats de tus artistas ---------- */
 const GENDER_ES = { 1: "Mujeres", 2: "Hombres", 3: "No binario", 0: "Sin datos" };
