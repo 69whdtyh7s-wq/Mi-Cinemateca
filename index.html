@@ -188,6 +188,16 @@ th button[data-dir="desc"]::after{content:"▼"}
 .r-poster{float:right;width:92px;border-radius:8px;margin-left:12px}
 .foot a{color:var(--accent-ink)}
 .coverage{margin:0;color:var(--muted);font-size:14px}
+.scrub{display:flex;align-items:center;gap:10px;margin-top:6px;width:min(320px,calc(100vw - 72px))}
+.field .scrub input[type=range]{-webkit-appearance:none;appearance:none;flex:1;height:28px;background:transparent;cursor:grab;touch-action:pan-y;margin:0;border:0;padding:0;border-radius:0;width:auto}
+.scrub input[type=range]:active{cursor:grabbing}
+.scrub input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:999px;background:linear-gradient(90deg,var(--accent) var(--p,100%),var(--accent-soft) var(--p,100%))}
+.scrub input[type=range]::-moz-range-track{height:6px;border-radius:999px;background:var(--accent-soft)}
+.scrub input[type=range]::-moz-range-progress{height:6px;border-radius:999px;background:var(--accent)}
+.scrub input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;margin-top:-9px;border-radius:50%;background:var(--surface);border:2px solid var(--accent);box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.scrub input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--surface);border:2px solid var(--accent);box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.scrub input[type=range]:focus-visible{outline:2px solid var(--accent-ink);outline-offset:4px;border-radius:8px}
+.scrub output{font:700 15px var(--font-data);min-width:5.5em;text-align:right;font-variant-numeric:tabular-nums}
 /* Ventanas flotantes de la píldora */
 .pop{position:fixed;z-index:40;width:min(340px,calc(100vw - 24px));max-height:calc(100dvh - 120px);overflow:auto;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.18),0 2px 6px rgba(0,0,0,.08);padding:14px 14px 16px;display:flex;flex-direction:column;gap:6px}
 .pop.wide{width:min(440px,calc(100vw - 24px))}
@@ -1034,6 +1044,7 @@ function render(){
   document.getElementById("reset").hidden = isSample;
 
   fillUntil(data);
+  if (typeof scrubSyncs !== "undefined") scrubSyncs.forEach(f => f());
   renderMade();
   renderDecades();
   renderFilmCharts(data);
@@ -1084,7 +1095,9 @@ function renderDecades(opts = {}){
     `<tr><th>Total</th><th>${total}</th><th></th></tr>`;
 
   if (opts.smooth && decChart && decChart.data.labels.join() === labels.join()){
-    decChart.data.datasets[0].data = vals; decChart.update(); return;
+    decChart.data.datasets[0].data = vals;
+    decChart.options.animation.duration = scrubbing ? 180 : (motion() ? 700 : 0);
+    decChart.update(); return;
   }
   const grid = cssVar("--line"), amber = cssVar("--amber"), inkC = cssVar("--ink"), font = cssVar("--font-data");
   decChart?.destroy();
@@ -1158,6 +1171,7 @@ function renderMade(opts = {}){
   // Mismo eje: solo cambian las alturas, de forma fluida
   if (opts.smooth && barChart && barChart.data.labels.join() === madeYears.join()){
     barChart.data.datasets[0].data = madeVals;
+    barChart.options.animation.duration = scrubbing ? 180 : (motion() ? 700 : 0);
     barChart.update();
     return;
   }
@@ -2543,6 +2557,41 @@ document.getElementById("favList").addEventListener("click", e => {
   const open = e.target.closest("[data-open-person]");
   if (open) openPerson(open.dataset.openPerson);
 });
+
+/* ---------- Selectores de año deslizables ----------
+   Cada <select> de años lleva al lado una barra que se arrastra sin levantar el dedo.
+   El <select> sigue siendo la fuente del valor; la barra solo lo cambia. */
+let scrubbing = false;
+function makeScrubber(selectId){
+  const sel = document.getElementById(selectId);
+  const wrap = document.createElement("div");
+  wrap.className = "scrub";
+  wrap.innerHTML = `<input type="range" min="0" max="0" step="1" aria-label="Elegir año deslizando"><output></output>`;
+  sel.closest(".field").appendChild(wrap);
+  sel.classList.add("scrub-select");
+  const range = wrap.querySelector("input"), out = wrap.querySelector("output");
+  // De izquierda (más antiguo) a derecha (más reciente / "Hoy")
+  const opts = () => [...sel.options].slice().reverse();
+  const sync = () => {
+    const o = opts(); range.max = Math.max(0, o.length - 1);
+    const i = o.findIndex(x => x.value === sel.value);
+    range.value = i < 0 ? o.length - 1 : i;
+    out.textContent = sel.options[sel.selectedIndex]?.text || "";
+    wrap.hidden = o.length < 2;
+    range.style.setProperty("--p", `${o.length > 1 ? range.value / (o.length - 1) * 100 : 100}%`);
+  };
+  range.addEventListener("input", () => {
+    const o = opts()[+range.value]; if (!o || o.value === sel.value) return;
+    sel.value = o.value; scrubbing = true;
+    sel.dispatchEvent(new Event("change"));
+    scrubbing = false; sync();
+  });
+  sel.addEventListener("change", sync);
+  new MutationObserver(sync).observe(sel, { childList: true });
+  sync();
+  return sync;
+}
+const scrubSyncs = ["madeUntil", "decUntil", "yearSel"].map(makeScrubber);
 
 /* ---------- Pestañas ---------- */
 function showView(v){
