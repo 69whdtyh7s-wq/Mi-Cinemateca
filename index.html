@@ -2510,7 +2510,12 @@ function openAdd(edit){
   else document.getElementById("addForm").hidden = true;
   renderRating();
   dlg.showModal();
-  if (!edit && tmdbKey) setTimeout(() => document.getElementById("addQ").focus(), 50);
+  // El foco se pone en el mismo toque (sin esperas) para que el iPhone abra el teclado
+  if (!edit){
+    const inp = document.getElementById(tmdbKey ? "addQ" : "addManTitle");
+    inp.focus({ preventScroll: true });
+    if (document.activeElement !== inp) requestAnimationFrame(() => inp.focus());
+  }
 }
 
 function showAddForm(sel){
