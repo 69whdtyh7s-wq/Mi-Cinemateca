@@ -551,6 +551,11 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
       </div>
     </div>
 
+    <p class="set-caption">App</p>
+    <div class="set-group">
+      <button class="set-row" type="button" id="reloadBtn"><span><b>Recargar la app</b><small>Carga la última versión y vuelve a leer tus datos</small></span><svg class="chev" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></button>
+    </div>
+
     <p class="set-caption">Espacio en este navegador</p>
     <div class="set-group"><table class="storage-table" id="storageTable"></table></div>
     <p class="set-foot" id="storageNote"></p>
@@ -2759,6 +2764,20 @@ document.getElementById("backupBtn").addEventListener("click", () => togglePanel
 document.getElementById("themeBtn").addEventListener("click", () => togglePanel("themeBtn", "themePanel"));
 document.querySelector('label.set-row[for="file"]').addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); document.getElementById("file").click(); } });
 document.getElementById("file").addEventListener("change", closePops);
+
+// Recargar (las web apps del iPhone no tienen botón de recargar)
+document.getElementById("reloadBtn").addEventListener("click", async () => {
+  const b = document.getElementById("reloadBtn");
+  b.querySelector("b").textContent = "Recargando…";
+  save();
+  const writes = [];
+  if (tmdbLoaded) writes.push(idb.set("tmdb", tmdbCache).catch(() => {}));
+  if (peopleLoaded) writes.push(idb.set("people", personCache).catch(() => {}));
+  await Promise.race([Promise.all(writes), new Promise(r => setTimeout(r, 1500))]);
+  // El parámetro evita que el navegador sirva una versión antigua guardada en caché
+  const u = new URL(location.href); u.searchParams.set("v", Date.now());
+  location.replace(u.toString());
+});
 
 // Espacio que ocupa la app en este navegador
 const fmtBytes = b => b >= 1048576 ? `${(b / 1048576).toLocaleString("es-ES", { maximumFractionDigits: 1 })} MB` : `${Math.max(1, Math.round(b / 1024))} KB`;
