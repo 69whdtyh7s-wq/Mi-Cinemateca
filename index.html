@@ -188,13 +188,48 @@ th button[data-dir="desc"]::after{content:"▼"}
 .r-poster{float:right;width:92px;border-radius:8px;margin-left:12px}
 .foot a{color:var(--accent-ink)}
 .coverage{margin:0;color:var(--muted);font-size:14px}
+/* Ventanas flotantes de la píldora */
+.pop{position:fixed;z-index:40;width:min(340px,calc(100vw - 24px));max-height:calc(100dvh - 120px);overflow:auto;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.18),0 2px 6px rgba(0,0,0,.08);padding:14px 14px 16px;display:flex;flex-direction:column;gap:6px}
+.pop.wide{width:min(440px,calc(100vw - 24px))}
+.pop.sheet{left:0;right:0;bottom:0;top:auto;width:100%;max-height:88dvh;border-radius:18px 18px 0 0;padding-bottom:calc(18px + env(safe-area-inset-bottom,0px))}
+.pop-backdrop{position:fixed;inset:0;z-index:39;background:transparent}
+body.pop-open .pop-backdrop{background:rgba(10,10,8,.4)}
+body.pop-open{overflow:hidden}
+.pop-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.pop-head h2{font-family:var(--font-display);font-weight:800;font-size:1.25rem;margin:0}
+.pop-close{width:30px;height:30px;border-radius:999px;border:0;background:var(--accent-soft);color:var(--ink);cursor:pointer;font-size:13px}
+.set-caption{margin:10px 4px 4px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.set-group{background:var(--bg);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.set-row{all:unset;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;min-height:48px;border-bottom:1px solid var(--line);cursor:pointer;font-size:15px;color:var(--ink)}
+.set-row:last-child{border-bottom:0}
+.set-row:hover{background:var(--accent-soft)}
+.set-row:focus-visible{outline:2px solid var(--accent-ink);outline-offset:-2px}
+.set-row.static{cursor:default}
+.set-row.static:hover{background:none}
+.set-row.col{flex-direction:column;align-items:stretch}
+.set-row b{font-weight:600;display:block}
+.set-row small{display:block;font-size:13px;color:var(--muted);margin-top:2px}
+.set-row .chev{color:var(--muted);flex:0 0 auto}
+.set-row.danger b{color:#c0392b}
+.set-row.radio .tick{width:20px;height:20px;border-radius:50%;border:2px solid var(--line);flex:0 0 auto}
+.set-row.radio[aria-checked="true"] .tick{border-color:var(--accent);background:radial-gradient(circle,var(--accent) 45%,transparent 50%)}
+.set-inline{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.set-inline input{flex:1 1 160px;min-width:0;font:16px var(--font-body);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.btn.small{font-size:14px;padding:8px 14px;border-radius:8px}
+#tmdbStatus.err{color:#c0392b}
+.pop .chips{padding:4px 2px}
+.storage-table{border-collapse:collapse;width:100%;font-size:14px}
+.storage-table td{padding:11px 14px;border-bottom:1px solid var(--line);text-align:left;font-family:var(--font-body)}
+.storage-table td:last-child{text-align:right;font-family:var(--font-data);font-variant-numeric:tabular-nums;white-space:nowrap}
+.storage-table tr:last-child td{border-bottom:0}
+.storage-table tr.strong td{font-weight:700}
+.pop > *{flex-shrink:0}
+.set-row.col{gap:10px}
+.set-foot{margin:6px 4px 0;font-size:12px;color:var(--muted);line-height:1.45}
+
 .storage-box{border-top:1px solid var(--line);padding-top:16px;display:flex;flex-direction:column;gap:8px}
 .storage-box h2{font-family:var(--font-display);font-weight:600;font-size:1.1rem;margin:0}
-.storage-table{border-collapse:collapse;width:100%;max-width:460px;font-size:14px}
-.storage-table td{padding:5px 0;border-bottom:1px solid var(--line);text-align:left;font-family:var(--font-body)}
-.storage-table td:last-child{text-align:right;font-family:var(--font-data);font-variant-numeric:tabular-nums}
-.storage-table tr.strong td{font-weight:700}
-.storage-table tr.dim td{color:var(--muted);border-bottom:0}
+
 #storageNote{margin:0;color:var(--muted);font-size:13px}
 .add{width:min(560px,calc(100vw - 24px))}
 .add-body{padding:20px;display:flex;flex-direction:column;gap:12px}
@@ -408,7 +443,6 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
       <div class="actions">
         <label class="btn upload" for="file" tabindex="0">Elegir CSV</label>
         <input type="file" id="file" accept=".csv,text/csv,.json,application/json" hidden>
-        <button class="btn ghost" id="reset" type="button" style="font-size:13px;padding:6px 12px;border-radius:6px" hidden>Borrar datos</button>
       </div>
     </div>
   </div>
@@ -416,43 +450,55 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
 
   <p class="msg" id="msg"></p>
 
-  <section class="panel drawer" id="filtersPanel" hidden>
-  <div class="types">
-    <span class="label">Tipos de título que se cuentan</span>
+
+  <!-- Ventanas flotantes de la píldora -->
+  <div class="pop-backdrop" id="popBackdrop" hidden></div>
+
+  <div class="pop" id="themePanel" role="dialog" aria-label="Apariencia" hidden>
+    <div class="pop-head"><h2>Apariencia</h2><button class="pop-close" type="button" data-pop-close aria-label="Cerrar">✕</button></div>
+    <div class="set-group" role="radiogroup" aria-label="Tema">
+      <button class="set-row radio" type="button" role="radio" data-theme-opt="auto"><span><b>Automático</b><small>Sigue el modo de tu dispositivo</small></span><span class="tick" aria-hidden="true"></span></button>
+      <button class="set-row radio" type="button" role="radio" data-theme-opt="light"><span><b>Claro</b></span><span class="tick" aria-hidden="true"></span></button>
+      <button class="set-row radio" type="button" role="radio" data-theme-opt="dark"><span><b>Oscuro</b></span><span class="tick" aria-hidden="true"></span></button>
+    </div>
+  </div>
+
+  <div class="pop" id="filtersPanel" role="dialog" aria-label="Filtros" hidden>
+    <div class="pop-head"><h2>Filtros</h2><button class="pop-close" type="button" data-pop-close aria-label="Cerrar">✕</button></div>
+    <p class="set-caption">Tipos de título que se cuentan en toda la app</p>
     <div class="chips" id="types"></div>
   </div>
-  </section>
 
-  <section class="panel drawer" id="backupPanel" hidden>
-  <div class="backup">
-    <div>
-      <h2>Copia de seguridad</h2>
-      <p class="hint">Guarda todos tus datos en un archivo para no perderlos o para pasarlos a otro dispositivo. Para importarla, súbela con "Elegir CSV" como si fuera un CSV.</p>
-    </div>
-    <div class="actions">
-      <button class="btn ghost" id="exportBtn" type="button">Exportar copia</button>
-    </div>
-  </div>
-  <div class="storage-box">
-    <h2>Espacio en este navegador</h2>
-    <table class="storage-table" id="storageTable"></table>
-    <p class="hint" id="storageNote"></p>
-  </div>
-  <div class="backup tmdb-box">
-    <div>
-      <h2>Datos de internet (TMDb)</h2>
-      <p class="hint">Pega tu "API Key" de TMDb para ver póster, sinopsis, reparto, países y dónde ver cada película. Se guarda solo en este dispositivo.</p>
-      <p class="hint" id="tmdbStatus" aria-live="polite"></p>
-    </div>
-    <div class="actions tmdb-actions">
-      <input id="tmdbKeyInput" type="password" autocomplete="off" spellcheck="false" placeholder="API Key o token de TMDb" aria-label="API Key de TMDb">
-      <button class="btn" id="tmdbSave" type="button">Guardar clave</button>
-      <button class="btn ghost" id="tmdbRemove" type="button" hidden>Quitar clave</button>
-      <button class="btn ghost" id="tmdbBulk" type="button" hidden>Descargar datos de todas</button>
-    </div>
-  </div>
-  </section>
+  <div class="pop wide" id="backupPanel" role="dialog" aria-label="Ajustes" hidden>
+    <div class="pop-head"><h2>Ajustes</h2><button class="pop-close" type="button" data-pop-close aria-label="Cerrar">✕</button></div>
 
+    <p class="set-caption">Tus datos</p>
+    <div class="set-group">
+      <label class="set-row" for="file" tabindex="0"><span><b>Cargar archivo</b><small>CSV de IMDb o copia de seguridad</small></span><svg class="chev" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></label>
+      <button class="set-row" type="button" id="exportBtn"><span><b>Exportar copia de seguridad</b><small>Un archivo con todas tus películas y personas</small></span><svg class="chev" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+      <button class="set-row danger" type="button" id="reset" hidden><span><b>Borrar datos de este dispositivo</b></span><svg class="chev" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+    </div>
+
+    <p class="set-caption">Datos de internet · TMDb</p>
+    <div class="set-group">
+      <div class="set-row static col">
+        <span><b>Clave de la API</b><small>Se guarda solo en este dispositivo</small></span>
+        <div class="set-inline">
+          <input id="tmdbKeyInput" type="password" autocomplete="off" spellcheck="false" placeholder="API Key o token de TMDb" aria-label="API Key de TMDb">
+          <button class="btn small" id="tmdbSave" type="button">Guardar</button>
+          <button class="btn ghost small" id="tmdbRemove" type="button" hidden>Quitar</button>
+        </div>
+      </div>
+      <div class="set-row static col">
+        <span><b>Datos de las películas</b><small id="tmdbStatus" aria-live="polite"></small></span>
+        <div class="set-inline"><button class="btn ghost small" id="tmdbBulk" type="button" hidden>Descargar datos de todas</button></div>
+      </div>
+    </div>
+
+    <p class="set-caption">Espacio en este navegador</p>
+    <div class="set-group"><table class="storage-table" id="storageTable"></table></div>
+    <p class="set-foot" id="storageNote"></p>
+  </div>
 
   <div class="tabs" role="tablist">
     <button class="tab" role="tab" id="tab-films" aria-controls="view-films" aria-selected="true" data-view="films">Películas <span id="tabCount"></span></button>
@@ -564,7 +610,7 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
     <section class="panel" id="worldEmpty">
       <h2>Datos de TMDb</h2>
       <p class="hint"></p>
-      <div class="actions"><button class="btn" type="button" id="worldOpenPanel">Abrir panel de TMDb</button></div>
+      <div class="actions"><button class="btn" type="button" id="worldOpenPanel" data-opens-pop>Abrir panel de TMDb</button></div>
     </section>
 
     <p class="hint world coverage" id="worldCoverage" hidden></p>
@@ -1825,7 +1871,7 @@ document.getElementById("ficha").addEventListener("click", e => {
   }
   if (img){ openPoster(img.dataset.path, img.dataset.title); return; }
   if (e.target === dlg || e.target.closest("[data-close]")) dlg.close();
-  if (e.target.closest("[data-open-tmdb]")){ dlg.close(); if (document.getElementById("backupPanel").hidden) togglePanel("backupBtn", "backupPanel"); document.getElementById("tmdbKeyInput").focus(); }
+  if (e.target.closest("[data-open-tmdb]")){ dlg.close(); togglePanel("backupBtn", "backupPanel", true); document.getElementById("tmdbKeyInput").focus(); }
 });
 
 // Abrir la ficha al tocar una fila de la tabla (salvo el enlace a IMDb)
@@ -1908,7 +1954,7 @@ function renderWorld(){
   }
   const pending = data.filter(r => !isFresh(imdbId(r))).length;
   document.getElementById("worldCoverage").textContent = `Con datos de TMDb de ${withX.length} de ${data.length} películas.` +
-    (pending ? ` Faltan ${pending}: descárgalas desde el panel de ajustes para completar las estadísticas.` : "");
+    (pending ? ` Faltan ${pending}: descárgalas desde el menú de ajustes (engranaje) para completar las estadísticas.` : "");
 
   const count = fn => { const c = {}; withX.forEach(x => fn(x).forEach(k => { if (k) c[k] = (c[k] || 0) + 1; })); return Object.entries(c).sort((a, b) => b[1] - a[1]); };
   const h = n => `${Math.max(n, 5) * 26 + 20}px`;
@@ -2005,16 +2051,15 @@ function renderCrew(){
   const all = Object.entries(c).sort((a, b) => b[1] - a[1]), top = all.slice(0, 15);
   const old = worldItems.filter(o => !o.x.v2).length;
   document.getElementById("crewHint").textContent = top.length
-    ? `Los ${CREW_LABEL[k][0]} que más se repiten en tus películas. Toca una barra para ver sus películas.` + (old ? ` ${old} películas se descargaron antes de añadir estos datos: pulsa "Continuar descarga" en el panel de ajustes para completarlas.` : "")
-    : `Todavía no hay datos de ${CREW_LABEL[k][0]}. Pulsa "Continuar descarga" en el panel de ajustes.`;
+    ? `Los ${CREW_LABEL[k][0]} que más se repiten en tus películas. Toca una barra para ver sus películas.` + (old ? ` ${old} películas se descargaron antes de añadir estos datos: pulsa "Continuar descarga" en el menú de ajustes (engranaje) para completarlas.` : "")
+    : `Todavía no hay datos de ${CREW_LABEL[k][0]}. Pulsa "Continuar descarga" en el menú de ajustes (engranaje).`;
   document.getElementById("crewBox").style.height = `${Math.max(top.length, 5) * 26 + 20}px`;
   setExpand("crewChart", CREW_LABEL[k][0].charAt(0).toUpperCase() + CREW_LABEL[k][0].slice(1), all, n => pickCrew(k, n));
   barChart2("crewChart", top.map(t => t[0]), top.map(t => t[1]), { horizontal: true, tip: v => `${v} películas`, onClick: i => pickCrew(k, top[i][0]) });
 }
 document.getElementById("crewSel").addEventListener("change", renderCrew);
 document.getElementById("worldOpenPanel").addEventListener("click", () => {
-  if (document.getElementById("backupPanel").hidden) togglePanel("backupBtn", "backupPanel");
-  document.getElementById("backupPanel").scrollIntoView({ behavior: motion() ? "smooth" : "auto" });
+  togglePanel("backupBtn", "backupPanel", true);
   if (!tmdbKey) document.getElementById("tmdbKeyInput").focus();
 });
 
@@ -2147,7 +2192,7 @@ function renderFavs(){
   const totalSeen = cards.reduce((a, c) => a + c.seen.length, 0);
   document.getElementById("favSummary").textContent = `${people.length} personas en tu lista. ` +
     (tmdbKey ? `Entre todas suman ${totalSeen} títulos que has visto.` : "") +
-    (pending && tmdbKey ? ` Faltan datos de TMDb de ${pending} de tus películas: descárgalos desde el panel de ajustes para que el recuento sea completo.` : "");
+    (pending && tmdbKey ? ` Faltan datos de TMDb de ${pending} de tus películas: descárgalos desde el menú de ajustes (engranaje) para que el recuento sea completo.` : "");
 
   const fq = (document.getElementById("favQ").value || "").trim().toLowerCase();
   const shownCards = fq ? cards.filter(c => (c.x?.n || c.p.name).toLowerCase().includes(fq)) : cards;
@@ -2450,6 +2495,7 @@ const drop = document.getElementById("drop");
 drop.addEventListener("drop", e => readFile(e.dataTransfer.files[0]));
 // Borrar datos: primero un cuadro de advertencia
 document.getElementById("reset").addEventListener("click", () => {
+  closePops();
   const dlg = document.getElementById("confirmReset");
   document.getElementById("resetCount").textContent = rows.length.toLocaleString("es-ES");
   dlg.showModal();
@@ -2467,15 +2513,42 @@ document.getElementById("confirmReset").addEventListener("click", e => {
   }
 });
 /* ---------- Píldora: copia de seguridad y filtros ---------- */
-function togglePanel(btnId, panelId){
-  const pairs = [["backupBtn", "backupPanel"], ["filtersBtn", "filtersPanel"]];
-  pairs.forEach(([b, p]) => {
-    const open = b === btnId && document.getElementById(p).hidden;
-    document.getElementById(p).hidden = !open;
-    document.getElementById(b).setAttribute("aria-expanded", open);
-  });
+const POPS = [["themeBtn", "themePanel"], ["filtersBtn", "filtersPanel"], ["backupBtn", "backupPanel"]];
+function placePop(btn, pop){
+  const mobile = matchMedia("(max-width: 640px)").matches;
+  pop.classList.toggle("sheet", mobile);
+  if (mobile){ pop.style.top = pop.style.right = ""; return; }
+  const r = document.getElementById(btn).closest(".pill").getBoundingClientRect();
+  pop.style.top = `${Math.round(r.bottom + 8)}px`;
+  pop.style.right = `${Math.max(12, Math.round(innerWidth - r.right))}px`;
 }
-document.getElementById("backupBtn").addEventListener("click", () => { togglePanel("backupBtn", "backupPanel"); showStorage(); });
+function togglePanel(btnId, panelId, forceOpen){
+  let anyOpen = false;
+  POPS.forEach(([b, p]) => {
+    const el = document.getElementById(p);
+    const open = b === btnId && (forceOpen || el.hidden);
+    el.hidden = !open;
+    document.getElementById(b).setAttribute("aria-expanded", open);
+    if (open){ placePop(b, el); anyOpen = true; }
+  });
+  const sheet = anyOpen && matchMedia("(max-width: 640px)").matches;   // en el móvil, hoja inferior con fondo oscurecido
+  document.getElementById("popBackdrop").hidden = !sheet;
+  document.body.classList.toggle("pop-open", sheet);
+  if (anyOpen && panelId === "backupPanel") showStorage();
+  if (anyOpen && panelId === "themePanel") syncThemeOpts();
+}
+const closePops = () => togglePanel(null, null);
+document.getElementById("popBackdrop").addEventListener("click", closePops);
+document.addEventListener("click", e => {
+  if (e.target.closest("[data-pop-close]")) closePops();
+  else if (!e.target.closest(".pop, .pill, dialog, [data-opens-pop]") && POPS.some(([, p]) => !document.getElementById(p).hidden)) closePops();
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape") closePops(); });
+addEventListener("resize", () => POPS.forEach(([b, p]) => { const el = document.getElementById(p); if (!el.hidden) placePop(b, el); }));
+document.getElementById("backupBtn").addEventListener("click", () => togglePanel("backupBtn", "backupPanel"));
+document.getElementById("themeBtn").addEventListener("click", () => togglePanel("themeBtn", "themePanel"));
+document.querySelector('label.set-row[for="file"]').addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); document.getElementById("file").click(); } });
+document.getElementById("file").addEventListener("change", closePops);
 
 // Espacio que ocupa la app en este navegador
 const fmtBytes = b => b >= 1048576 ? `${(b / 1048576).toLocaleString("es-ES", { maximumFractionDigits: 1 })} MB` : `${Math.max(1, Math.round(b / 1024))} KB`;
@@ -2509,11 +2582,18 @@ function syncThemeBtn(){
   b.title = d ? "Modo claro" : "Modo oscuro";
 }
 function setTheme(t){
-  document.documentElement.dataset.theme = t;
-  try { localStorage.setItem("cinemateca-theme", t); } catch(e) {}
+  if (t === "auto"){ delete document.documentElement.dataset.theme; try { localStorage.removeItem("cinemateca-theme"); } catch(e) {} }
+  else { document.documentElement.dataset.theme = t; try { localStorage.setItem("cinemateca-theme", t); } catch(e) {} }
   syncThemeBtn(); chartSig = ""; if (rows) render();
 }
-document.getElementById("themeBtn").addEventListener("click", () => setTheme(isDark() ? "light" : "dark"));
+function syncThemeOpts(){
+  const cur = document.documentElement.dataset.theme || "auto";
+  document.querySelectorAll("[data-theme-opt]").forEach(b => b.setAttribute("aria-checked", b.dataset.themeOpt === cur));
+}
+document.getElementById("themePanel").addEventListener("click", e => {
+  const b = e.target.closest("[data-theme-opt]"); if (!b) return;
+  setTheme(b.dataset.themeOpt); syncThemeOpts();
+});
 darkMQ.addEventListener("change", () => { syncThemeBtn(); chartSig = ""; render(); });
 try { const t = localStorage.getItem("cinemateca-theme"); if (t === "dark" || t === "light") document.documentElement.dataset.theme = t; } catch(e) {}
 syncThemeBtn();
