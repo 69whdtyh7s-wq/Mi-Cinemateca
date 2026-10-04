@@ -434,6 +434,18 @@ body.pop-open{overflow:hidden}
 .big-list li > button{cursor:pointer}
 .big-list li > button:hover .bl-name{color:var(--accent-ink);text-decoration:underline}
 .big-list li > button:focus-visible{outline:2px solid var(--accent-ink);outline-offset:-2px}
+.people-list li > button{grid-template-columns:40px minmax(0,1fr) auto;gap:12px}
+.people-list .pl-photo{width:40px;height:40px;border-radius:50%;object-fit:cover;background:var(--accent-soft);display:grid;place-items:center;font-weight:700;color:var(--muted)}
+.people-list .pl-name{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.people-list .pl-meta{display:block;font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.people-list .pl-go{color:var(--muted);font-size:18px}
+.people-list li > button:hover .pl-name{color:var(--accent-ink);text-decoration:underline}
+.plink{all:unset;cursor:pointer;font-weight:600;border-bottom:1px solid var(--accent)}
+.plink:hover{color:var(--accent-ink)}
+.plink:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px;border-radius:3px}
+button.stat{all:unset;box-sizing:border-box;padding:4px 0;border-top:3px solid var(--teal);cursor:pointer;display:block}
+button.stat:hover .l{color:var(--accent-ink);text-decoration:underline}
+button.stat:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
 .bl-rank{font-family:var(--font-data);font-size:12px;color:var(--muted)}
 .bl-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bl-bar{height:8px;border-radius:999px;background:var(--accent-soft);overflow:hidden}
@@ -698,7 +710,7 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
         <div class="sub-panel"><h3>Especialidad</h3><div class="chart" id="depBox"><canvas id="depChart" aria-label="Especialidad de tus artistas"></canvas></div></div>
       </div>
       <div class="duo">
-        <div class="sub-panel"><h3>Década de nacimiento</h3><div class="chart small"><canvas id="birthDecChart" aria-label="Década de nacimiento de tus artistas"></canvas></div></div>
+        <div class="sub-panel"><h3>Década de nacimiento</h3><div class="chart" id="birthDecBox"><canvas id="birthDecChart" aria-label="Década de nacimiento de tus artistas"></canvas></div></div>
         <div class="sub-panel"><h3>Datos curiosos</h3><ul class="facts" id="artistFacts"></ul></div>
       </div>
     </section>
@@ -1410,6 +1422,8 @@ function openExpand(canvasId){
 document.getElementById("bigList").addEventListener("click", ev => {
   const dlg = ev.currentTarget;
   if (ev.target === dlg || ev.target.closest("[data-close]")){ dlg.close(); return; }
+  const pb = ev.target.closest("button[data-person]");
+  if (pb){ groupReturn = true; dlg.close(); openPerson(+pb.dataset.person || pb.dataset.person); return; }
   const b = ev.target.closest("button[data-i]"); if (!b) return;
   const e = EXPAND[dlg.dataset.key]; dlg.close(); const en = e.entries[+b.dataset.i]; e.onPick(en[2] ?? en[0], en[0]);
 });
@@ -2816,6 +2830,41 @@ const countryOf = pl => {
   return MAP[last] || last;
 };
 
+/* Lista de artistas de un grupo (sexo, edad, década…) con enlace a su ficha */
+let lastGroup = null, groupReturn = false;
+function openArtistGroup(title, items){
+  lastGroup = { title, items };
+  const dlg = document.getElementById("bigList");
+  const meta = o => { const x = o.x, y = x.b ? x.b.slice(0, 4) : "";
+    const life = x.d ? `${y}–${x.d.slice(0, 4)}` : x.b ? `${ageAt(x.b)} años` : "";
+    return [life, DEP_ES[x.dep] || x.dep, countryOf(x.pl)].filter(Boolean).join(" · "); };
+  dlg.innerHTML = `
+    <button class="ficha-close" type="button" aria-label="Cerrar" data-close>✕</button>
+    <div class="big-head">
+      <h2>${esc(title)}</h2>
+      <p class="hint">${items.length} ${items.length === 1 ? "artista" : "artistas"}. Toca uno para abrir su ficha.</p>
+      ${items.length > 8 ? `<input type="search" id="bigFilter" placeholder="Buscar en la lista" aria-label="Buscar en la lista" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">` : ""}
+    </div>
+    <ol class="big-list people-list">${items.map(o => { const n = o.x.n || o.p.name; return `
+      <li data-label="${esc(n.toLowerCase())}"><button type="button" data-person="${esc(String(o.p.id))}">
+        ${o.x.img ? `<img class="pl-photo" src="${TMDB_IMG}w92${o.x.img}" alt="" loading="lazy">` : `<span class="pl-photo">${esc(n.charAt(0))}</span>`}
+        <span><span class="pl-name">${esc(n)}</span><span class="pl-meta">${esc(meta(o))}</span></span>
+        <span class="pl-go" aria-hidden="true">›</span>
+      </button></li>`; }).join("")}</ol>`;
+  dlg.querySelector("#bigFilter")?.addEventListener("input", ev => {
+    const q = ev.target.value.trim().toLowerCase();
+    dlg.querySelectorAll(".big-list li").forEach(li => { li.hidden = !!q && !li.dataset.label.includes(q); });
+  });
+  dlg.dataset.key = "";
+  if (!dlg.open) dlg.showModal();
+  dlg.scrollTop = 0;
+}
+// Al cerrar la ficha de un artista abierta desde un grupo, se vuelve al grupo
+document.getElementById("personDlg").addEventListener("close", () => {
+  if (groupReturn && lastGroup){ groupReturn = false; openArtistGroup(lastGroup.title, lastGroup.items); }
+});
+const byName = (a, b) => (a.x.n || a.p.name).localeCompare(b.x.n || b.p.name, "es");
+
 function renderArtistStats(){
   const box = document.getElementById("artistStats"); if (!box) return;
   const list = people.map(p => ({ p, x: personCache[p.id] })).filter(o => o.x && !o.x.none);
@@ -2823,35 +2872,49 @@ function renderArtistStats(){
   box.hidden = !list.length;
   if (!list.length) return;
   const pending = people.length - list.length + list.filter(o => o.x.g === undefined).length;
-  document.getElementById("artistHint").textContent = `${people.length} artistas en tu lista${pending ? `. Faltan datos de ${pending}: abre la pestaña Artistas para que se descarguen` : ""}.`;
+  document.getElementById("artistHint").textContent = `${people.length} artistas en tu lista${pending ? `. Faltan datos de ${pending}: abre la pestaña Artistas para que se descarguen` : ""}. Toca un número, una barra o un nombre para ver los artistas.`;
 
   const alive = withB.filter(o => !o.x.d), dead = withB.filter(o => o.x.d);
   const ages = alive.map(o => ageAt(o.x.b));
   const avgAge = ages.length ? ages.reduce((a, b) => a + b, 0) / ages.length : null;
   const byG = {}; list.forEach(o => { const k = GENDER_ES[o.x.g ?? 0] || "Sin datos"; byG[k] = (byG[k] || 0) + 1; });
   const pctW = list.length ? Math.round((byG["Mujeres"] || 0) / list.length * 100) : 0;
+  const gKey = o => GENDER_ES[o.x.g ?? 0] || "Sin datos";
+  const groups = {
+    all: ["Todos tus artistas", () => list.slice().sort(byName)],
+    alive: ["Artistas vivos, de menor a mayor edad", () => alive.slice().sort((a, b) => b.x.b.localeCompare(a.x.b))],
+    women: ["Mujeres", () => list.filter(o => gKey(o) === "Mujeres").sort(byName)],
+    dead: ["Fallecidos", () => dead.slice().sort((a, b) => b.x.d.localeCompare(a.x.d))]
+  };
   document.getElementById("artistTiles").innerHTML = [
-    [list.length, "artistas"],
-    [avgAge != null ? Math.round(avgAge) : "—", "edad media (vivos)"],
-    [`${pctW}%`, "mujeres"],
-    [dead.length, "fallecidos"]
-  ].map(([n, l]) => `<div class="stat"><div class="n">${n}</div><div class="l">${l}</div></div>`).join("");
+    [list.length, "artistas", "all"],
+    [avgAge != null ? Math.round(avgAge) : "—", "edad media (vivos)", "alive"],
+    [`${pctW}%`, "mujeres", "women"],
+    [dead.length, "fallecidos", "dead"]
+  ].map(([n, l, g]) => `<button type="button" class="stat" data-group="${g}" title="Ver la lista"><div class="n">${n}</div><div class="l">${l}</div></button>`).join("");
+  document.getElementById("artistTiles").onclick = e => { const b = e.target.closest("[data-group]"); if (!b) return; const [t, fn] = groups[b.dataset.group]; openArtistGroup(t, fn()); };
 
   // Sexo
   const gEntries = Object.entries(byG).sort((a, b) => b[1] - a[1]);
   document.getElementById("genderBox").style.height = `${Math.max(gEntries.length, 3) * 30 + 20}px`;
-  barChart2("genderChart", gEntries.map(g => g[0]), gEntries.map(g => g[1]), { horizontal: true, color: cssVar("--teal"), tip: v => `${v} artistas` });
+  barChart2("genderChart", gEntries.map(g => g[0]), gEntries.map(g => g[1]), { horizontal: true, color: cssVar("--teal"), tip: v => `${v} artistas`,
+    onClick: i => openArtistGroup(gEntries[i][0], list.filter(o => gKey(o) === gEntries[i][0]).sort(byName)) });
 
   // Edades (vivos) por tramos
   const bands = ["<30", "30–39", "40–49", "50–59", "60–69", "70–79", "80+"];
   const bandOf = a => a < 30 ? 0 : a >= 80 ? 6 : Math.floor(a / 10) - 2;
   const bandCount = bands.map(() => 0); ages.forEach(a => bandCount[bandOf(a)]++);
-  barChart2("ageBandChart", bands, bandCount, { tip: v => `${v} artistas` });
+  barChart2("ageBandChart", bands, bandCount, { tip: v => `${v} artistas`,
+    onClick: i => openArtistGroup(`Edad actual: ${bands[i]} años`, alive.filter(o => bandOf(ageAt(o.x.b)) === i).sort((a, b) => b.x.b.localeCompare(a.x.b))) });
 
   // Década de nacimiento
   const dec = {}; withB.forEach(o => { const d = Math.floor(+o.x.b.slice(0, 4) / 10) * 10; dec[d] = (dec[d] || 0) + 1; });
   const decKeys = Object.keys(dec).map(Number).sort((a, b) => a - b);
-  barChart2("birthDecChart", decKeys.map(d => `${d}s`), decKeys.map(d => dec[d]), { color: cssVar("--teal"), tip: v => `${v} artistas` });
+  const decLabel = d => d >= 2000 ? `Años ${d}` : `Años ${String(d).slice(2)}`;
+  const decKeysDesc = decKeys.slice().reverse();
+  document.getElementById("birthDecBox").style.height = `${Math.max(decKeysDesc.length, 4) * 28 + 20}px`;
+  barChart2("birthDecChart", decKeysDesc.map(decLabel), decKeysDesc.map(d => dec[d]), { horizontal: true, color: cssVar("--teal"), tip: v => `${v} artistas`,
+    onClick: i => { const d = decKeysDesc[i]; openArtistGroup(`Nacidos en los ${decLabel(d).toLowerCase()} (${d}–${d + 9})`, withB.filter(o => Math.floor(+o.x.b.slice(0, 4) / 10) * 10 === d).sort((a, b) => a.x.b.localeCompare(b.x.b))); } });
 
   // País de nacimiento y especialidad
   const cnt = fn => { const c = {}; list.forEach(o => { const k = fn(o); if (k) c[k] = (c[k] || 0) + 1; }); return Object.entries(c).sort((a, b) => b[1] - a[1]); };
@@ -2859,9 +2922,11 @@ function renderArtistStats(){
   const topC = countries.slice(0, 10);
   document.getElementById("birthCountryBox").style.height = `${Math.max(topC.length, deps.length, 4) * 26 + 20}px`;
   document.getElementById("depBox").style.height = document.getElementById("birthCountryBox").style.height;
-  barChart2("birthCountryChart", topC.map(c => c[0]), topC.map(c => c[1]), { horizontal: true, tip: v => `${v} artistas` });
-  setExpand("birthCountryChart", "País de nacimiento de tus artistas", countries);
-  barChart2("depChart", deps.map(d => d[0]), deps.map(d => d[1]), { horizontal: true, color: cssVar("--teal"), tip: v => `${v} artistas` });
+  const pickCountry = c => openArtistGroup(`Nacidos en ${c}`, list.filter(o => countryOf(o.x.pl) === c).sort(byName));
+  barChart2("birthCountryChart", topC.map(c => c[0]), topC.map(c => c[1]), { horizontal: true, tip: v => `${v} artistas`, onClick: i => pickCountry(topC[i][0]) });
+  setExpand("birthCountryChart", "País de nacimiento de tus artistas", countries, pickCountry);
+  barChart2("depChart", deps.map(d => d[0]), deps.map(d => d[1]), { horizontal: true, color: cssVar("--teal"), tip: v => `${v} artistas`,
+    onClick: i => openArtistGroup(deps[i][0], list.filter(o => (DEP_ES[o.x.dep] || o.x.dep) === deps[i][0]).sort(byName)) });
 
   // Datos curiosos
   const byAge = alive.slice().sort((a, b) => a.x.b.localeCompare(b.x.b));
@@ -2871,13 +2936,14 @@ function renderArtistStats(){
   const bdays = alive.map(o => ({ o, md: o.x.b.slice(5) })).sort((a, b) => a.md.localeCompare(b.md));
   const today = new Date().toISOString().slice(5, 10);
   const nextB = bdays.find(b => b.md >= today) || bdays[0];
-  const name = o => esc(o.x.n || o.p.name);
+  const name = o => `<button type="button" class="plink" data-person="${esc(String(o.p.id))}">${esc(o.x.n || o.p.name)}</button>`;
   document.getElementById("artistFacts").innerHTML = [
     ["El más joven", youngest ? `${name(youngest)}<small>${ageAt(youngest.x.b)} años</small>` : "—"],
     ["El mayor", oldest ? `${name(oldest)}<small>${ageAt(oldest.x.b)} años</small>` : "—"],
     ["Del que más has visto", mostSeen?.n ? `${name(mostSeen.o)}<small>${mostSeen.n} títulos</small>` : "—"],
     ["Próximo cumpleaños", nextB ? `${name(nextB.o)}<small>${fmtDateEs(new Date().getFullYear() + "-" + nextB.md).replace(/ de \d{4}$/, "")} · cumple ${ageAt(nextB.o.x.b) + 1}</small>` : "—"]
   ].map(([k, v]) => `<li><span class="k">${k}</span><span class="v">${v}</span></li>`).join("");
+  document.getElementById("artistFacts").onclick = e => { const b = e.target.closest("[data-person]"); if (b) openPerson(+b.dataset.person || b.dataset.person); };
 }
 
 /* ---------- Mantener la pantalla encendida mientras se descarga de TMDb ---------- */
