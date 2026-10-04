@@ -285,7 +285,18 @@ body.pop-open{overflow:hidden}
 .fav-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px 16px}
 .fav-head .hint,#favStatus{margin:0;color:var(--muted);font-size:14px}
 #favStatus:empty{display:none}
-.fav-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:16px;align-items:start}
+.fav-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:16px;align-items:start}
+/* Artistas en tarjetas: foto arriba, datos debajo */
+.fav.panel{padding:0;overflow:hidden;gap:0}
+.fav .fav-top{flex-direction:column;align-items:stretch;gap:0;padding:0;border-radius:0}
+.fav .fav-top .fav-photo{width:100%;height:auto;aspect-ratio:3/4;border-radius:0}
+.fav .fav-top .fav-photo.ph{font-size:2.8rem}
+.fav .fav-info{padding:10px 12px 14px}
+.fav .fav-info h3{font-size:1.05rem;line-height:1.2}
+.fav .fav-count{font-size:13px}
+.fav .fav-count b{font-size:1.1rem}
+.fav .fav-meta{font-size:12px;margin-top:4px}
+.fav .fav-top:hover .fav-photo{filter:brightness(1.05)}
 .fav{gap:10px}
 .fav-top{all:unset;box-sizing:border-box;display:flex;gap:14px;align-items:center;padding-right:28px;cursor:pointer;border-radius:10px}
 .fav-top:hover h3{color:var(--accent-ink);text-decoration:underline}
@@ -322,17 +333,7 @@ body.pop-open{overflow:hidden}
   .person .score b{font-size:1.1rem}
   .person-bio,.person-section{padding-inline:16px}
   .poster-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 10px}
-  /* Artistas en tarjetas: dos por fila, foto arriba */
   .fav-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-  .fav.panel{padding:0;overflow:hidden;gap:0}
-  .fav-top{flex-direction:column;align-items:stretch;gap:0;padding:0;border-radius:0}
-  .fav-top .fav-photo{width:100%;height:auto;aspect-ratio:3/4;border-radius:0}
-  .fav-top .fav-photo.ph{font-size:2.6rem}
-  .fav-info{padding:10px 10px 12px}
-  .fav-info h3{font-size:1rem;line-height:1.2}
-  .fav-count{font-size:12px}
-  .fav-count b{font-size:1.05rem}
-  .fav-meta{font-size:11px;margin-top:4px}
 }
 .fav-photo{width:64px;height:64px;border-radius:50%;object-fit:cover;flex:0 0 auto;background:var(--teal-soft)}
 .fav-photo.ph{display:grid;place-items:center;font:800 1.5rem var(--font-display);color:var(--teal-ink)}
