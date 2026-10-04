@@ -231,6 +231,17 @@ body.pop-open{overflow:hidden}
 .pop-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
 .pop-head h2{font-family:var(--font-display);font-weight:800;font-size:1.25rem;margin:0}
 .pop-close{width:30px;height:30px;border-radius:999px;border:0;background:var(--accent-soft);color:var(--ink);cursor:pointer;font-size:13px}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:2px 0 4px}
+.tile{all:unset;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;aspect-ratio:1;border-radius:14px;background:var(--bg);color:var(--ink);cursor:pointer;text-align:center;padding:6px}
+.tile span{font:600 12px var(--font-body);line-height:1.15}
+.tile svg{color:var(--accent-ink)}
+.tile:hover{background:var(--accent-soft)}
+.tile:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
+.tile.danger svg,.tile.danger span{color:#c0392b}
+.tile:disabled{opacity:.4;cursor:default}
+.tile:disabled:hover{background:var(--bg)}
+.tile.busy svg{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 .set-caption{margin:10px 4px 4px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
 .set-group{background:var(--bg);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
 .set-row{all:unset;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;min-height:48px;border-bottom:1px solid var(--line);cursor:pointer;font-size:15px;color:var(--ink)}
@@ -561,12 +572,11 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
 
   <div class="pop wide" id="backupPanel" role="dialog" aria-label="Ajustes" hidden>
     <div class="pop-head"><h2>Ajustes</h2><button class="pop-close" type="button" data-pop-close aria-label="Cerrar">✕</button></div>
-
-    <p class="set-caption">Tus datos</p>
-    <div class="set-group">
-      <label class="set-row" for="file" tabindex="0"><span><b>Cargar archivo</b><small>CSV de IMDb o copia de seguridad</small></span><svg class="chev" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></label>
-      <button class="set-row" type="button" id="exportBtn"><span><b>Exportar copia de seguridad</b><small>Un archivo con todas tus películas y personas</small></span><svg class="chev" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
-      <button class="set-row danger" type="button" id="reset" hidden><span><b>Borrar datos de este dispositivo</b></span><svg class="chev" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+    <div class="tiles">
+      <button class="tile" type="button" id="reloadBtn" title="Carga la última versión y vuelve a leer tus datos"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg><span>Recargar</span></button>
+      <label class="tile" for="file" tabindex="0" title="CSV de IMDb o copia de seguridad"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M5 15v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg><span>Cargar archivo</span></label>
+      <button class="tile" type="button" id="exportBtn" title="Un archivo con todas tus películas y personas"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 15v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg><span>Exportar copia</span></button>
+      <button class="tile danger" type="button" id="reset" title="Borrar tus datos de este dispositivo"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg><span>Borrar datos</span></button>
     </div>
 
     <p class="set-caption">Datos de internet · TMDb</p>
@@ -583,11 +593,6 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
         <span><b>Datos de las películas</b><small id="tmdbStatus" aria-live="polite"></small></span>
         <div class="set-inline"><button class="btn ghost small" id="tmdbBulk" type="button" hidden>Descargar datos de todas</button></div>
       </div>
-    </div>
-
-    <p class="set-caption">App</p>
-    <div class="set-group">
-      <button class="set-row" type="button" id="reloadBtn"><span><b>Recargar la app</b><small>Carga la última versión y vuelve a leer tus datos</small></span><svg class="chev" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></button>
     </div>
 
     <p class="set-caption">Espacio en este navegador</p>
@@ -1125,7 +1130,7 @@ function render(){
   document.querySelector(".tabs").hidden = empty;
   document.querySelectorAll(".view").forEach(v => { if (empty) v.dataset.wasEmpty = "1"; });
   document.body.classList.toggle("no-data", empty);
-  document.getElementById("reset").hidden = isSample;
+  document.getElementById("reset").disabled = isSample;
 
   fillUntil(data);
   if (typeof scrubSyncs !== "undefined") scrubSyncs.forEach(f => f());
@@ -2973,13 +2978,13 @@ document.addEventListener("keydown", e => { if (e.key === "Escape") closePops();
 addEventListener("resize", () => POPS.forEach(([b, p]) => { const el = document.getElementById(p); if (!el.hidden) placePop(b, el); }));
 document.getElementById("backupBtn").addEventListener("click", () => togglePanel("backupBtn", "backupPanel"));
 document.getElementById("themeBtn").addEventListener("click", () => togglePanel("themeBtn", "themePanel"));
-document.querySelector('label.set-row[for="file"]').addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); document.getElementById("file").click(); } });
+document.querySelector('label.tile[for="file"]').addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); document.getElementById("file").click(); } });
 document.getElementById("file").addEventListener("change", closePops);
 
 // Recargar (las web apps del iPhone no tienen botón de recargar)
 document.getElementById("reloadBtn").addEventListener("click", async () => {
   const b = document.getElementById("reloadBtn");
-  b.querySelector("b").textContent = "Recargando…";
+  b.querySelector("span").textContent = "Recargando…"; b.classList.add("busy");
   save();
   const writes = [];
   if (tmdbLoaded) writes.push(idb.set("tmdb", tmdbCache).catch(() => {}));
