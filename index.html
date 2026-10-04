@@ -550,7 +550,7 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
     <button class="tab" role="tab" id="tab-stats" aria-controls="view-stats" aria-selected="false" data-view="stats">Estadísticas</button>
     <button class="tab" role="tab" id="tab-taste" aria-controls="view-taste" aria-selected="false" data-view="taste">Tus gustos</button>
     <button class="tab" role="tab" id="tab-world" aria-controls="view-world" aria-selected="false" data-view="world">Mundo</button>
-    <button class="tab" role="tab" id="tab-favs" aria-controls="view-favs" aria-selected="false" data-view="favs">Favoritos</button>
+    <button class="tab" role="tab" id="tab-favs" aria-controls="view-favs" aria-selected="false" data-view="favs">Artistas</button>
     <button class="tab" role="tab" id="tab-year" aria-controls="view-year" aria-selected="false" data-view="year">Resumen del año</button>
   </div>
 
@@ -726,17 +726,17 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
 
   <div class="view" id="view-favs" role="tabpanel" aria-labelledby="tab-favs" hidden>
     <div class="fav-search">
-      <input type="search" id="favQ" placeholder="Buscar persona (en tu lista o en TMDb para añadirla)" aria-label="Buscar persona" autocomplete="off">
+      <input type="search" id="favQ" placeholder="Buscar artista (en tu lista o en TMDb para añadirlo)" aria-label="Buscar persona" autocomplete="off">
       <ul class="add-results" id="favResults" hidden></ul>
     </div>
     <section class="panel" id="favEmpty">
-      <h2>Tus personas favoritas</h2>
+      <h2>Tus artistas</h2>
       <p class="hint">Busca arriba a cualquier actor, director o guionista para añadirlo, o sube una lista de personas de IMDb con "Elegir CSV", igual que tus películas. Para exportarla: en IMDb abre tu lista de personas, pulsa ⋯ → <em>Export</em> y descarga el CSV desde "Exports".</p>
       <p class="hint">Verás cuántas de sus películas has visto, tu nota media a su trabajo y cuáles te faltan.</p>
     </section>
     <div class="fav-head" id="favHead" hidden>
       <p class="hint" id="favSummary"></p>
-      <button class="expand-btn" type="button" id="favClear">Quitar la lista de personas</button>
+      <button class="expand-btn" type="button" id="favClear">Quitar todos los artistas</button>
     </div>
     <p class="hint" id="favStatus" aria-live="polite"></p>
     <div class="fav-grid" id="favList" hidden></div>
@@ -2162,7 +2162,7 @@ function loadPeople(objs, name){
   });
   savePeople();
   const msg = document.getElementById("msg"); msg.className = "msg";
-  msg.textContent = `Lista de personas cargada desde ${name}: ${added} ${added === 1 ? "nueva" : "nuevas"}, ${people.length} en total. Mira la pestaña Favoritos.`;
+  msg.textContent = `Lista de personas cargada desde ${name}: ${added} ${added === 1 ? "nueva" : "nuevas"}, ${people.length} en total. Mira la pestaña Artistas.`;
   showView("favs"); renderFavs(); fetchPeople();
 }
 
@@ -2217,7 +2217,7 @@ function renderFavs(){
   const list = document.getElementById("favList"), empty = document.getElementById("favEmpty"), head = document.getElementById("favHead");
   if (!list) return;
   empty.hidden = people.length > 0; head.hidden = !people.length; list.hidden = !people.length;
-  document.getElementById("favQ").placeholder = tmdbKey ? "Buscar persona (en tu lista o en TMDb para añadirla)" : "Buscar en tu lista";
+  document.getElementById("favQ").placeholder = tmdbKey ? "Buscar artista (en tu lista o en TMDb para añadirlo)" : "Buscar en tu lista";
   if (!people.length) return;
   if (!tmdbKey) document.getElementById("favStatus").textContent = "Añade tu clave de TMDb (icono de ajustes) para ver cuántas películas has visto de cada persona.";
 
@@ -2261,7 +2261,7 @@ function renderFavs(){
         ${c.seen.length ? `<h4>Has visto</h4><ul class="fav-films">${c.seen.sort((a, b) => (b.r.year || 0) - (a.r.year || 0)).map(s => `<li><button type="button" data-k="${esc(rowKey(s.r))}">${esc(s.r.title)}</button><span>${[s.r.year, s.c.j.join(", "), s.r.mine ? `tu nota ${s.r.mine}` : ""].filter(Boolean).join(" · ")}</span></li>`).join("")}</ul>` : ""}
         ${c.missing.length ? `<h4>Te faltan (mejor valoradas en TMDb)</h4><ul class="fav-films">${c.missing.map(m => `<li><a href="https://www.themoviedb.org/movie/${m.id}" target="_blank" rel="noopener">${esc(m.ti)}</a><span>${[m.y, m.j.join(", "), m.v ? `TMDb ${fmt1(m.v)}` : ""].filter(Boolean).join(" · ")}</span></li>`).join("")}</ul>` : `<p class="fav-meta">No te falta ninguna de sus películas conocidas.</p>`}
       </details>` : "";
-    return `<article class="fav panel"><button class="fav-remove" type="button" data-remove-person="${esc(c.p.id)}" aria-label="Quitar a ${esc(c.x?.n || c.p.name)} de favoritos" title="Quitar de favoritos">✕</button><button type="button" class="fav-top" data-open-person="${esc(c.p.id)}" aria-label="Abrir la ficha de ${esc(c.x?.n || c.p.name)}">${photo}<div class="fav-info"><h3>${esc(c.x?.n || c.p.name)}</h3>${stats}</div></button>${detail}</article>`;
+    return `<article class="fav panel"><button type="button" class="fav-top" data-open-person="${esc(c.p.id)}" aria-label="Abrir la ficha de ${esc(c.x?.n || c.p.name)}">${photo}<div class="fav-info"><h3>${esc(c.x?.n || c.p.name)}</h3>${stats}</div></button></article>`;
   }).join("");
 }
 document.getElementById("favList").addEventListener("click", e => {
@@ -2306,13 +2306,13 @@ document.getElementById("favResults").addEventListener("click", async e => {
   savePeople();
   document.getElementById("favQ").value = ""; document.getElementById("favResults").hidden = true;
   renderFavs(); fetchPeople();
-  const m = document.getElementById("msg"); m.className = "msg"; m.textContent = `${r.name} añadido a favoritos.`;
+  const m = document.getElementById("msg"); m.className = "msg"; m.textContent = `${r.name} añadido a Artistas.`;
 });
 document.getElementById("favList").addEventListener("click", e => {
   const rm = e.target.closest("[data-remove-person]"); if (!rm) return;
   const p = people.find(x => x.id === rm.dataset.removePerson);
   people = people.filter(x => x.id !== rm.dataset.removePerson); savePeople(); renderFavs();
-  const m = document.getElementById("msg"); m.className = "msg"; m.textContent = `${p?.name || "Persona"} quitada de favoritos.`;
+  const m = document.getElementById("msg"); m.className = "msg"; m.textContent = `${p?.name || "Persona"} quitado de Artistas.`;
 });
 
 document.getElementById("favClear").addEventListener("click", () => {
@@ -2514,6 +2514,7 @@ function personHTML(p){
         <div class="actions">
           ${x.imdb || /^nm\d+/.test(p.id) ? `<a class="btn ghost" href="https://www.imdb.com/name/${esc(x.imdb || p.id)}/" target="_blank" rel="noopener">Ver en IMDb</a>` : ""}
           ${x.t ? `<a class="btn ghost" href="https://www.themoviedb.org/person/${x.t}" target="_blank" rel="noopener">Ver en TMDb</a>` : ""}
+          <button class="btn ghost" type="button" data-remove-person="${esc(p.id)}">Quitar de Artistas</button>
         </div>
       </div>
     </div>
@@ -2550,6 +2551,12 @@ document.getElementById("personDlg").addEventListener("click", e => {
   if (e.target === dlg || e.target.closest("[data-close]")){ dlg.close(); return; }
   const img = e.target.closest(".person-photo img");
   if (img){ openPoster(img.dataset.path, img.dataset.title); return; }
+  const rm = e.target.closest("[data-remove-person]");
+  if (rm){
+    const p = people.find(x => x.id === rm.dataset.removePerson);
+    people = people.filter(x => x.id !== rm.dataset.removePerson); savePeople(); dlg.close(); renderFavs();
+    const m = document.getElementById("msg"); m.className = "msg"; m.textContent = `${p?.name || "Persona"} quitado de Artistas.`; return;
+  }
   const b = e.target.closest("button.pg-item[data-k]");
   if (b){ const r = rows.find(x => rowKey(x) === b.dataset.k); if (r) openFicha(r); }
 });
