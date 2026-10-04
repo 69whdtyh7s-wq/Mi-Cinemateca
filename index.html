@@ -188,6 +188,12 @@ th button[data-dir="desc"]::after{content:"▼"}
 .r-poster{float:right;width:92px;border-radius:8px;margin-left:12px}
 .foot a{color:var(--accent-ink)}
 .coverage{margin:0;color:var(--muted);font-size:14px}
+body.no-data .view{display:none!important}
+.welcome{gap:12px;max-width:720px}
+.welcome h2{font-family:var(--font-display);font-weight:800;font-size:1.6rem}
+.welcome p{margin:0;line-height:1.6;color:var(--muted)}
+.welcome-steps{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:6px;line-height:1.5}
+.welcome .actions{margin-top:6px}
 .scrub{display:flex;align-items:center;gap:10px;margin-top:6px;width:min(320px,calc(100vw - 72px))}
 .field .scrub input[type=range]{-webkit-appearance:none;appearance:none;flex:1;height:28px;background:transparent;cursor:grab;touch-action:pan-y;margin:0;border:0;padding:0;border-radius:0;width:auto}
 .scrub input[type=range]:active{cursor:grabbing}
@@ -560,6 +566,20 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
     <div class="set-group"><table class="storage-table" id="storageTable"></table></div>
     <p class="set-foot" id="storageNote"></p>
   </div>
+
+  <section class="panel welcome" id="welcome" hidden>
+    <h2>Empieza tu cinemateca</h2>
+    <p>Sube la lista de películas que has visto en IMDb y la app calculará tus estadísticas: cuántas ves cada año, tus géneros, directores, artistas y mucho más. Todo se guarda solo en este dispositivo.</p>
+    <ol class="welcome-steps">
+      <li>En IMDb, abre tu lista o "Your Ratings", pulsa <b>⋯ → Export</b> y descarga el CSV desde "Exports".</li>
+      <li>Súbelo aquí con <b>Elegir CSV</b> o arrastrándolo a la página.</li>
+      <li>Si quieres pósters, sinopsis y más datos, añade tu clave de TMDb en <b>Ajustes</b> (engranaje).</li>
+    </ol>
+    <div class="actions">
+      <label class="btn" for="file" tabindex="0">Elegir CSV</label>
+      <button class="btn ghost" type="button" id="welcomeAdd">Añadir una película a mano</button>
+    </div>
+  </section>
 
   <div class="tabs" role="tablist">
     <button class="tab" role="tab" id="tab-films" aria-controls="view-films" aria-selected="true" data-view="films">Películas <span id="tabCount"></span></button>
@@ -939,23 +959,6 @@ function applyChanges(old, inc, fields){
   return changed;
 }
 
-function sample(){
-  // Datos inventados para mostrar cómo se ve la página
-  let s = 7; const rnd = () => (s = (s * 9301 + 49297) % 233280) / 233280;
-  const G = ["Drama", "Comedy", "Thriller", "Sci-Fi", "Animation", "Crime", "Romance", "Horror"];
-  const r = []; let n0 = 1;
-  for (let y = START; y <= NOW; y++){
-    const n = Math.round(35 + 25 * Math.sin((y - START) / 2.2) + rnd() * 20);
-    for (let i = 0; i < n; i++){
-      const rel = Math.min(y, Math.round(y - Math.pow(rnd(), 2.2) * 60));
-      const m = String(1 + Math.floor(rnd() * (y === NOW ? new Date().getMonth() + 1 : 12))).padStart(2, "0"), dd = String(1 + Math.floor(rnd() * 28)).padStart(2, "0");
-      r.push({ type: "Movie", watched: y, watchedDate: `${y}-${m}-${dd}`, year: rel, title: `Película de ejemplo ${n0++}`, orig: "", url: "",
-        imdb: Math.round((5 + rnd() * 4) * 10) / 10, mine: rnd() > .4 ? 4 + Math.floor(rnd() * 7) : null,
-        runtime: 80 + Math.floor(rnd() * 80), genres: G[Math.floor(rnd() * G.length)], dir: "Director de ejemplo" });
-    }
-  }
-  return r;
-}
 
 function cssVar(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
 
@@ -1056,7 +1059,13 @@ function render(){
     }]
   });
 
-  document.getElementById("dropText").textContent = isSample ? "Estás viendo datos de ejemplo. Arrastra aquí tu CSV de IMDb o" : "Arrastra aquí tu CSV de IMDb o";
+  document.getElementById("dropText").textContent = "Arrastra aquí tu CSV de IMDb o";
+  // Sin datos: pantalla de bienvenida en lugar de pestañas vacías
+  const empty = !rows.length;
+  document.getElementById("welcome").hidden = !empty;
+  document.querySelector(".tabs").hidden = empty;
+  document.querySelectorAll(".view").forEach(v => { if (empty) v.dataset.wasEmpty = "1"; });
+  document.body.classList.toggle("no-data", empty);
   document.getElementById("reset").hidden = isSample;
 
   fillUntil(data);
@@ -2449,6 +2458,7 @@ function finishAdd(text){
 }
 
 document.getElementById("addBtn").addEventListener("click", () => openAdd());
+document.getElementById("welcomeAdd").addEventListener("click", () => openAdd());
 document.getElementById("addQ").addEventListener("input", e => { clearTimeout(addTimer); const q = e.target.value.trim(); addTimer = setTimeout(() => searchAdd(q), 350); });
 document.getElementById("addDlg").addEventListener("click", e => {
   const dlg = e.currentTarget;
@@ -2722,7 +2732,7 @@ document.getElementById("confirmReset").addEventListener("click", e => {
   if (e.target.closest("#resetExport")){ document.getElementById("exportBtn").click(); return; }
   if (e.target.closest("#resetConfirm")){
     try { localStorage.removeItem(KEY); localStorage.removeItem(DATA_KEY); } catch(err) {}
-    rows = sample(); isSample = true; newKeys = new Set(); updKeys = new Set(); dataVer++; sort = { ...DEFAULT_SORT }; shown = PAGE; buildTypes(); render();
+    rows = []; isSample = true; newKeys = new Set(); updKeys = new Set(); dataVer++; sort = { ...DEFAULT_SORT }; shown = PAGE; buildTypes(); render();
     const msg = document.getElementById("msg"); msg.className = "msg"; msg.textContent = "Datos borrados de este dispositivo. Sube tu CSV para empezar de nuevo.";
     dlg.close();
   }
@@ -2832,7 +2842,7 @@ try { stored = JSON.parse(localStorage.getItem(DATA_KEY) || "null"); saved = loc
 if (stored && Array.isArray(stored.rows) && stored.rows.length){
   rows = stored.rows; newKeys = new Set(stored.newKeys || []); updKeys = new Set(stored.updKeys || []); isSample = false; buildTypes(); render();
 } else if (saved) load(saved);
-else { rows = sample(); buildTypes(); render(); }
+else { rows = []; isSample = true; buildTypes(); render(); }
 showView(location.hash === "#peliculas" ? "films" : (["stats", "films", "year", "taste", "world", "favs"].includes(tab) ? tab : "films"));
 
 // Sincronización: si el repositorio tiene datos.csv, se añaden sus películas nuevas
