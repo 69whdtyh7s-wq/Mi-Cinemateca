@@ -188,7 +188,14 @@ th button[data-dir="desc"]::after{content:"▼"}
 .r-poster{float:right;width:92px;border-radius:8px;margin-left:12px}
 .foot a{color:var(--accent-ink)}
 .coverage{margin:0;color:var(--muted);font-size:14px}
-.storage-line{margin:0;padding-top:12px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+.storage-box{border-top:1px solid var(--line);padding-top:16px;display:flex;flex-direction:column;gap:8px}
+.storage-box h2{font-family:var(--font-display);font-weight:600;font-size:1.1rem;margin:0}
+.storage-table{border-collapse:collapse;width:100%;max-width:460px;font-size:14px}
+.storage-table td{padding:5px 0;border-bottom:1px solid var(--line);text-align:left;font-family:var(--font-body)}
+.storage-table td:last-child{text-align:right;font-family:var(--font-data);font-variant-numeric:tabular-nums}
+.storage-table tr.strong td{font-weight:700}
+.storage-table tr.dim td{color:var(--muted);border-bottom:0}
+#storageNote{margin:0;color:var(--muted);font-size:13px}
 .add{width:min(560px,calc(100vw - 24px))}
 .add-body{padding:20px;display:flex;flex-direction:column;gap:12px}
 .add-body h2{font-family:var(--font-display);font-weight:800;font-size:1.4rem;margin:0;padding-right:40px}
@@ -383,8 +390,8 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
       <p class="sub">Estadísticas de lo que has visto, a partir de tu lista de IMDb.</p>
     </div>
   <div class="pill" role="toolbar" aria-label="Opciones">
-    <button class="pill-btn" id="backupBtn" type="button" aria-label="Copia de seguridad y TMDb" title="Copia de seguridad y TMDb" aria-expanded="false" aria-controls="backupPanel">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v4h4"/><path d="M12 7.5V12l3 2"/></svg>
+    <button class="pill-btn" id="backupBtn" type="button" aria-label="Ajustes" title="Ajustes: copia de seguridad, TMDb y espacio" aria-expanded="false" aria-controls="backupPanel">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     </button>
     <button class="pill-btn" id="themeBtn" type="button" aria-label="Cambiar a modo oscuro" title="Modo oscuro">
       <svg class="moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
@@ -426,7 +433,11 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
       <button class="btn ghost" id="exportBtn" type="button">Exportar copia</button>
     </div>
   </div>
-  <p class="hint storage-line" id="storageLine"></p>
+  <div class="storage-box">
+    <h2>Espacio en este navegador</h2>
+    <table class="storage-table" id="storageTable"></table>
+    <p class="hint" id="storageNote"></p>
+  </div>
   <div class="backup tmdb-box">
     <div>
       <h2>Datos de internet (TMDb)</h2>
@@ -1897,7 +1908,7 @@ function renderWorld(){
   }
   const pending = data.filter(r => !isFresh(imdbId(r))).length;
   document.getElementById("worldCoverage").textContent = `Con datos de TMDb de ${withX.length} de ${data.length} películas.` +
-    (pending ? ` Faltan ${pending}: descárgalas desde el panel del reloj para completar las estadísticas.` : "");
+    (pending ? ` Faltan ${pending}: descárgalas desde el panel de ajustes para completar las estadísticas.` : "");
 
   const count = fn => { const c = {}; withX.forEach(x => fn(x).forEach(k => { if (k) c[k] = (c[k] || 0) + 1; })); return Object.entries(c).sort((a, b) => b[1] - a[1]); };
   const h = n => `${Math.max(n, 5) * 26 + 20}px`;
@@ -1994,8 +2005,8 @@ function renderCrew(){
   const all = Object.entries(c).sort((a, b) => b[1] - a[1]), top = all.slice(0, 15);
   const old = worldItems.filter(o => !o.x.v2).length;
   document.getElementById("crewHint").textContent = top.length
-    ? `Los ${CREW_LABEL[k][0]} que más se repiten en tus películas. Toca una barra para ver sus películas.` + (old ? ` ${old} películas se descargaron antes de añadir estos datos: pulsa "Continuar descarga" en el panel del reloj para completarlas.` : "")
-    : `Todavía no hay datos de ${CREW_LABEL[k][0]}. Pulsa "Continuar descarga" en el panel del reloj.`;
+    ? `Los ${CREW_LABEL[k][0]} que más se repiten en tus películas. Toca una barra para ver sus películas.` + (old ? ` ${old} películas se descargaron antes de añadir estos datos: pulsa "Continuar descarga" en el panel de ajustes para completarlas.` : "")
+    : `Todavía no hay datos de ${CREW_LABEL[k][0]}. Pulsa "Continuar descarga" en el panel de ajustes.`;
   document.getElementById("crewBox").style.height = `${Math.max(top.length, 5) * 26 + 20}px`;
   setExpand("crewChart", CREW_LABEL[k][0].charAt(0).toUpperCase() + CREW_LABEL[k][0].slice(1), all, n => pickCrew(k, n));
   barChart2("crewChart", top.map(t => t[0]), top.map(t => t[1]), { horizontal: true, tip: v => `${v} películas`, onClick: i => pickCrew(k, top[i][0]) });
@@ -2113,7 +2124,7 @@ function renderFavs(){
   empty.hidden = people.length > 0; head.hidden = !people.length; list.hidden = !people.length;
   document.getElementById("favQ").placeholder = tmdbKey ? "Buscar persona (en tu lista o en TMDb para añadirla)" : "Buscar en tu lista";
   if (!people.length) return;
-  if (!tmdbKey) document.getElementById("favStatus").textContent = "Añade tu clave de TMDb (icono del reloj) para ver cuántas películas has visto de cada persona.";
+  if (!tmdbKey) document.getElementById("favStatus").textContent = "Añade tu clave de TMDb (icono de ajustes) para ver cuántas películas has visto de cada persona.";
 
   // Tus títulos, indexados por su id de TMDb
   const seenMap = new Map();
@@ -2136,7 +2147,7 @@ function renderFavs(){
   const totalSeen = cards.reduce((a, c) => a + c.seen.length, 0);
   document.getElementById("favSummary").textContent = `${people.length} personas en tu lista. ` +
     (tmdbKey ? `Entre todas suman ${totalSeen} títulos que has visto.` : "") +
-    (pending && tmdbKey ? ` Faltan datos de TMDb de ${pending} de tus películas: descárgalos desde el panel del reloj para que el recuento sea completo.` : "");
+    (pending && tmdbKey ? ` Faltan datos de TMDb de ${pending} de tus películas: descárgalos desde el panel de ajustes para que el recuento sea completo.` : "");
 
   const fq = (document.getElementById("favQ").value || "").trim().toLowerCase();
   const shownCards = fq ? cards.filter(c => (c.x?.n || c.p.name).toLowerCase().includes(fq)) : cards;
@@ -2469,13 +2480,22 @@ document.getElementById("backupBtn").addEventListener("click", () => { togglePan
 // Espacio que ocupa la app en este navegador
 const fmtBytes = b => b >= 1048576 ? `${(b / 1048576).toLocaleString("es-ES", { maximumFractionDigits: 1 })} MB` : `${Math.max(1, Math.round(b / 1024))} KB`;
 async function showStorage(){
-  const el = document.getElementById("storageLine");
   const size = v => new Blob([JSON.stringify(v ?? null)]).size;
-  const parts = [["tus películas", isSample ? 0 : size(rows)], ["datos de TMDb", size(tmdbCache)], ["personas", size(people) + size(personCache)]].filter(p => p[1] > 64);
-  let total = "";
-  try { const e = await navigator.storage?.estimate?.(); if (e?.usage) total = `En total, este sitio ocupa ${fmtBytes(e.usage)} en este navegador`; } catch(err) {}
-  el.textContent = (total || "Espacio aproximado en este navegador") + (parts.length ? `: ${parts.map(([k, b]) => `${k} ${fmtBytes(b)}`).join(", ")}.` : ".") +
-    " Las imágenes de los pósters las guarda el navegador aparte, en su caché.";
+  const films = isSample ? 0 : size(rows);
+  const tmdbFilms = size(tmdbCache), tmdbPeople = size(personCache), peopleList = size(people);
+  const nFilms = Object.values(tmdbCache).filter(x => x && !x.none).length, nPeople = Object.values(personCache).filter(x => x && !x.none).length;
+  const tmdbTotal = tmdbFilms + tmdbPeople;
+  let site = null;
+  try { const e = await navigator.storage?.estimate?.(); if (e?.usage) site = e.usage; } catch(err) {}
+  const row = (k, v, cls = "") => `<tr class="${cls}"><td>${k}</td><td>${v}</td></tr>`;
+  document.getElementById("storageTable").innerHTML =
+    row("Tus películas", `${fmtBytes(films)}`) +
+    row("Tu lista de personas", fmtBytes(peopleList)) +
+    row(`Datos de TMDb · películas (${nFilms})`, fmtBytes(tmdbFilms)) +
+    row(`Datos de TMDb · personas (${nPeople})`, fmtBytes(tmdbPeople)) +
+    row("Total de TMDb", fmtBytes(tmdbTotal), "strong") +
+    row("Total de la app", fmtBytes(films + peopleList + tmdbTotal), "strong");
+  document.getElementById("storageNote").textContent = "Las imágenes de los pósters y las fotos no cuentan aquí: el navegador las guarda aparte, en su caché temporal, y las borra solo cuando necesita espacio.";
 }
 document.getElementById("filtersBtn").addEventListener("click", () => togglePanel("filtersBtn", "filtersPanel"));
 
