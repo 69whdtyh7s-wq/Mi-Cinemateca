@@ -188,6 +188,12 @@ th button[data-dir="desc"]::after{content:"▼"}
 .r-poster{float:right;width:92px;border-radius:8px;margin-left:12px}
 .foot a{color:var(--accent-ink)}
 .coverage{margin:0;color:var(--muted);font-size:14px}
+.artist-stats{gap:16px}
+.artist-stats .hint{margin:0;color:var(--muted);font-size:14px}
+.sub-panel{min-width:0;display:flex;flex-direction:column;gap:6px}
+.sub-panel h3{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.chart.small{height:220px}
+.artist-tiles .stat .n{font-size:1.6rem}
 .list-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 .list-head .count{margin:0}
 .seg{display:inline-flex;padding:3px;border-radius:10px;background:var(--bg);border:1px solid var(--line);gap:2px}
@@ -649,6 +655,24 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
         <details><summary>Ver media semanal por año</summary><div class="tbl"><table id="tblWeek"></table></div></details>
       </section>
     </div>
+
+    <section class="panel artist-stats" id="artistStats" hidden>
+      <h2>Tus artistas</h2>
+      <p class="hint" id="artistHint"></p>
+      <div class="stats artist-tiles" id="artistTiles"></div>
+      <div class="duo">
+        <div class="sub-panel"><h3>Sexo</h3><div class="chart" id="genderBox"><canvas id="genderChart" aria-label="Artistas por sexo"></canvas></div></div>
+        <div class="sub-panel"><h3>Edad actual</h3><div class="chart small"><canvas id="ageBandChart" aria-label="Artistas vivos por tramos de edad"></canvas></div></div>
+      </div>
+      <div class="duo">
+        <div class="sub-panel"><h3>País de nacimiento</h3><div class="chart" id="birthCountryBox"><canvas id="birthCountryChart" aria-label="País de nacimiento de tus artistas"></canvas></div></div>
+        <div class="sub-panel"><h3>Especialidad</h3><div class="chart" id="depBox"><canvas id="depChart" aria-label="Especialidad de tus artistas"></canvas></div></div>
+      </div>
+      <div class="duo">
+        <div class="sub-panel"><h3>Década de nacimiento</h3><div class="chart small"><canvas id="birthDecChart" aria-label="Década de nacimiento de tus artistas"></canvas></div></div>
+        <div class="sub-panel"><h3>Datos curiosos</h3><ul class="facts" id="artistFacts"></ul></div>
+      </div>
+    </section>
 
     <section class="panel">
       <div class="panel-head">
@@ -1112,6 +1136,7 @@ function render(){
   fillYearSel(data);
   renderYear();
   renderWorld();
+  if (typeof renderArtistStats === "function") renderArtistStats();
   syncTmdbPanel();
   fillYearSelects(data);
   renderFilms();
@@ -2212,7 +2237,7 @@ const PEOPLE_KEY = "cinemateca-people";
 let people = [], personCache = {}, peopleRun = null;
 try { people = JSON.parse(localStorage.getItem(PEOPLE_KEY) || "[]"); } catch(e) {}
 let peopleLoaded = false;
-const peopleReady = idb.get("people").then(c => { if (c && typeof c === "object"){ personCache = Object.assign(c, personCache); renderFavs(); } }).catch(() => {}).finally(() => { peopleLoaded = true; });
+const peopleReady = idb.get("people").then(c => { if (c && typeof c === "object"){ personCache = Object.assign(c, personCache); renderFavs(); renderArtistStats(); } }).catch(() => {}).finally(() => { peopleLoaded = true; });
 const savePeople = () => { try { localStorage.setItem(PEOPLE_KEY, JSON.stringify(people)); } catch(e) {} };
 let personSaveTimer = null;
 // Guardar al salir, solo si ya se había leído lo guardado (para no pisarlo con datos vacíos)
@@ -2250,13 +2275,13 @@ function loadPeople(objs, name){
 }
 
 async function fetchPerson(p){
-  if (personCache[p.id]?.v === 1) return personCache[p.id];
+  if (personCache[p.id]?.v === 2 || personCache[p.id]?.none) return personCache[p.id];
   let hit = p.tmdb ? { id: p.tmdb } : null;
   if (!hit){
     const found = await tmdbGet(`/find/${p.id}`, { external_source: "imdb_id", language: "es-ES" });
     hit = found.person_results?.[0];
   }
-  if (!hit){ personCache[p.id] = { v: 1, none: 1 }; savePersonCache(); return personCache[p.id]; }
+  if (!hit){ personCache[p.id] = { v: 2, none: 1 }; savePersonCache(); return personCache[p.id]; }
   const d = await tmdbGet(`/person/${hit.id}`, { language: "es-ES", append_to_response: "combined_credits" });
   const credits = new Map();
   const add = (c, job) => {
@@ -2270,7 +2295,11 @@ async function fetchPerson(p){
     const job = c.job === "Director" ? "Dirección" : c.department === "Writing" ? "Guion" : c.job === "Original Music Composer" ? "Música" : c.job === "Director of Photography" ? "Fotografía" : null;
     if (job) add(c, job);
   });
-  personCache[p.id] = { v: 1, t: hit.id, n: d.name || p.name, img: d.profile_path || "", dep: d.known_for_department || "", cr: [...credits.values()] };
+  const prev = personCache[p.id] || {};
+  personCache[p.id] = { v: 2, t: hit.id, n: d.name || p.name, img: d.profile_path || "", dep: d.known_for_department || "", cr: [...credits.values()],
+    g: d.gender ?? 0, b: d.birthday || "", d: d.deathday || "", pl: d.place_of_birth || "",
+    bio: d.biography || prev.bio, bioLang: d.biography ? "es" : prev.bioLang, imdb: d.imdb_id || prev.imdb, aka: (d.also_known_as || prev.aka || []).slice(0, 3) };
+  if (!d.biography && prev.bio === undefined) delete personCache[p.id].bio;
   savePersonCache();
   return personCache[p.id];
 }
@@ -2280,7 +2309,7 @@ async function fetchPeople(){
   peopleRun = {};                      // reserva mientras se lee lo guardado
   await Promise.all([peopleReady, tmdbReady]);
   peopleRun = null;
-  const todo = people.filter(p => personCache[p.id]?.v !== 1);
+  const todo = people.filter(p => personCache[p.id]?.v !== 2 && !personCache[p.id]?.none);
   if (!todo.length) return;
   const token = peopleRun = {};
   const st = document.getElementById("favStatus");
@@ -2290,10 +2319,10 @@ async function fetchPeople(){
     try { await fetchPerson(p); }
     catch(e){ st.textContent = e.message; peopleRun = null; return; }
     i++; st.textContent = `Descargando datos de TMDb de tus personas: ${i} de ${todo.length}…`;
-    if (i % 5 === 0) renderFavs();
+    if (i % 5 === 0){ renderFavs(); renderArtistStats(); }
     await new Promise(r => setTimeout(r, 150));
   }
-  peopleRun = null; st.textContent = ""; renderFavs();
+  peopleRun = null; st.textContent = ""; renderFavs(); renderArtistStats();
 }
 
 let aLayout = "cards";
@@ -2718,6 +2747,85 @@ function makeScrubber(selectId){
   return sync;
 }
 const scrubSyncs = ["madeUntil", "decUntil", "yearSel"].map(makeScrubber);
+
+/* ---------- Stats de tus artistas ---------- */
+const GENDER_ES = { 1: "Mujeres", 2: "Hombres", 3: "No binario", 0: "Sin datos" };
+const countryOf = pl => {
+  if (!pl) return "";
+  const last = pl.split(",").pop().trim().replace(/\.$/, "");
+  const MAP = { "USA": "Estados Unidos", "U.S.A": "Estados Unidos", "United States": "Estados Unidos", "United States of America": "Estados Unidos", "EE. UU": "Estados Unidos", "EE.UU": "Estados Unidos", "Estados Unidos": "Estados Unidos",
+    "UK": "Reino Unido", "United Kingdom": "Reino Unido", "England": "Reino Unido", "Scotland": "Reino Unido", "Wales": "Reino Unido", "Northern Ireland": "Reino Unido", "Inglaterra": "Reino Unido", "Escocia": "Reino Unido",
+    "Spain": "España", "France": "Francia", "Italy": "Italia", "Germany": "Alemania", "West Germany": "Alemania", "Japan": "Japón", "Canada": "Canadá", "Australia": "Australia", "Ireland": "Irlanda",
+    "Mexico": "México", "Argentina": "Argentina", "Brazil": "Brasil", "Sweden": "Suecia", "Denmark": "Dinamarca", "Norway": "Noruega", "South Korea": "Corea del Sur", "Korea": "Corea del Sur", "China": "China",
+    "Hong Kong": "Hong Kong", "Taiwan": "Taiwán", "India": "India", "Russia": "Rusia", "USSR": "Rusia", "Soviet Union": "Rusia", "Poland": "Polonia", "Austria": "Austria", "Netherlands": "Países Bajos",
+    "Belgium": "Bélgica", "Switzerland": "Suiza", "New Zealand": "Nueva Zelanda", "Israel": "Israel", "Iran": "Irán", "Greece": "Grecia", "Portugal": "Portugal", "Chile": "Chile", "Colombia": "Colombia",
+    "Cuba": "Cuba", "South Africa": "Sudáfrica", "Hungary": "Hungría", "Czech Republic": "Chequia", "Czechoslovakia": "Chequia", "Finland": "Finlandia", "Turkey": "Turquía", "Puerto Rico": "Puerto Rico" };
+  return MAP[last] || last;
+};
+
+function renderArtistStats(){
+  const box = document.getElementById("artistStats"); if (!box) return;
+  const list = people.map(p => ({ p, x: personCache[p.id] })).filter(o => o.x && !o.x.none);
+  const withB = list.filter(o => o.x.b);
+  box.hidden = !list.length;
+  if (!list.length) return;
+  const pending = people.length - list.length + list.filter(o => o.x.g === undefined).length;
+  document.getElementById("artistHint").textContent = `${people.length} artistas en tu lista${pending ? `. Faltan datos de ${pending}: abre la pestaña Artistas para que se descarguen` : ""}.`;
+
+  const alive = withB.filter(o => !o.x.d), dead = withB.filter(o => o.x.d);
+  const ages = alive.map(o => ageAt(o.x.b));
+  const avgAge = ages.length ? ages.reduce((a, b) => a + b, 0) / ages.length : null;
+  const byG = {}; list.forEach(o => { const k = GENDER_ES[o.x.g ?? 0] || "Sin datos"; byG[k] = (byG[k] || 0) + 1; });
+  const pctW = list.length ? Math.round((byG["Mujeres"] || 0) / list.length * 100) : 0;
+  document.getElementById("artistTiles").innerHTML = [
+    [list.length, "artistas"],
+    [avgAge != null ? Math.round(avgAge) : "—", "edad media (vivos)"],
+    [`${pctW}%`, "mujeres"],
+    [dead.length, "fallecidos"]
+  ].map(([n, l]) => `<div class="stat"><div class="n">${n}</div><div class="l">${l}</div></div>`).join("");
+
+  // Sexo
+  const gEntries = Object.entries(byG).sort((a, b) => b[1] - a[1]);
+  document.getElementById("genderBox").style.height = `${Math.max(gEntries.length, 3) * 30 + 20}px`;
+  barChart2("genderChart", gEntries.map(g => g[0]), gEntries.map(g => g[1]), { horizontal: true, color: cssVar("--teal"), tip: v => `${v} artistas` });
+
+  // Edades (vivos) por tramos
+  const bands = ["<30", "30–39", "40–49", "50–59", "60–69", "70–79", "80+"];
+  const bandOf = a => a < 30 ? 0 : a >= 80 ? 6 : Math.floor(a / 10) - 2;
+  const bandCount = bands.map(() => 0); ages.forEach(a => bandCount[bandOf(a)]++);
+  barChart2("ageBandChart", bands, bandCount, { tip: v => `${v} artistas` });
+
+  // Década de nacimiento
+  const dec = {}; withB.forEach(o => { const d = Math.floor(+o.x.b.slice(0, 4) / 10) * 10; dec[d] = (dec[d] || 0) + 1; });
+  const decKeys = Object.keys(dec).map(Number).sort((a, b) => a - b);
+  barChart2("birthDecChart", decKeys.map(d => `${d}s`), decKeys.map(d => dec[d]), { color: cssVar("--teal"), tip: v => `${v} artistas` });
+
+  // País de nacimiento y especialidad
+  const cnt = fn => { const c = {}; list.forEach(o => { const k = fn(o); if (k) c[k] = (c[k] || 0) + 1; }); return Object.entries(c).sort((a, b) => b[1] - a[1]); };
+  const countries = cnt(o => countryOf(o.x.pl)), deps = cnt(o => DEP_ES[o.x.dep] || o.x.dep);
+  const topC = countries.slice(0, 10);
+  document.getElementById("birthCountryBox").style.height = `${Math.max(topC.length, deps.length, 4) * 26 + 20}px`;
+  document.getElementById("depBox").style.height = document.getElementById("birthCountryBox").style.height;
+  barChart2("birthCountryChart", topC.map(c => c[0]), topC.map(c => c[1]), { horizontal: true, tip: v => `${v} artistas` });
+  setExpand("birthCountryChart", "País de nacimiento de tus artistas", countries);
+  barChart2("depChart", deps.map(d => d[0]), deps.map(d => d[1]), { horizontal: true, color: cssVar("--teal"), tip: v => `${v} artistas` });
+
+  // Datos curiosos
+  const byAge = alive.slice().sort((a, b) => a.x.b.localeCompare(b.x.b));
+  const youngest = byAge[byAge.length - 1], oldest = byAge[0];
+  const seenMap = new Set(); counted().forEach(r => { const c = tmdbCache[imdbId(r)]; if (c && c.t) seenMap.add(`${c.k}:${c.t}`); });
+  const mostSeen = list.map(o => ({ o, n: (o.x.cr || []).filter(c => seenMap.has(`${c.k}:${c.id}`)).length })).sort((a, b) => b.n - a.n)[0];
+  const bdays = alive.map(o => ({ o, md: o.x.b.slice(5) })).sort((a, b) => a.md.localeCompare(b.md));
+  const today = new Date().toISOString().slice(5, 10);
+  const nextB = bdays.find(b => b.md >= today) || bdays[0];
+  const name = o => esc(o.x.n || o.p.name);
+  document.getElementById("artistFacts").innerHTML = [
+    ["El más joven", youngest ? `${name(youngest)}<small>${ageAt(youngest.x.b)} años</small>` : "—"],
+    ["El mayor", oldest ? `${name(oldest)}<small>${ageAt(oldest.x.b)} años</small>` : "—"],
+    ["Del que más has visto", mostSeen?.n ? `${name(mostSeen.o)}<small>${mostSeen.n} títulos</small>` : "—"],
+    ["Próximo cumpleaños", nextB ? `${name(nextB.o)}<small>${fmtDateEs(new Date().getFullYear() + "-" + nextB.md).replace(/ de \d{4}$/, "")} · cumple ${ageAt(nextB.o.x.b) + 1}</small>` : "—"]
+  ].map(([k, v]) => `<li><span class="k">${k}</span><span class="v">${v}</span></li>`).join("");
+}
 
 /* ---------- Pestañas ---------- */
 function showView(v){
