@@ -496,7 +496,12 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
   header .sub{grid-area:sub;margin:0}
   header > .pill{grid-area:pill;justify-self:end;align-self:center}
   header > .corner{grid-area:csv;align-self:center}
-  h1{font-size:clamp(1rem,5.4vw,1.6rem);white-space:nowrap}
+  /* Título en dos líneas con el icono grande para dejar sitio a la píldora */
+  h1{font-size:min(2rem,calc((100vw - 168px) / 7.9));gap:.3em;line-height:.95;letter-spacing:-.025em}
+  h1 span{width:min-content}
+  h1 .logo{width:2.05em;height:2.05em}
+  header .pill-btn{width:38px;height:38px}
+  header{gap:12px 8px}
   .corner{justify-content:flex-end}
   .drop{flex:0 1 auto}
   .panel{padding:16px;border-radius:12px}
