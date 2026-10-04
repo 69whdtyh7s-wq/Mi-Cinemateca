@@ -308,6 +308,14 @@ body.pop-open{overflow:hidden}
 .fav .fav-count b{font-size:1.1rem}
 .fav .fav-meta{font-size:12px;margin-top:4px}
 .fav .fav-top:hover .fav-photo{filter:brightness(1.05)}
+.fav-head-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+/* Artistas en filas */
+.fav-grid.as-list{grid-template-columns:repeat(auto-fill,minmax(min(100%,360px),1fr));gap:10px}
+.fav-grid.as-list .fav.panel{padding:12px 14px}
+.fav-grid.as-list .fav-top{flex-direction:row;align-items:center;gap:14px}
+.fav-grid.as-list .fav-top .fav-photo{width:56px;height:56px;aspect-ratio:auto;border-radius:50%}
+.fav-grid.as-list .fav-top .fav-photo.ph{font-size:1.3rem}
+.fav-grid.as-list .fav-info{padding:0}
 .fav{gap:10px}
 .fav-top{all:unset;box-sizing:border-box;display:flex;gap:14px;align-items:center;padding-right:28px;cursor:pointer;border-radius:10px}
 .fav-top:hover h3{color:var(--accent-ink);text-decoration:underline}
@@ -346,6 +354,7 @@ body.pop-open{overflow:hidden}
   .poster-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 10px}
   .seg button span{display:none}
   .fav-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .fav-grid.as-list{grid-template-columns:1fr}
 }
 .fav-photo{width:64px;height:64px;border-radius:50%;object-fit:cover;flex:0 0 auto;background:var(--teal-soft)}
 .fav-photo.ph{display:grid;place-items:center;font:800 1.5rem var(--font-display);color:var(--teal-ink)}
@@ -785,7 +794,13 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
     </section>
     <div class="fav-head" id="favHead" hidden>
       <p class="hint" id="favSummary"></p>
-      <button class="expand-btn" type="button" id="favClear">Quitar todos los artistas</button>
+      <div class="fav-head-actions">
+        <button class="expand-btn" type="button" id="favClear">Quitar todos los artistas</button>
+        <div class="seg" id="favSeg" role="group" aria-label="Forma de ver los artistas">
+          <button type="button" data-alayout="list" aria-pressed="false" title="Filas"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><span>Filas</span></button>
+          <button type="button" data-alayout="cards" aria-pressed="true" title="Tarjetas"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="9" rx="1"/><rect x="3" y="15" width="7" height="6" rx="1"/><rect x="14" y="15" width="7" height="6" rx="1"/></svg><span>Tarjetas</span></button>
+        </div>
+      </div>
     </div>
     <p class="hint" id="favStatus" aria-live="polite"></p>
     <div class="fav-grid" id="favList" hidden></div>
@@ -1379,7 +1394,7 @@ function thumb(r){
 }
 let layout = "list";
 try { layout = localStorage.getItem("cinemateca-layout") === "cards" ? "cards" : "list"; } catch(e) {}
-document.querySelector(".seg").addEventListener("click", e => {
+document.querySelector(".list-head .seg").addEventListener("click", e => {
   const b = e.target.closest("[data-layout]"); if (!b) return;
   layout = b.dataset.layout; try { localStorage.setItem("cinemateca-layout", layout); } catch(err) {}
   renderFilms();
@@ -1411,7 +1426,7 @@ function renderFilms(){
   const cards = layout === "cards";
   document.getElementById("filmTable").hidden = cards;
   document.getElementById("filmCards").hidden = !cards;
-  document.querySelectorAll(".seg [data-layout]").forEach(b => b.setAttribute("aria-pressed", b.dataset.layout === layout));
+  document.querySelectorAll(".list-head .seg [data-layout]").forEach(b => b.setAttribute("aria-pressed", b.dataset.layout === layout));
   if (cards){
     document.getElementById("filmCards").innerHTML = n ? list.slice(0, shown).map(r => {
       const x = typeof tmdbCache !== "undefined" ? tmdbCache[imdbId(r)] : null;
@@ -2281,7 +2296,19 @@ async function fetchPeople(){
   peopleRun = null; st.textContent = ""; renderFavs();
 }
 
+let aLayout = "cards";
+try { aLayout = localStorage.getItem("cinemateca-alayout") === "list" ? "list" : "cards"; } catch(e) {}
+document.getElementById("favSeg").addEventListener("click", e => {
+  const b = e.target.closest("[data-alayout]"); if (!b) return;
+  aLayout = b.dataset.alayout; try { localStorage.setItem("cinemateca-alayout", aLayout); } catch(err) {}
+  applyALayout();
+});
+function applyALayout(){
+  document.getElementById("favList").classList.toggle("as-list", aLayout === "list");
+  document.querySelectorAll("#favSeg [data-alayout]").forEach(b => b.setAttribute("aria-pressed", b.dataset.alayout === aLayout));
+}
 function renderFavs(){
+  applyALayout();
   const list = document.getElementById("favList"), empty = document.getElementById("favEmpty"), head = document.getElementById("favHead");
   if (!list) return;
   empty.hidden = people.length > 0; head.hidden = !people.length; list.hidden = !people.length;
