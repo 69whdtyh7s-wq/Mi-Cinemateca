@@ -2553,8 +2553,8 @@ function personHTML(p){
     </div>
     ${missing.length ? `<div class="person-section">
       <h3>Te faltan <span>${missing.length}</span></h3>
-      <p class="hint">Sus películas que no has visto, de mejor a peor valorada en TMDb.</p>
-      <div class="poster-grid">${missing.slice(0, 24).map(m => `<a class="pg-item" href="https://www.themoviedb.org/movie/${m.id}" target="_blank" rel="noopener">${poster(m.p, m.ti)}<b>${esc(m.ti)}</b><small>${[m.y, m.j.join(", ")].filter(Boolean).join(" · ")}</small>${m.v ? `<em class="tm">${fmt1(m.v)}</em>` : ""}</a>`).join("")}</div>
+      <p class="hint">Sus películas que no has visto, de mejor a peor valorada en TMDb. Toca una para verla en IMDb.</p>
+      <div class="poster-grid">${missing.slice(0, 24).map(m => `<a class="pg-item" data-mid="${m.id}" href="${m.im ? `https://www.imdb.com/title/${m.im}/` : `https://www.imdb.com/find/?q=${encodeURIComponent(m.ti + (m.y ? " " + m.y : ""))}&s=tt`}" target="_blank" rel="noopener">${poster(m.p, m.ti)}<b>${esc(m.ti)}</b><small>${[m.y, m.j.join(", ")].filter(Boolean).join(" · ")}</small>${m.v ? `<em class="tm">${fmt1(m.v)}</em>` : ""}</a>`).join("")}</div>
       ${missing.length > 24 ? `<p class="hint">Y ${missing.length - 24} más en su página de TMDb.</p>` : ""}
     </div>` : ""}`;
 }
@@ -2572,6 +2572,29 @@ async function openPerson(id){
     await fetchPersonDetails(p);
     if (dlg.open && personOpen === p){ const st = dlg.scrollTop; dlg.innerHTML = personHTML(p); dlg.scrollTop = st; }
   } catch(e){ const b = dlg.querySelector(".person-bio.dim"); if (b) b.textContent = e.message; }
+  linkMissingToImdb(p);
+}
+
+// Enlaces exactos a IMDb para las películas que faltan (TMDb da su identificador de IMDb aparte)
+async function linkMissingToImdb(p){
+  const x = personCache[p.id]; if (!x?.cr || !tmdbKey) return;
+  const seen = new Set();
+  counted().forEach(r => { const c = tmdbCache[imdbId(r)]; if (c && c.t) seen.add(`${c.k}:${c.t}`); });
+  const year = new Date().getFullYear();
+  const todo = x.cr.filter(c => c.k === "movie" && c.y && +c.y <= year && c.c >= 30 && !seen.has(`movie:${c.id}`) && c.im === undefined)
+    .sort((a, b) => b.v - a.v || b.c - a.c).slice(0, 24);
+  if (!todo.length) return;
+  let i = 0;
+  const worker = async () => {
+    while (i < todo.length && personOpen === p){
+      const c = todo[i++];
+      try { c.im = (await tmdbGet(`/movie/${c.id}/external_ids`)).imdb_id || ""; } catch(e) { return; }
+      const a = document.querySelector(`#personDlg a.pg-item[data-mid="${c.id}"]`);
+      if (a && c.im) a.href = `https://www.imdb.com/title/${c.im}/`;
+    }
+  };
+  await Promise.all([worker(), worker(), worker()]);
+  savePersonCache();
 }
 document.getElementById("personDlg").addEventListener("click", e => {
   const dlg = e.currentTarget;
