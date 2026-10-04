@@ -91,6 +91,10 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center}
 .tab span{font-family:var(--font-data);font-size:12px;font-weight:400;color:var(--muted);margin-left:4px}
 .view{display:flex;flex-direction:column;gap:24px}
 /* Secciones plegables de Stats */
+.view.swipe-l{animation:swipeL .28s ease-out}
+.view.swipe-r{animation:swipeR .28s ease-out}
+@keyframes swipeL{from{transform:translateX(40px);opacity:.3}to{transform:none;opacity:1}}
+@keyframes swipeR{from{transform:translateX(-40px);opacity:.3}to{transform:none;opacity:1}}
 .sgroup > summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;padding:10px 4px;border-bottom:2px solid var(--line);font-family:var(--font-display);font-weight:800;font-size:1.6rem;letter-spacing:-.01em;color:var(--ink);-webkit-user-select:none;user-select:none}
 .sgroup > summary::-webkit-details-marker{display:none}
 .sgroup > summary .chev{flex:0 0 auto;color:var(--muted);transition:transform .2s}
@@ -1269,6 +1273,48 @@ function fillUntil(data){
   };
   document.addEventListener("touchend", end);
   document.addEventListener("touchcancel", end);
+})();
+
+/* Deslizar a los lados sobre el contenido para cambiar de pestaña (pantallas táctiles) */
+(() => {
+  if (!("ontouchstart" in window)) return;
+  let x0 = null, y0 = 0, t0 = 0, dec = null;
+  // ¿Hay algo que se desplace en horizontal bajo el dedo? (gráficos con scroll, tablas, pestañas…)
+  const hScroller = el => {
+    for (; el && el !== document.body; el = el.parentElement){
+      if (el.matches("input, select, textarea, .scrub, .tabs, dialog, .pop")) return true;
+      const ox = getComputedStyle(el).overflowX;
+      if ((ox === "auto" || ox === "scroll") && el.scrollWidth > el.clientWidth + 2) return true;
+    }
+    return false;
+  };
+  document.addEventListener("touchstart", e => {
+    x0 = null; dec = null;
+    if (e.touches.length > 1 || document.body.classList.contains("pop-open") || document.querySelector("dialog[open]")) return;
+    if (!e.target.closest(".view") || hScroller(e.target)) return;
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = performance.now();
+  }, { passive: true });
+  document.addEventListener("touchmove", e => {
+    if (x0 == null || dec) return;
+    const dx = e.touches[0].clientX - x0, dy = e.touches[0].clientY - y0;
+    if (Math.abs(dx) > 12 || Math.abs(dy) > 12) dec = Math.abs(dx) > Math.abs(dy) * 1.6 ? "h" : "v";
+    if (dec === "v") x0 = null;
+  }, { passive: true });
+  document.addEventListener("touchend", e => {
+    if (x0 == null || dec !== "h") { x0 = null; return; }
+    const t = e.changedTouches[0], dx = t.clientX - x0, dy = t.clientY - y0, dt = performance.now() - t0;
+    x0 = null;
+    if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.6 || dt > 800) return;
+    const tabs = [...document.querySelectorAll(".tab")].filter(b => !b.hidden);
+    const i = tabs.findIndex(b => b.getAttribute("aria-selected") === "true");
+    const next = tabs[i + (dx < 0 ? 1 : -1)]; if (!next) return;
+    showView(next.dataset.view);
+    const view = document.getElementById("view-" + next.dataset.view);
+    view.classList.remove("swipe-l", "swipe-r"); void view.offsetWidth;
+    view.classList.add(dx < 0 ? "swipe-l" : "swipe-r");
+    const bar = document.querySelector(".tabs"), top = bar.getBoundingClientRect().top + scrollY - (parseFloat(getComputedStyle(bar).top) || 0);
+    if (scrollY > top) scrollTo({ top, behavior: "auto" });
+  });
 })();
 
 /* Recordar qué secciones de Stats están plegadas */
