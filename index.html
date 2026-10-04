@@ -1893,13 +1893,14 @@ const langName = (() => { try { const d = new Intl.DisplayNames(["es"], { type: 
 const imdbId = r => r.id || ((r.url || "").match(/tt\d+/) || [])[0] || "";
 
 function saveTmdbCache(){
-  clearTimeout(tmdbSaveTimer);
+  if (tmdbSaveTimer) return;                      // igual que arriba: guardar cada poco durante la descarga
   tmdbSaveTimer = setTimeout(() => {
+    tmdbSaveTimer = null;
     idb.set("tmdb", tmdbCache).catch(() => {
       try { localStorage.setItem(TMDB_CACHE, JSON.stringify(tmdbCache)); }
       catch(e){ setTmdbStatus("El navegador no tiene más espacio para guardar datos de TMDb. Si usas una ventana privada, abre la app en una normal.", true); }
     });
-  }, 600);
+  }, 1500);
 }
 
 async function tmdbGet(path, params = {}){
@@ -2252,7 +2253,12 @@ const flushCaches = () => {
 };
 addEventListener("pagehide", flushCaches);
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") flushCaches(); });
-const savePersonCache = () => { clearTimeout(personSaveTimer); personSaveTimer = setTimeout(() => idb.set("people", personCache).catch(() => {}), 500); };
+// Guardado periódico: como mucho cada 1,5 s, pero sin esperar a que termine toda la descarga
+// (antes se aplazaba con cada artista nuevo y, si se recargaba a mitad, se perdía todo)
+const savePersonCache = () => {
+  if (personSaveTimer) return;
+  personSaveTimer = setTimeout(() => { personSaveTimer = null; idb.set("people", personCache).catch(() => {}); }, 1500);
+};
 const DEP_ES = { Acting: "Interpretación", Directing: "Dirección", Writing: "Guion", Sound: "Música", Camera: "Fotografía",
   Production: "Producción", Editing: "Montaje", Art: "Dirección artística", "Costume & Make-Up": "Vestuario y maquillaje", "Visual Effects": "Efectos visuales", Crew: "Equipo" };
 
