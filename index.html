@@ -2090,7 +2090,7 @@ async function runBulk(){
       try { await fetchTmdb(r); }
       catch(e){ if (e.code === 401){ bulk = null; setTmdbStatus(e.message, true); return; } }
       const done = total - todo.length + i;
-      setTmdbStatus(`Descargando datos de TMDb: ${done} de ${total}. Puedes seguir usando la app; deja esta página abierta.`);
+      setTmdbStatus(`Descargando datos de TMDb: ${done} de ${total}. Puedes seguir usando la app; la pantalla no se apagará hasta que termine.`);
       if (Date.now() - lastRender > 8000){ lastRender = Date.now(); renderWorld(); if (!document.getElementById("view-films").hidden) renderFilms(); }
       await new Promise(res => setTimeout(res, 120));
     }
@@ -2329,7 +2329,7 @@ async function fetchPeople(){
     if (peopleRun !== token) return;
     try { await fetchPerson(p); }
     catch(e){ st.textContent = e.message; peopleRun = null; return; }
-    i++; st.textContent = `Descargando datos de TMDb de tus personas: ${i} de ${todo.length}…`;
+    i++; st.textContent = `Descargando datos de TMDb de tus artistas: ${i} de ${todo.length}… La pantalla no se apagará hasta que termine.`;
     if (i % 5 === 0){ renderFavs(); renderArtistStats(); }
     await new Promise(r => setTimeout(r, 150));
   }
@@ -2837,6 +2837,22 @@ function renderArtistStats(){
     ["Próximo cumpleaños", nextB ? `${name(nextB.o)}<small>${fmtDateEs(new Date().getFullYear() + "-" + nextB.md).replace(/ de \d{4}$/, "")} · cumple ${ageAt(nextB.o.x.b) + 1}</small>` : "—"]
   ].map(([k, v]) => `<li><span class="k">${k}</span><span class="v">${v}</span></li>`).join("");
 }
+
+/* ---------- Mantener la pantalla encendida mientras se descarga de TMDb ---------- */
+let wakeLock = null;
+async function syncWakeLock(){
+  const busy = !!bulk || !!peopleRun;
+  try {
+    if (busy && !wakeLock && document.visibilityState === "visible" && navigator.wakeLock){
+      wakeLock = await navigator.wakeLock.request("screen");
+      wakeLock.addEventListener("release", () => { wakeLock = null; });
+    } else if (!busy && wakeLock){
+      const w = wakeLock; wakeLock = null; await w.release();
+    }
+  } catch(e) { wakeLock = null; }   // si el navegador no lo permite, la descarga sigue igual
+}
+setInterval(syncWakeLock, 1500);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") syncWakeLock(); });
 
 /* ---------- Pestañas ---------- */
 function showView(v){
