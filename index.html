@@ -1652,16 +1652,20 @@ const idb = (() => {
 })();
 
 // Cargar la caché de TMDb (y mover la antigua de localStorage si existía)
-idb.get("tmdb").then(c => {
+// tmdbReady: hasta que no se lee lo guardado, no se descarga nada (evita volver a pedirlo todo al recargar)
+let tmdbLoaded = false;
+const tmdbReady = idb.get("tmdb").then(c => {
+  let migrated = false;
   if (c && typeof c === "object") tmdbCache = Object.assign(c, tmdbCache);
   else {
-    try { const old = localStorage.getItem(TMDB_CACHE); if (old) tmdbCache = Object.assign(JSON.parse(old), tmdbCache); } catch(e) {}
+    try { const old = localStorage.getItem(TMDB_CACHE); if (old){ tmdbCache = Object.assign(JSON.parse(old), tmdbCache); migrated = true; } } catch(e) {}
   }
   try { localStorage.removeItem(TMDB_CACHE); } catch(e) {}
-  if (Object.keys(tmdbCache).length) { saveTmdbCache(); if (rows){ renderWorld(); renderYear(); renderFilms(); syncTmdbPanel(); } }
+  if (migrated) saveTmdbCache();
+  if (Object.keys(tmdbCache).length && rows){ renderWorld(); renderYear(); renderFilms(); syncTmdbPanel(); }
 }).catch(() => {
   try { tmdbCache = Object.assign(JSON.parse(localStorage.getItem(TMDB_CACHE) || "{}"), tmdbCache); } catch(e) {}
-});
+}).finally(() => { tmdbLoaded = true; });
 // Pedir al navegador que no borre estos datos por falta de uso (Safari puede hacerlo)
 try { navigator.storage?.persist?.(); } catch(e) {}
 const regionName = (() => { try { const d = new Intl.DisplayNames(["es"], { type: "region" }); return c => { try { return d.of(c); } catch(e) { return c; } }; } catch(e) { return c => c; } })();
@@ -1701,6 +1705,7 @@ const isFresh = id => { const c = tmdbCache[id]; return !!c && (c.none || c.v2);
 async function fetchTmdb(r){
   const id = imdbId(r);
   if (!id || !tmdbKey) return null;
+  await tmdbReady;
   if (isFresh(id)) return tmdbCache[id];
   const found = await tmdbGet(`/find/${id}`, { external_source: "imdb_id", language: "es-ES" });
   const hit = found.movie_results?.[0] ? { kind: "movie", ...found.movie_results[0] } : found.tv_results?.[0] ? { kind: "tv", ...found.tv_results[0] } : null;
@@ -1852,6 +1857,7 @@ document.getElementById("tmdbRemove").addEventListener("click", () => {
 document.getElementById("tmdbBulk").addEventListener("click", () => { if (bulk){ bulk = null; syncTmdbPanel(); } else runBulk(); });
 
 async function runBulk(){
+  await tmdbReady;
   const todo = counted().filter(r => imdbId(r) && !isFresh(imdbId(r)));
   const total = counted().filter(r => imdbId(r)).length;
   const token = bulk = {};
@@ -2016,9 +2022,17 @@ const pickProv = p => filterFilms(`Disponible en: ${p}`, r => (xOf(r).w || []).i
 const PEOPLE_KEY = "cinemateca-people";
 let people = [], personCache = {}, peopleRun = null;
 try { people = JSON.parse(localStorage.getItem(PEOPLE_KEY) || "[]"); } catch(e) {}
-idb.get("people").then(c => { if (c && typeof c === "object"){ personCache = Object.assign(c, personCache); renderFavs(); } }).catch(() => {});
+let peopleLoaded = false;
+const peopleReady = idb.get("people").then(c => { if (c && typeof c === "object"){ personCache = Object.assign(c, personCache); renderFavs(); } }).catch(() => {}).finally(() => { peopleLoaded = true; });
 const savePeople = () => { try { localStorage.setItem(PEOPLE_KEY, JSON.stringify(people)); } catch(e) {} };
 let personSaveTimer = null;
+// Guardar al salir, solo si ya se había leído lo guardado (para no pisarlo con datos vacíos)
+const flushCaches = () => {
+  if (peopleLoaded) idb.set("people", personCache).catch(() => {});
+  if (tmdbLoaded) idb.set("tmdb", tmdbCache).catch(() => {});
+};
+addEventListener("pagehide", flushCaches);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") flushCaches(); });
 const savePersonCache = () => { clearTimeout(personSaveTimer); personSaveTimer = setTimeout(() => idb.set("people", personCache).catch(() => {}), 500); };
 const DEP_ES = { Acting: "Interpretación", Directing: "Dirección", Writing: "Guion", Sound: "Música", Camera: "Fotografía",
   Production: "Producción", Editing: "Montaje", Art: "Dirección artística", "Costume & Make-Up": "Vestuario y maquillaje", "Visual Effects": "Efectos visuales", Crew: "Equipo" };
@@ -2074,6 +2088,9 @@ async function fetchPerson(p){
 
 async function fetchPeople(){
   if (!tmdbKey || peopleRun || !people.length) return;
+  peopleRun = {};                      // reserva mientras se lee lo guardado
+  await Promise.all([peopleReady, tmdbReady]);
+  peopleRun = null;
   const todo = people.filter(p => personCache[p.id]?.v !== 1);
   if (!todo.length) return;
   const token = peopleRun = {};
