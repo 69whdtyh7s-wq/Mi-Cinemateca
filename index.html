@@ -1954,19 +1954,42 @@ let tmdbKey = "", tmdbCache = {}, tmdbSaveTimer = null, bulk = null;
 try { tmdbKey = localStorage.getItem(TMDB_KEY) || ""; } catch(e) {}
 
 // Almacén grande del navegador (IndexedDB): admite muchos más datos que localStorage (≈5 MB en Safari)
+// v2: cada artista se guarda por separado (almacén "people"), en lugar de un único bloque enorme
+// que en el iPhone podía no llegar a guardarse y obligaba a descargarlo todo otra vez.
 const idb = (() => {
   let dbp = null;
   const open = () => dbp || (dbp = new Promise((res, rej) => {
-    const rq = indexedDB.open("mi-cinemateca", 1);
-    rq.onupgradeneeded = () => rq.result.createObjectStore("kv");
-    rq.onsuccess = () => res(rq.result);
-    rq.onerror = () => rej(rq.error);
+    const rq = indexedDB.open("mi-cinemateca", 2);
+    rq.onupgradeneeded = () => {
+      const db = rq.result;
+      if (!db.objectStoreNames.contains("kv")) db.createObjectStore("kv");
+      if (!db.objectStoreNames.contains("people")) db.createObjectStore("people");
+    };
+    rq.onsuccess = () => {
+      const db = rq.result;
+      db.onclose = db.onversionchange = () => { try { db.close(); } catch(e) {} dbp = null; };
+      res(db);
+    };
+    rq.onerror = () => { dbp = null; rej(rq.error); };
+    rq.onblocked = () => { dbp = null; rej(new Error("blocked")); };
   }));
-  const tx = (mode, fn) => open().then(db => new Promise((res, rej) => {
-    const t = db.transaction("kv", mode), st = t.objectStore("kv"), out = fn(st);
-    t.oncomplete = () => res(out && out.result); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error);
+  const once = (store, mode, fn) => open().then(db => new Promise((res, rej) => {
+    const t = db.transaction(store, mode), st = t.objectStore(store), out = fn(st);
+    t.oncomplete = () => res(out && out.result); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error || new Error("abort"));
   }));
-  return { get: k => tx("readonly", st => st.get(k)), set: (k, v) => tx("readwrite", st => st.put(v, k)) };
+  // Safari a veces pierde la conexión al volver de segundo plano: se reabre y se reintenta una vez
+  const tx = (store, mode, fn) => once(store, mode, fn).catch(() => { dbp = null; return once(store, mode, fn); });
+  return {
+    get: k => tx("kv", "readonly", st => st.get(k)),
+    set: (k, v) => tx("kv", "readwrite", st => st.put(v, k)),
+    del: k => tx("kv", "readwrite", st => st.delete(k)),
+    allPeople: () => open().then(db => new Promise((res, rej) => {
+      const out = {}, t = db.transaction("people", "readonly"), rq = t.objectStore("people").openCursor();
+      rq.onsuccess = () => { const c = rq.result; if (c){ out[c.key] = c.value; c.continue(); } };
+      t.oncomplete = () => res(out); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error);
+    })),
+    putPeople: entries => tx("people", "readwrite", st => { entries.forEach(([k, v]) => { if (v) st.put(v, k); else st.delete(k); }); })
+  };
 })();
 
 // Cargar la caché de TMDb (y mover la antigua de localStorage si existía)
@@ -2341,22 +2364,46 @@ const PEOPLE_KEY = "cinemateca-people";
 let people = [], personCache = {}, peopleRun = null;
 try { people = JSON.parse(localStorage.getItem(PEOPLE_KEY) || "[]"); } catch(e) {}
 let peopleLoaded = false;
-const peopleReady = idb.get("people").then(c => { if (c && typeof c === "object"){ personCache = Object.assign(c, personCache); renderFavs(); renderArtistStats(); } }).catch(() => {}).finally(() => { peopleLoaded = true; });
+const peopleReady = (async () => {
+  let m = await idb.allPeople().catch(() => ({}));
+  if (!Object.keys(m).length){
+    // Pasar la copia antigua (un solo bloque) al nuevo formato, artista por artista
+    const old = await idb.get("people").catch(() => null);
+    if (old && typeof old === "object" && Object.keys(old).length){
+      m = old;
+      try { await idb.putPeople(Object.entries(old)); await idb.del("people"); } catch(e) {}
+    }
+  }
+  personCache = Object.assign(m, personCache);
+  if (Object.keys(m).length){ renderFavs(); renderArtistStats(); }
+})().catch(() => {}).finally(() => { peopleLoaded = true; flushPeople(); });
 const savePeople = () => { try { localStorage.setItem(PEOPLE_KEY, JSON.stringify(people)); } catch(e) {} };
 let personSaveTimer = null;
 // Guardar al salir, solo si ya se había leído lo guardado (para no pisarlo con datos vacíos)
 const flushCaches = () => {
-  if (peopleLoaded) idb.set("people", personCache).catch(() => {});
+  flushPeople();
   if (tmdbLoaded) idb.set("tmdb", tmdbCache).catch(() => {});
 };
 addEventListener("pagehide", flushCaches);
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") flushCaches(); });
 // Guardado periódico: como mucho cada 1,5 s, pero sin esperar a que termine toda la descarga
 // (antes se aplazaba con cada artista nuevo y, si se recargaba a mitad, se perdía todo)
-const savePersonCache = () => {
+const dirtyPeople = new Set();
+const savePersonCache = id => {
+  if (id) dirtyPeople.add(id); else Object.keys(personCache).forEach(k => dirtyPeople.add(k));
   if (personSaveTimer) return;
-  personSaveTimer = setTimeout(() => { personSaveTimer = null; idb.set("people", personCache).catch(() => {}); }, 1500);
+  personSaveTimer = setTimeout(flushPeople, 50);   // cada artista es pequeño: se guarda casi al momento
 };
+function flushPeople(){
+  clearTimeout(personSaveTimer); personSaveTimer = null;
+  if (!peopleLoaded || !dirtyPeople.size) return Promise.resolve();
+  const ids = [...dirtyPeople]; dirtyPeople.clear();
+  return idb.putPeople(ids.map(id => [id, personCache[id]])).catch(e => {
+    ids.forEach(id => dirtyPeople.add(id));
+    const st = document.getElementById("favStatus");
+    if (st) st.textContent = `No se han podido guardar en este dispositivo los datos de TMDb de los artistas (${e?.name || e?.message || "error"}). Si usas una ventana privada, abre la app en una normal.`;
+  });
+}
 const DEP_ES = { Acting: "Interpretación", Directing: "Dirección", Writing: "Guion", Sound: "Música", Camera: "Fotografía",
   Production: "Producción", Editing: "Montaje", Art: "Dirección artística", "Costume & Make-Up": "Vestuario y maquillaje", "Visual Effects": "Efectos visuales", Crew: "Equipo" };
 
@@ -2390,7 +2437,7 @@ async function fetchPerson(p){
     const found = await tmdbGet(`/find/${p.id}`, { external_source: "imdb_id", language: "es-ES" });
     hit = found.person_results?.[0];
   }
-  if (!hit){ personCache[p.id] = { v: 2, none: 1 }; savePersonCache(); return personCache[p.id]; }
+  if (!hit){ personCache[p.id] = { v: 2, none: 1 }; savePersonCache(p.id); return personCache[p.id]; }
   const d = await tmdbGet(`/person/${hit.id}`, { language: "es-ES", append_to_response: "combined_credits" });
   const credits = new Map();
   const add = (c, job) => {
@@ -2409,7 +2456,7 @@ async function fetchPerson(p){
     g: d.gender ?? 0, b: d.birthday || "", d: d.deathday || "", pl: d.place_of_birth || "",
     bio: d.biography || prev.bio, bioLang: d.biography ? "es" : prev.bioLang, imdb: d.imdb_id || prev.imdb, aka: (d.also_known_as || prev.aka || []).slice(0, 3) };
   if (!d.biography && prev.bio === undefined) delete personCache[p.id].bio;
-  savePersonCache();
+  savePersonCache(p.id);
   return personCache[p.id];
 }
 
@@ -2703,7 +2750,7 @@ async function fetchPersonDetails(p){
   if (!bio){ try { bio = (await tmdbGet(`/person/${x.t}`, { language: "en-US" })).biography || ""; bioLang = "en"; } catch(e) {} }
   Object.assign(x, { bio, bioLang, b: d.birthday || "", d: d.deathday || "", pl: d.place_of_birth || "", imdb: d.imdb_id || d.external_ids?.imdb_id || "",
     aka: (d.also_known_as || []).slice(0, 3), img: x.img || d.profile_path || "" });
-  savePersonCache();
+  savePersonCache(p.id);
   return x;
 }
 
@@ -2806,7 +2853,7 @@ async function linkMissingToImdb(p){
     }
   };
   await Promise.all([worker(), worker(), worker()]);
-  savePersonCache();
+  savePersonCache(p.id);
 }
 document.getElementById("personDlg").addEventListener("click", e => {
   const dlg = e.currentTarget;
@@ -3208,7 +3255,7 @@ document.getElementById("reloadBtn").addEventListener("click", async () => {
   save();
   const writes = [];
   if (tmdbLoaded) writes.push(idb.set("tmdb", tmdbCache).catch(() => {}));
-  if (peopleLoaded) writes.push(idb.set("people", personCache).catch(() => {}));
+  writes.push(flushPeople());
   await Promise.race([Promise.all(writes), new Promise(r => setTimeout(r, 1500))]);
   // El parámetro evita que el navegador sirva una versión antigua guardada en caché
   const u = new URL(location.href); u.searchParams.set("v", Date.now());
