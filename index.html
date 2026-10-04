@@ -336,6 +336,11 @@ body.pop-open{overflow:hidden}
 .err-text:empty{display:none}
 .fav-search{position:relative;display:flex;gap:8px;align-items:center}
 .fav-search .seg.acts button{padding:9px 12px}
+.qbox{position:relative;flex:1;min-width:0;display:block}
+.qbox input{width:100%;padding-right:40px!important}
+.qbox input::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none;display:none}
+.qclear{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:28px;height:28px;border:0;border-radius:50%;background:var(--accent-soft);color:var(--ink);font-size:12px;cursor:pointer;display:grid;place-items:center;padding:0}
+.qclear:hover{background:var(--accent)}
 .person-results em{margin-left:auto;font-style:normal;font-weight:600;font-size:13px;color:var(--accent-ink);white-space:nowrap}
 .person-results button:disabled{cursor:default;opacity:.6}
 .person-results img{border-radius:50%;width:40px;height:40px}
@@ -404,7 +409,15 @@ body.pop-open{overflow:hidden}
   .person .score b{font-size:1.1rem}
   .person-bio,.person-section{padding-inline:16px}
   .poster-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 10px}
-  .fav-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .fav-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .fav-grid:not(.as-list) .fav.panel{border-radius:10px}
+  .fav-grid:not(.as-list) .fav-info{padding:7px 8px 9px}
+  .fav-grid:not(.as-list) .fav-info h3{font-size:.86rem;line-height:1.15;overflow-wrap:anywhere}
+  .fav-grid:not(.as-list) .fav-count{font-size:11px;line-height:1.3}
+  .fav-grid:not(.as-list) .fav-count b{font-size:.95rem}
+  .fav-grid:not(.as-list) .fav-meta{font-size:10.5px;line-height:1.3}
+  .fav-grid:not(.as-list) .fav-bar{height:4px;margin-top:4px}
+  .fav-grid:not(.as-list) .fav-photo.ph{font-size:2rem}
   .fav-grid.as-list{grid-template-columns:1fr}
 }
 .fav-photo{width:64px;height:64px;border-radius:50%;object-fit:cover;flex:0 0 auto;background:var(--teal-soft)}
@@ -881,7 +894,7 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
 
   <div class="view" id="view-favs" role="tabpanel" aria-labelledby="tab-favs" hidden>
     <div class="fav-search">
-      <input type="search" id="favQ" placeholder="Buscar en tus artistas" aria-label="Buscar en tus artistas" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+      <div class="qbox"><input type="search" id="favQ" placeholder="Buscar en tus artistas" aria-label="Buscar en tus artistas" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"><button type="button" class="qclear" aria-label="Borrar búsqueda" hidden>✕</button></div>
       <div class="seg acts" role="group" aria-label="Acciones">
         <button type="button" id="favAddBtn" title="Añadir artista" aria-label="Añadir artista"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
       </div>
@@ -930,7 +943,7 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
 
   <div class="view" id="view-films" role="tabpanel" aria-labelledby="tab-films" hidden>
     <div class="filters" id="filmFilters">
-        <div class="field grow"><label class="label" for="q">Buscar</label><input id="q" type="search" placeholder="Título, director o género" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"></div>
+        <div class="field grow"><label class="label" for="q">Buscar</label><div class="qbox"><input id="q" type="search" placeholder="Título, director o género" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"><button type="button" class="qclear" aria-label="Borrar búsqueda" hidden>✕</button></div></div>
         <div class="field"><label class="label" for="fWatched">Vista en</label><select id="fWatched"></select></div>
         <div class="field"><label class="label" for="fYear">Estrenada en</label><select id="fYear"></select></div>
         <div class="field mobile-only"><label class="label" for="sortSel">Ordenar por</label><select id="sortSel">
@@ -1334,6 +1347,16 @@ function fillUntil(data){
   document.addEventListener("touchend", finish);
   document.addEventListener("touchcancel", finish);
 })();
+
+/* Botón ✕ para borrar lo escrito en los buscadores */
+document.querySelectorAll(".qbox").forEach(box => {
+  const inp = box.querySelector("input"), x = box.querySelector(".qclear");
+  const sync = () => { x.hidden = !inp.value; };
+  inp.addEventListener("input", sync);
+  x.addEventListener("pointerdown", e => e.preventDefault());   // no quitar el foco (ni cerrar el teclado)
+  x.addEventListener("click", () => { inp.value = ""; sync(); inp.dispatchEvent(new Event("input", { bubbles: true })); inp.focus(); });
+  setInterval(() => { if (x.hidden === !!inp.value) sync(); }, 500);   // por si el valor cambia desde el código
+});
 
 /* Recordar qué secciones de Stats están plegadas */
 ["sgFilms", "sgArtists"].forEach(id => {
