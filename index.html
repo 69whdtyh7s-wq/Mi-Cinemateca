@@ -469,7 +469,8 @@ body.pop-open{overflow:hidden}
 .year-title{font-family:var(--font-display);font-weight:800;font-size:clamp(1.8rem,5vw,2.6rem);margin:0;line-height:1}
 .year-title span{color:var(--teal-ink)}
 .stat .delta{font-family:var(--font-data);font-size:12px;color:var(--muted);margin-left:6px;font-weight:400}
-.roulette{gap:6px}
+.roulette{gap:6px;position:relative;padding-right:52px}
+.roulette .r-close{position:absolute;top:12px;right:12px}
 .roulette .r-title{font-family:var(--font-display);font-weight:800;font-size:1.6rem;margin:0;line-height:1.15}
 .roulette .r-meta{color:var(--muted);margin:0}
 .roulette .actions{margin-top:8px}
@@ -836,7 +837,7 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
 
   <div class="view" id="view-favs" role="tabpanel" aria-labelledby="tab-favs" hidden>
     <div class="fav-search">
-      <input type="search" id="favQ" placeholder="Buscar o añadir artista" aria-label="Buscar persona" autocomplete="off">
+      <input type="search" id="favQ" placeholder="Buscar o añadir artista" aria-label="Buscar persona" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
       <ul class="add-results" id="favResults" hidden></ul>
     </div>
     <section class="panel" id="favEmpty">
@@ -883,7 +884,7 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
 
   <div class="view" id="view-films" role="tabpanel" aria-labelledby="tab-films" hidden>
     <div class="filters" id="filmFilters">
-        <div class="field grow"><label class="label" for="q">Buscar</label><input id="q" type="search" placeholder="Título, director o género"></div>
+        <div class="field grow"><label class="label" for="q">Buscar</label><input id="q" type="search" placeholder="Título, director o género" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"></div>
         <div class="field"><label class="label" for="fWatched">Vista en</label><select id="fWatched"></select></div>
         <div class="field"><label class="label" for="fYear">Estrenada en</label><select id="fYear"></select></div>
         <div class="field mobile-only"><label class="label" for="sortSel">Ordenar por</label><select id="sortSel">
@@ -933,7 +934,7 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
     <div class="add-body">
       <h2 id="addTitle">Añadir película</h2>
       <div id="addSearch">
-        <input type="search" id="addQ" placeholder="Busca por título" aria-label="Buscar película" autocomplete="off">
+        <input type="search" id="addQ" placeholder="Busca por título" aria-label="Buscar película" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
         <ul class="add-results" id="addResults"></ul>
         <button type="button" class="expand-btn" id="addManualLink">¿No aparece? Añádela a mano</button>
       </div>
@@ -941,7 +942,7 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
       <div id="addForm" hidden>
         <div class="add-picked" id="addPicked"></div>
         <div class="add-manual" id="addManual">
-          <div class="field"><label class="label" for="addManTitle">Título</label><input id="addManTitle" type="text" autocomplete="off"></div>
+          <div class="field"><label class="label" for="addManTitle">Título</label><input id="addManTitle" type="text" autocomplete="off" autocorrect="off" spellcheck="false"></div>
           <div class="field"><label class="label" for="addManYear">Año de estreno</label><input id="addManYear" type="number" inputmode="numeric" min="1880" max="2100"></div>
         </div>
         <div class="field"><label class="label" for="addDate">La viste el</label><input id="addDate" type="date"></div>
@@ -1387,7 +1388,7 @@ function openExpand(canvasId){
     <div class="big-head">
       <h2>${esc(e.title)}</h2>
       <p class="hint">${e.entries.length} en total.${e.onPick ? " Toca uno para ver sus películas." : ""}</p>
-      <input type="search" id="bigFilter" placeholder="Buscar en la lista" aria-label="Buscar en la lista">
+      <input type="search" id="bigFilter" placeholder="Buscar en la lista" aria-label="Buscar en la lista" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
     </div>
     <ol class="big-list">${e.entries.map(([label, n], i) => `
       <li data-label="${esc(String(label).toLowerCase())}">
@@ -1847,9 +1848,9 @@ function renderYear(){
 function spin(){
   const list = filtered(), box = document.getElementById("roulette");
   box.hidden = false;
-  if (!list.length){ box.innerHTML = `<p class="r-meta">No hay películas con estos filtros.</p>`; return; }
+  if (!list.length){ box.innerHTML = `<button class="pop-close r-close" type="button" aria-label="Quitar" onclick="this.parentNode.hidden=true">✕</button><p class="r-meta">No hay películas con estos filtros.</p>`; return; }
   const r = list[Math.floor(Math.random() * list.length)];
-  box.innerHTML = `${tmdbCache[imdbId(r)]?.p ? `<img class="r-poster" src="${TMDB_IMG}w185${tmdbCache[imdbId(r)].p}" alt="">` : ""}<span class="label">Tu película al azar</span>
+  box.innerHTML = `${tmdbCache[imdbId(r)]?.p ? `<img class="r-poster" src="${TMDB_IMG}w185${tmdbCache[imdbId(r)].p}" alt="">` : ""}<button class="pop-close r-close" type="button" id="spinClose" aria-label="Quitar">✕</button><span class="label">Tu película al azar</span>
     <p class="r-title">${esc(r.title)}</p>
     <p class="r-meta">${[r.year, r.dir, genresOf(r).join(", "), r.runtime ? `${r.runtime} min` : ""].filter(Boolean).map(esc).join(" · ")}</p>
     <p class="r-meta">${[r.mine ? `Tu nota: ${r.mine}` : "", r.imdb ? `IMDb: ${fmt1(r.imdb)}` : "", r.watchedDate ? `Vista el ${r.watchedDate.split("-").reverse().join("/")}` : ""].filter(Boolean).join(" · ")}</p>
@@ -1859,6 +1860,7 @@ function spin(){
       ${r.url ? `<a class="btn ghost" href="${esc(r.url)}" target="_blank" rel="noopener">Ver en IMDb</a>` : ""}
     </div>`;
   document.getElementById("spinAgain").addEventListener("click", spin);
+  document.getElementById("spinClose").addEventListener("click", () => { box.hidden = true; box.innerHTML = ""; });
   document.getElementById("spinFicha").addEventListener("click", () => openFicha(r));
 }
 document.getElementById("spin").addEventListener("click", spin);
