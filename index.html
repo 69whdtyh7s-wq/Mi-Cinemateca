@@ -189,7 +189,13 @@ th button[data-dir="desc"]::after{content:"▼"}
 .side-arrow.prev{left:max(6px,calc(50vw - 380px - 58px))}
 .side-arrow.next{right:max(6px,calc(50vw - 380px - 58px))}
 .side-pos{position:fixed;bottom:calc(10px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);z-index:3;font:12px var(--font-data);color:#fff;background:rgba(0,0,0,.55);padding:3px 10px;border-radius:999px;pointer-events:none}
-@media (max-width: 640px){ .side-arrow{width:36px;height:36px;margin-top:-18px;font-size:24px;opacity:.85} .side-arrow:disabled{opacity:0;pointer-events:none} }
+/* iPhone: las flechas van abajo, junto al contador, para no tapar el texto */
+@media (max-width: 640px){
+  .side-arrow{top:auto;bottom:calc(4px + env(safe-area-inset-bottom,0px));width:36px;height:36px;margin-top:0;font-size:24px;opacity:1}
+  .side-arrow.prev{left:calc(50% - 74px)}
+  .side-arrow.next{right:calc(50% - 74px)}
+  .side-arrow:disabled{opacity:.3}
+}
 .ficha-close{position:sticky;top:8px;float:right;margin:8px 8px 0 0;width:36px;height:36px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:16px;cursor:pointer;z-index:1}
 .ficha-grid{display:grid;grid-template-columns:240px minmax(0,1fr);gap:14px 22px;padding:22px 22px 44px}
 .ficha-body{display:contents}
