@@ -625,6 +625,16 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
   .films .c-sub + .c-sub{margin-top:-2px}
   .tbl{margin-top:0}
 }
+/* iPad (táctil y más ancho que un iPhone): 5 artistas por fila */
+@media (hover: none) and (min-width: 641px){
+  .fav-grid:not(.as-list){grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+  .fav-grid:not(.as-list) .fav-info{padding:8px 10px 11px}
+  .fav-grid:not(.as-list) .fav-info h3{font-size:.95rem;line-height:1.2;overflow-wrap:anywhere}
+  .fav-grid:not(.as-list) .fav-count{font-size:12px;line-height:1.3}
+  .fav-grid:not(.as-list) .fav-count b{font-size:1rem}
+  .fav-grid:not(.as-list) .fav-meta{font-size:11px;line-height:1.3}
+  .fav-grid:not(.as-list) .fav-photo.ph{font-size:2.2rem}
+}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 </style>
 </head>
