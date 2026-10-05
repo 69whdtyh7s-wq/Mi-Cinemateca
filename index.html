@@ -351,6 +351,7 @@ body.pop-open{overflow:hidden}
 .fav-none{grid-column:1 / -1;display:flex;flex-direction:column;align-items:flex-start;gap:8px}
 .fav-search input{font:16px var(--font-body);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;flex:1;min-width:0}
 .fav{position:relative}
+.nowrap{white-space:nowrap}
 img.flag{display:inline-block;width:20px;height:15px;vertical-align:-2px;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,.15);object-fit:cover}
 .fav-flag{position:absolute;top:7px;left:7px;line-height:0}
 .fav-flag img.flag{width:26px;height:19.5px;border-radius:3px;box-shadow:0 0 0 1px rgba(0,0,0,.2),0 1px 4px rgba(0,0,0,.3)}
@@ -2248,7 +2249,7 @@ function fichaHTML(r, x){
     ["Estreno", r.year], ["Vista", r.watchedDate ? r.watchedDate.split("-").reverse().join("/") : ""],
     ["Duración", r.runtime ? `${r.runtime} min` : ""], ["Dirección", r.dir],
     ["Géneros", genresOf(r).join(", ")],
-    ["País", x?.c?.length ? x.c.map(regionName).join(", ") : ""],
+    ["País", x?.c?.length ? { html: x.c.map(c => `<span class="nowrap">${flagImg(c)}${flagCode(c) ? " " : ""}${esc(regionName(c))}</span>`).join(", ") } : ""],
     ["Idioma original", x?.l ? langName(x.l) : ""],
     ["Reparto", x?.a?.length ? x.a.join(", ") : ""],
     ["Guion", x?.wr?.length ? x.wr.join(", ") : ""],
@@ -2279,7 +2280,7 @@ function fichaHTML(r, x){
         ${scores ? `<div class="scores">${scores}</div>` : ""}
         ${x?.o ? `<p class="ficha-overview">${esc(x.o)}</p>` : ""}
         ${extra}
-        <dl class="ficha-facts">${facts.map(([k, v]) => `<dt>${k}</dt><dd>${esc(String(v))}</dd>`).join("")}</dl>
+        <dl class="ficha-facts">${facts.map(([k, v]) => `<dt>${k}</dt><dd>${typeof v === "object" ? v.html : esc(String(v))}</dd>`).join("")}</dl>
         ${x && !x.none ? `<p class="ficha-where"><span class="label">Dónde verla en España</span>${x.w?.length ? esc(x.w.join(", ")) : "No está en ninguna plataforma de suscripción ahora mismo."}${x.wl ? ` <a href="${esc(x.wl)}" target="_blank" rel="noopener">Ver opciones</a>` : ""}</p>` : ""}
         <div class="actions">
           ${r.url ? `<a class="btn ghost" href="${esc(r.url)}" target="_blank" rel="noopener">Ver en IMDb</a>` : ""}
@@ -3010,7 +3011,7 @@ function personHTML(p){
   const facts = [
     ["Especialidad", dep],
     ["Nacimiento", x.b ? `${fmtDateEs(x.b)}${!x.d && age != null ? ` (${age} años)` : ""}` : ""],
-    ["Lugar", x.pl || ""],
+    ["Lugar", x.pl ? (() => { const f = flagImg(birthCode(x.pl)); return f ? { html: `${f} ${esc(x.pl)}` } : x.pl; })() : ""],
     ["Fallecimiento", x.d ? `${fmtDateEs(x.d)}${age != null ? ` (a los ${age} años)` : ""}` : ""],
     ["Conocido por", known.join(", ")],
     ["Primera que viste", firstSeen ? `${firstSeen.r.title}${firstSeen.r.watchedDate ? ` · ${firstSeen.r.watchedDate.split("-").reverse().join("/")}` : ""}` : ""],
@@ -3029,7 +3030,7 @@ function personHTML(p){
           ${movies.length ? `<span class="score"><b>${pct}%</b>De sus películas</span>` : ""}
           ${avg != null ? `<span class="score"><b>${fmt1(avg)}</b>Tu nota media</span>` : ""}
         </div>
-        <dl class="ficha-facts">${facts.map(([k, v]) => `<dt>${k}</dt><dd>${esc(String(v))}</dd>`).join("")}</dl>
+        <dl class="ficha-facts">${facts.map(([k, v]) => `<dt>${k}</dt><dd>${typeof v === "object" ? v.html : esc(String(v))}</dd>`).join("")}</dl>
         <div class="actions">
           ${x.imdb || /^nm\d+/.test(p.id) ? `<a class="btn ghost" href="https://www.imdb.com/name/${esc(x.imdb || p.id)}/" target="_blank" rel="noopener">Ver en IMDb</a>` : ""}
           ${x.t ? `<a class="btn ghost" href="https://www.themoviedb.org/person/${x.t}" target="_blank" rel="noopener">Ver en TMDb</a>` : ""}
