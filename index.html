@@ -303,6 +303,9 @@ body.pop-open{overflow:hidden}
 .tile:disabled:hover{background:var(--bg)}
 .tile.busy svg{animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+.filt-hint{margin:0 4px 6px;font-size:13px}
+.filt-note{margin:8px 4px 0;font-size:13px;background:var(--accent-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.filt-note .btn{margin-top:8px;display:inline-flex}
 .set-fold > summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:6px}
 .set-fold > summary::-webkit-details-marker{display:none}
 .set-fold > summary .chev{display:inline-block;font-size:16px;transition:transform .2s}
@@ -693,8 +696,13 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
 
   <div class="pop" id="filtersPanel" role="dialog" aria-label="Filtros" hidden>
     <div class="pop-head"><h2>Filtros</h2><button class="pop-close" type="button" data-pop-close aria-label="Cerrar">✕</button></div>
-    <p class="set-caption">Tipos de título que se cuentan en toda la app</p>
+    <p class="set-caption">Películas</p>
+    <p class="hint filt-hint">Tipos de título que cuentan en Películas (Vistas y Watchlist) y en sus estadísticas.</p>
     <div class="chips" id="types"></div>
+    <p class="hint filt-note" id="typesNote" hidden></p>
+    <p class="set-caption">Series</p>
+    <p class="hint filt-hint">Tipos de título que cuentan en la pestaña Series y en Stats › Series.</p>
+    <div class="chips" id="stypes"></div>
   </div>
 
   <div class="pop wide" id="backupPanel" role="dialog" aria-label="Ajustes" hidden>
@@ -1281,27 +1289,47 @@ const TYPE_ES = { movie:"Película", tvmovie:"Película de TV", video:"Vídeo", 
 const typeKey = t => (t || "Sin tipo").toLowerCase().replace(/[^a-z]/g, "") || "sintipo";
 const DEFAULT_ON = ["movie", "tvmovie", "video", "pelcula", "film"];
 
-function buildTypes(){
-  const counts = {};
-  rows.forEach(r => { const k = typeKey(r.type); counts[k] = counts[k] || { n: 0, raw: r.type || "Sin tipo" }; counts[k].n++; });
-  selected = new Set(Object.keys(counts));   // por defecto: Todo
-  const all = Object.keys(counts).every(k => selected.has(k));
-  document.getElementById("types").innerHTML =
-    `<label class="chip" for="tAll"><input type="checkbox" id="tAll" ${all ? "checked" : ""}> Todo <b>${rows.length}</b></label>` +
-    Object.entries(counts).sort((a, b) => b[1].n - a[1].n).map(([k, v], i) =>
-    `<label class="chip" for="t${i}"><input type="checkbox" id="t${i}" data-k="${k}" ${selected.has(k) ? "checked" : ""}> ${esc(TYPE_ES[k] || v.raw)} <b>${v.n}</b></label>`).join("");
+// Filtros de tipos de título: uno para Películas y otro para Series. Se guarda lo que desmarcas.
+const TYPES_OFF_KEY = "cinemateca-types-off";
+let typesOff = { films: [], series: [] }, sselected = new Set();
+try { const t = JSON.parse(localStorage.getItem(TYPES_OFF_KEY) || "null"); if (t && Array.isArray(t.films)) typesOff = { films: t.films, series: t.series || [] }; } catch(e) {}
+const saveTypesOff = () => { try { localStorage.setItem(TYPES_OFF_KEY, JSON.stringify(typesOff)); } catch(e) {} };
+const typeName = (k, raw) => TYPE_ES[k] || raw || "Sin tipo";
+function chipsHTML(group, counts, total, on){
+  const keys = Object.keys(counts), all = keys.every(k => on.has(k));
+  return `<label class="chip"><input type="checkbox" data-all="${group}" ${all ? "checked" : ""}> Todo <b>${total}</b></label>` +
+    Object.entries(counts).sort((a, b) => b[1].n - a[1].n).map(([k, v]) =>
+      `<label class="chip"><input type="checkbox" data-g="${group}" data-k="${k}" ${on.has(k) ? "checked" : ""}> ${esc(typeName(k, v.raw))} <b>${v.n}</b></label>`).join("");
 }
-document.getElementById("types").addEventListener("change", e => {
-  const boxes = [...document.querySelectorAll("#types input[data-k]")];
-  const allBox = document.getElementById("tAll");
-  if (e.target === allBox){
-    boxes.forEach(b => { b.checked = allBox.checked; allBox.checked ? selected.add(b.dataset.k) : selected.delete(b.dataset.k); });
-  } else {
-    const k = e.target.dataset.k; if (!k) return;
-    e.target.checked ? selected.add(k) : selected.delete(k);
-    allBox.checked = boxes.every(b => b.checked);
-  }
-  render();
+function buildTypes(){
+  if (!rows) return;
+  const count = list => { const c = {}; list.forEach(r => { const k = typeKey(r.type); c[k] = c[k] || { n: 0, raw: r.type }; c[k].n++; }); return c; };
+  const fl = rows.concat(typeof watch !== "undefined" ? watch.filter(r => !isSeriesRow(r)) : []);
+  const sl = typeof series !== "undefined" ? series.concat(swatch.filter(r => !series.some(x => dupKey(x) === dupKey(r))), watch.filter(isSeriesRow)) : [];
+  const fc = count(fl), sc = count(sl);
+  selected = new Set(Object.keys(fc).filter(k => !typesOff.films.includes(k)));
+  sselected = new Set(Object.keys(sc).filter(k => !typesOff.series.includes(k)));
+  document.getElementById("types").innerHTML = chipsHTML("films", fc, fl.length, selected);
+  document.getElementById("stypes").innerHTML = sl.length ? chipsHTML("series", sc, sl.length, sselected) : `<p class="hint">Aún no has cargado series.</p>`;
+  // Series dentro de la lista de películas vistas
+  const serInFilms = rows.filter(r => isSeriesRow(r) && selected.has(typeKey(r.type))).length;
+  const note = document.getElementById("typesNote");
+  note.hidden = !serInFilms;
+  note.innerHTML = serInFilms ? `Tu lista de películas vistas incluye ${serInFilms} ${serInFilms === 1 ? "serie" : "series y miniseries"}. Como ya tienes la pestaña Series, puedes quitarlas de Películas. <button type="button" class="btn ghost small" id="typesNoSeries">Quitar series de Películas</button>` : "";
+  document.getElementById("filtersDot").hidden = !typesOff.films.length && !typesOff.series.length;
+}
+document.getElementById("filtersPanel").addEventListener("change", e => {
+  const t = e.target; if (t.type !== "checkbox") return;
+  const g = t.dataset.all || t.dataset.g; if (!g) return;
+  const boxes = [...document.querySelectorAll(`#filtersPanel input[data-g="${g}"]`)];
+  if (t.dataset.all) boxes.forEach(b => { b.checked = t.checked; });
+  typesOff[g] = boxes.filter(b => !b.checked).map(b => b.dataset.k);
+  saveTypesOff(); buildTypes(); dataVer++; render();
+});
+document.getElementById("filtersPanel").addEventListener("click", e => {
+  if (!e.target.closest("#typesNoSeries")) return;
+  typesOff.films = [...new Set(typesOff.films.concat(rows.filter(isSeriesRow).map(r => typeKey(r.type))))];
+  saveTypesOff(); buildTypes(); dataVer++; render();
 });
 
 const counted = () => rows.filter(r => selected.has(typeKey(r.type)));
@@ -1335,7 +1363,7 @@ function showDupNotice(list){
   box.hidden = false;
   box.querySelector(".pop-close").onclick = () => { box.hidden = true; };
 }
-function saveWatch(){ try { localStorage.setItem(WATCH_KEY, JSON.stringify(watch)); } catch(e) {} syncSrcCounts(); if (typeof renderWatchStats === "function") renderWatchStats(); }
+function saveWatch(){ try { localStorage.setItem(WATCH_KEY, JSON.stringify(watch)); } catch(e) {} if (rows && typeof series !== "undefined") buildTypes(); syncSrcCounts(); if (typeof renderWatchStats === "function") renderWatchStats(); }
 function syncSrcCounts(){
   const a = document.getElementById("cntSeen"), b = document.getElementById("cntTodo");
   const ser = typeof srcKind === "function" && srcKind() === "series";
@@ -1346,7 +1374,7 @@ function syncSrcCounts(){
 const SERIES_KEY = "cinemateca-series";
 let series = [];
 try { series = JSON.parse(localStorage.getItem(SERIES_KEY) || "[]"); if (!Array.isArray(series)) series = []; } catch(e) { series = []; }
-function saveSeries(){ try { localStorage.setItem(SERIES_KEY, JSON.stringify(series)); } catch(e) {} const el = document.getElementById("tabCountS"); if (el) el.textContent = series.length || ""; if (typeof renderSeriesStats === "function") renderSeriesStats(); }
+function saveSeries(){ try { localStorage.setItem(SERIES_KEY, JSON.stringify(series)); } catch(e) {} if (rows) buildTypes(); const el = document.getElementById("tabCountS"); if (el) el.textContent = series.length || ""; if (typeof renderSeriesStats === "function") renderSeriesStats(); }
 const SERIES_TYPES = new Set(["tvseries", "tvminiseries", "seriedetv", "miniseriedetv", "serie", "miniserie"]);
 const isSeriesRow = r => SERIES_TYPES.has(typeKey(r.type));
 function loadSeries(list, name, quiet){
@@ -1367,14 +1395,15 @@ const findFilm = k => rows.find(x => rowKey(x) === k) || watch.find(x => rowKey(
 const SWATCH_KEY = "cinemateca-swatch";
 let swatch = [];
 try { swatch = JSON.parse(localStorage.getItem(SWATCH_KEY) || "[]"); if (!Array.isArray(swatch)) swatch = []; } catch(e) { swatch = []; }
-function saveSWatch(){ try { localStorage.setItem(SWATCH_KEY, JSON.stringify(swatch)); } catch(e) {} syncSrcCounts(); }
+function saveSWatch(){ try { localStorage.setItem(SWATCH_KEY, JSON.stringify(swatch)); } catch(e) {} buildTypes(); syncSrcCounts(); }
 const lastSub = { films: "seen", series: "seen" };
 const srcKind = () => filmSrc === "series" || filmSrc === "stodo" ? "series" : "films";
-const watchMovies = () => watch.filter(r => !isSeriesRow(r));
+const watchMovies = () => watch.filter(r => !isSeriesRow(r) && (!selected || selected.has(typeKey(r.type))));
+const seriesCounted = () => series.filter(r => sselected.has(typeKey(r.type)) || !sselected.size);
 // Watchlist de series: las series de tu Watchlist general + un CSV aparte solo de series pendientes
 function watchSeries(){
   const m = new Map();
-  swatch.concat(watch.filter(isSeriesRow)).forEach(r => { const k = dupKey(r); if (!m.has(k)) m.set(k, r); });
+  swatch.concat(watch.filter(isSeriesRow)).forEach(r => { const k = dupKey(r); if (!m.has(k) && (!sselected.size || sselected.has(typeKey(r.type)))) m.set(k, r); });
   return [...m.values()];
 }
 function loadSWatch(list, name, quiet){
@@ -1423,7 +1452,7 @@ document.getElementById("filmSrc").addEventListener("click", e => { const b = e.
 
 function render(){
   const data = counted();
-  document.getElementById("filtersDot").hidden = data.length === rows.length;
+  document.getElementById("filtersDot").hidden = !typesOff.films.length && !typesOff.series.length;
   document.getElementById("tabCount").textContent = data.length;
   syncSrcCounts();
 
@@ -1914,7 +1943,7 @@ function filtered(){
   const q = document.getElementById("q").value.trim().toLowerCase();
   const fw = Number(document.getElementById("fWatched").value) || null;
   const fy = Number(document.getElementById("fYear").value) || null;
-  let list = (filmSrc === "todo" ? watchMovies() : filmSrc === "series" ? series : filmSrc === "stodo" ? watchSeries() : counted()).filter(r =>
+  let list = (filmSrc === "todo" ? watchMovies() : filmSrc === "series" ? seriesCounted() : filmSrc === "stodo" ? watchSeries() : counted()).filter(r =>
     (filmSrc !== "seen" || !fw || r.watched === fw) && (!fy || r.year === fy) &&
     (!q || searchText(r).includes(q)) && (!extra || extra.fn(r)));
   const k = sort.key === "watched" ? "watchedDate" : sort.key, m = sort.dir === "asc" ? 1 : -1;
@@ -2172,7 +2201,7 @@ function renderSeriesStats(){
   document.getElementById("ssEmpty").hidden = has;
   document.getElementById("ssBody").hidden = !has;
   if (!has) return;
-  const S = series.filter(isSeriesRow).length ? series.filter(r => isSeriesRow(r)) : series, n = S.length;
+  const S = seriesCounted(), n = S.length;
   const rated = S.filter(r => r.mine), avgM = rated.length ? rated.reduce((a, r) => a + r.mine, 0) / rated.length : null;
   const withI = S.filter(r => r.imdb), avgI = withI.length ? withI.reduce((a, r) => a + r.imdb, 0) / withI.length : null;
   const minis = S.filter(r => /mini/i.test(r.type || "")).length;
