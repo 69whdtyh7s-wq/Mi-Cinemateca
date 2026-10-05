@@ -2542,7 +2542,6 @@ function fichaHTML(r, x){
         ${whereHTML(r, x)}
         <div class="actions">
           ${r.url ? `<a class="btn ghost" href="${esc(r.url)}" target="_blank" rel="noopener">Ver en IMDb</a>` : ""}
-          ${x?.t ? `<a class="btn ghost" href="https://www.themoviedb.org/${x.k}/${x.t}" target="_blank" rel="noopener">Ver en TMDb</a>` : ""}
           <button class="btn ghost" type="button" data-edit>Cambiar nota o fecha</button>
           ${r.manual ? `<button class="btn ghost" type="button" data-remove>Quitar de mi lista</button>` : ""}
         </div>
@@ -3345,7 +3344,6 @@ function personHTML(p){
         <dl class="ficha-facts">${facts.map(([k, v]) => `<dt>${k}</dt><dd>${typeof v === "object" ? v.html : esc(String(v))}</dd>`).join("")}</dl>
         <div class="actions">
           ${x.imdb || /^nm\d+/.test(p.id) ? `<a class="btn ghost" href="https://www.imdb.com/name/${esc(x.imdb || p.id)}/" target="_blank" rel="noopener">Ver en IMDb</a>` : ""}
-          ${x.t ? `<a class="btn ghost" href="https://www.themoviedb.org/person/${x.t}" target="_blank" rel="noopener">Ver en TMDb</a>` : ""}
           ${people.some(q => q.id === p.id) ? `<button class="btn ghost" type="button" data-remove-person="${esc(p.id)}">Quitar de Artistas</button>` : `<button class="btn" type="button" data-add-temp>+ Añadir a Artistas</button>`}
         </div>
       </div>
