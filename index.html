@@ -639,6 +639,19 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
   .films .c-sub + .c-sub{margin-top:-2px}
   .tbl{margin-top:0}
 }
+/* iPhone: tarjetas de películas y series con la carátula grande (2 por fila) y la nota más discreta */
+@media (max-width: 640px){
+  .film-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 12px}
+  .film-cards .pg-item img,.film-cards .pg-item .pg-ph{border-radius:10px}
+  .film-cards .pg-item em{top:5px;right:5px;font-size:10px;padding:1px 5px;border-radius:5px}
+  .film-cards .pg-item .pg-tag{font-size:9px}
+  .film-cards .pg-item b{font-size:13px}
+  .film-cards .pg-item small{font-size:11px}
+  .list-head .seg{padding:2px}
+  .list-head .seg button{padding:5px 9px}
+  .list-head .seg svg{width:16px;height:16px}
+  .sort-mini select,.sort-mini button{font-size:12px;padding:5px 8px;border-radius:7px}
+}
 /* iPad (táctil y más ancho que un iPhone): 5 artistas por fila */
 @media (hover: none) and (min-width: 641px){
   .fav-grid:not(.as-list){grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
