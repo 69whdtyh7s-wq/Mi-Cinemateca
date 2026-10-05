@@ -2842,7 +2842,7 @@ function isPeopleCSV(objs){
   const constKey = Object.keys(objs[0]).find(k => k.toLowerCase() === "const");
   return keys.includes("name") && constKey && /^nm\d+/.test(objs[0][constKey] || "");
 }
-function loadPeople(objs, name){
+function loadPeople(objs, name, quiet){
   const find = (...ns) => Object.keys(objs[0]).find(k => ns.some(n => k.toLowerCase() === n.toLowerCase()));
   const k = { id: find("Const"), name: find("Name"), known: find("Known For"), pos: find("Position"), added: find("Created"), desc: find("Description") };
   const byId = new Map(people.map(p => [p.id, p]));
@@ -2853,6 +2853,7 @@ function loadPeople(objs, name){
     if (byId.has(id)) Object.assign(byId.get(id), p); else { people.push(p); byId.set(id, p); added++; }
   });
   savePeople();
+  if (quiet){ if (added){ renderFavs(); if (typeof renderArtistStats === "function") renderArtistStats(); } return; }   // sincronización silenciosa
   const msg = document.getElementById("msg"); msg.className = "msg";
   msg.textContent = `Lista de personas cargada desde ${name}: ${added} ${added === 1 ? "nueva" : "nuevas"}, ${people.length} en total. Mira la pestaña Artistas.`;
   showView("favs"); renderFavs(); fetchPeople();
@@ -3578,7 +3579,7 @@ function load(text, name, opts = {}){
       if (Array.isArray(backup.people) && backup.people.length){ const known = new Set(people.map(p => p.id)); backup.people.forEach(p => { if (!known.has(p.id)) people.push(p); }); savePeople(); }
     } else {
       const objs = parseCSV(text);
-      if (isPeopleCSV(objs)){ loadPeople(objs, name || "el archivo"); return; }
+      if (isPeopleCSV(objs)){ loadPeople(objs, name || "el archivo", opts.quiet); return; }
       incoming = normalize(objs);
       // Lista de películas por ver: el archivo no trae ninguna nota tuya (o se llama "watchlist")
       const todoFile = opts.todo || (!opts.seen && (/watch\s*list|por\s*ver/i.test(name || "") || (incoming.length && !incoming.some(r => r.mine))));
@@ -3809,7 +3810,9 @@ if (location.protocol.startsWith("http") && !location.hostname.endsWith("claude.
   fetch("datos.csv", { cache: "no-store" }).then(r => r.ok ? r.text() : null)
     .then(t => { if (t && t.includes(",")) load(t, "datos.csv de GitHub", { quiet: true, seen: true }); }).catch(() => {})
     .finally(() => fetch("porver.csv", { cache: "no-store" }).then(r => r.ok ? r.text() : null)
-      .then(t => { if (t && t.includes(",")) load(t, "porver.csv de GitHub", { quiet: true, todo: true }); }).catch(() => {}));
+      .then(t => { if (t && t.includes(",")) load(t, "porver.csv de GitHub", { quiet: true, todo: true }); }).catch(() => {})
+      .finally(() => fetch("personas.csv", { cache: "no-store" }).then(r => r.ok ? r.text() : null)
+        .then(t => { if (t && t.includes(",")) load(t, "personas.csv de GitHub", { quiet: true }); }).catch(() => {})));
 }
 </script>
 </body>
