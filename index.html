@@ -3135,7 +3135,8 @@ function openArtistGroup(title, items){
   const dlg = document.getElementById("bigList");
   const meta = o => { const x = o.x, y = x.b ? x.b.slice(0, 4) : "";
     const life = x.d ? `${y}–${x.d.slice(0, 4)}` : x.b ? `${ageAt(x.b)} años` : "";
-    return [life, DEP_ES[x.dep] || x.dep, countryOf(x.pl)].filter(Boolean).join(" · "); };
+    const co = countryOf(x.pl), f = co ? flagOf(codeOfCountry(co)) : "";
+    return [life, DEP_ES[x.dep] || x.dep, f ? `${co} ${f}` : co].filter(Boolean).join(" · "); };
   dlg.innerHTML = `
     <button class="ficha-close" type="button" aria-label="Cerrar" data-close>✕</button>
     <div class="big-head">
@@ -3221,9 +3222,10 @@ function renderArtistStats(){
   const topC = countries.slice(0, 10);
   document.getElementById("birthCountryBox").style.height = `${Math.max(topC.length, deps.length, 4) * 26 + 20}px`;
   document.getElementById("depBox").style.height = document.getElementById("birthCountryBox").style.height;
-  const pickCountry = c => openArtistGroup(`Nacidos en ${c}`, list.filter(o => countryOf(o.x.pl) === c).sort(byName));
-  barChart2("birthCountryChart", topC.map(c => c[0]), topC.map(c => c[1]), { horizontal: true, tip: v => `${v} artistas`, onClick: i => pickCountry(topC[i][0]) });
-  setExpand("birthCountryChart", "País de nacimiento de tus artistas", countries, pickCountry);
+  const pickCountry = c => openArtistGroup(`Nacidos en ${withFlag(c)}`, list.filter(o => countryOf(o.x.pl) === c).sort(byName));
+  const withFlag = c => { const f = flagOf(codeOfCountry(c)); return f ? `${c} ${f}` : c; };
+  barChart2("birthCountryChart", topC.map(c => withFlag(c[0])), topC.map(c => c[1]), { horizontal: true, tip: v => `${v} artistas`, onClick: i => pickCountry(topC[i][0]) });
+  setExpand("birthCountryChart", "País de nacimiento de tus artistas", countries.map(c => [withFlag(c[0]), c[1], c[0]]), pickCountry);
   barChart2("depChart", deps.map(d => d[0]), deps.map(d => d[1]), { horizontal: true, color: cssVar("--teal"), tip: v => `${v} artistas`,
     onClick: i => openArtistGroup(deps[i][0], list.filter(o => (DEP_ES[o.x.dep] || o.x.dep) === deps[i][0]).sort(byName)) });
 
