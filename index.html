@@ -263,6 +263,14 @@ th button[data-dir="desc"]::after{content:"▼"}
 .sort-mini select{flex:1;min-width:0;font:600 14px var(--font-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 8px}
 .sort-mini button{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:7px 10px;font:600 13px var(--font-body);white-space:nowrap;cursor:pointer}
 @media (max-width: 640px){ .sort-mini{display:flex} }
+/* En tarjetas no hay cabeceras de columna: el selector de orden se ve en todas las versiones */
+.list-head.cards-mode .sort-mini{display:flex}
+@media (min-width: 641px){
+  .list-head.cards-mode .sort-mini{flex-basis:auto;order:0;margin-left:auto}
+  .list-head.cards-mode .sort-mini label{position:static;width:auto;height:auto;overflow:visible;clip:auto}
+  .list-head.cards-mode .sort-mini select{flex:0 1 auto}
+  .list-head.cards-mode .list-tools{margin-left:0}
+}
 .list-tools{display:flex;gap:8px;align-items:center;margin-left:auto}
 .seg.acts button{color:var(--ink)}
 .seg.acts button:hover{background:var(--surface)}
@@ -2030,6 +2038,7 @@ function renderFilms(){
   // Vista en tarjetas
   layout = layouts[srcKind()];
   const cards = layout === "cards";
+  document.querySelector("#view-films .list-head").classList.toggle("cards-mode", cards);
   document.getElementById("filmTable").hidden = cards;
   document.getElementById("filmCards").hidden = !cards;
   document.querySelectorAll(".list-head .seg.layout [data-layout]").forEach(b => b.setAttribute("aria-pressed", b.dataset.layout === layout));
