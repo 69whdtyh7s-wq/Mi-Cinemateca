@@ -2411,9 +2411,9 @@ function renderWorld(){
   document.getElementById("langHint").textContent = `Películas en ${langs.length} idiomas originales distintos. Toca una barra para ver sus películas.`;
   document.getElementById("countryBox").style.height = h(Math.max(topC.length, topL.length));
   document.getElementById("langBox").style.height = h(Math.max(topC.length, topL.length));
-  setExpand("countryChart", "Países de tus películas", countries.map(c => [regionName(c[0]), c[1], c[0]]), pickCountry);
+  setExpand("countryChart", "Países de tus películas", countries.map(c => [countryLabel(c[0]), c[1], c[0]]), pickCountry);
   setExpand("langChart", "Idiomas originales", langs.map(l => [langName(l[0]), l[1], l[0]]), pickLang);
-  barChart2("countryChart", topC.map(c => regionName(c[0])), topC.map(c => c[1]), { horizontal: true, color: cssVar("--teal"), tip: v => `${v} películas`, onClick: i => pickCountry(topC[i][0]) });
+  barChart2("countryChart", topC.map(c => countryLabel(c[0])), topC.map(c => c[1]), { horizontal: true, color: cssVar("--teal"), tip: v => `${v} películas`, onClick: i => pickCountry(topC[i][0]) });
   barChart2("langChart", topL.map(l => langName(l[0])), topL.map(l => l[1]), { horizontal: true, tip: v => `${v} películas`, onClick: i => pickLang(topL[i][0]) });
 
   // Cine no anglosajón por año
@@ -2511,6 +2511,11 @@ document.getElementById("worldOpenPanel").addEventListener("click", () => {
 const xOf = r => tmdbCache[imdbId(r)] || {};
 const pickGenre = g => filterFilms(`Género: ${g}`, r => genresOf(r).includes(g));
 const pickDirector = d => filterFilms(`Dirección: ${d}`, r => (r.dir || "").split(",").map(x => x.trim()).includes(d));
+// Bandera (emoji) a partir del código de país; los países que ya no existen no tienen bandera
+const NO_FLAG = new Set(["XC", "XG", "YU", "CS", "DD", "AN", "XK", "XI", "BU", "ZR", "TP"]);
+const FLAG_AS = { SU: "RU" };   // la URSS aparece como Rusia
+const flagOf = c => { const code = FLAG_AS[c] || c; return /^[A-Z]{2}$/.test(code || "") && !NO_FLAG.has(code) ? String.fromCodePoint(...[...code].map(ch => 0x1F1E6 + ch.charCodeAt(0) - 65)) : ""; };
+const countryLabel = code => { const f = flagOf(code); return f ? `${f} ${regionName(code)}` : regionName(code); };
 const pickCountry = (code, name) => filterFilms(`País: ${name || regionName(code)}`, r => (xOf(r).c || []).includes(code));
 const pickLang = (code, name) => filterFilms(`Idioma: ${name || langName(code)}`, r => xOf(r).l === code);
 const pickActor = a => filterFilms(`Reparto: ${a}`, r => (xOf(r).a || []).includes(a));
