@@ -945,9 +945,10 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
       <section class="stats" id="wsTiles"></section>
       <div class="duo">
         <section class="panel">
-          <h2>Las mejor valoradas que te faltan</h2>
-          <p class="hint">Según la nota de IMDb. Toca una para ver su ficha.</p>
+          <h2>Joyas pendientes</h2>
+          <p class="hint">Las de tu Watchlist con mejor nota en IMDb. Toca una para ver su ficha.</p>
           <ol class="vs" id="wsBest"></ol>
+          <button class="expand-btn" type="button" id="wsBestAll">Ver la lista completa</button>
         </section>
         <section class="panel">
           <h2>Datos curiosos</h2>
@@ -956,12 +957,13 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
       </div>
       <section class="panel">
         <h2>Cuándo las añadiste</h2>
-        <p class="hint">Películas que metiste en tu Watchlist cada año.</p>
+        <p class="hint">Películas que metiste en tu Watchlist cada año. Toca una barra para verlas.</p>
         <div class="chart small"><canvas id="wAddedChart" aria-label="Películas añadidas a la Watchlist por año"></canvas></div>
       </section>
       <div class="duo">
         <section class="panel">
           <h2>Por década de estreno</h2>
+          <p class="hint">Toca una barra para verlas en tu Watchlist.</p>
           <div class="chart" id="wDecBox"><canvas id="wDecChart" aria-label="Watchlist por década de estreno"></canvas></div>
         </section>
         <section class="panel">
@@ -1986,6 +1988,15 @@ const filmLink = r => r.url ? `<a href="${esc(r.url)}" target="_blank" rel="noop
 const yearsRange = () => { const ys = []; for (let y = START; y <= NOW; y++) ys.push(y); return ys; };
 
 /* ---------- Estadísticas de la Watchlist ---------- */
+// Ir a la Watchlist con un filtro exacto (el chip permite quitarlo)
+function openWatchFilter(label, fn, sortBy){
+  showView("films"); setFilmSrc("todo");
+  document.getElementById("q").value = "";
+  extra = fn ? { label, fn } : null;
+  if (sortBy) sort = sortBy;
+  shown = PAGE; renderFilms();
+  document.querySelector(".tabs").scrollIntoView({ behavior: motion() ? "smooth" : "auto" });
+}
 function openWatch(text = ""){
   showView("films"); setFilmSrc("todo");
   document.getElementById("q").value = text; shown = PAGE; renderFilms();
@@ -2031,28 +2042,31 @@ function renderWatchStats(){
   // Añadidas por año
   const ys = [...new Set(W.map(r => r.watched).filter(Boolean))].sort((a, b) => a - b);
   const yrs = []; if (ys.length) for (let y = ys[0]; y <= ys[ys.length - 1]; y++) yrs.push(y);
-  barChart2("wAddedChart", yrs, yrs.map(y => W.filter(r => r.watched === y).length), { color: cssVar("--teal"), tip: v => `${v} películas` });
+  barChart2("wAddedChart", yrs, yrs.map(y => W.filter(r => r.watched === y).length), { color: cssVar("--teal"), tip: v => `${v} películas`,
+    onClick: i => openWatchFilter(`Añadidas en ${yrs[i]}`, r => r.watched === yrs[i]) });
 
   // Décadas
   const dc = {}; W.forEach(r => { if (r.year){ const d = Math.floor(r.year / 10) * 10; dc[d] = (dc[d] || 0) + 1; } });
   const decs = Object.keys(dc).map(Number).sort((a, b) => b - a);
   const decLabel = d => d >= 2000 ? `Años ${d}` : `Años ${String(d).slice(2)}`;
   document.getElementById("wDecBox").style.height = `${Math.max(decs.length, 4) * 26 + 20}px`;
-  barChart2("wDecChart", decs.map(decLabel), decs.map(d => dc[d]), { horizontal: true, tip: v => `${v} películas` });
+  barChart2("wDecChart", decs.map(decLabel), decs.map(d => dc[d]), { horizontal: true, tip: v => `${v} películas`,
+    onClick: i => openWatchFilter(`Estrenadas en los ${decLabel(decs[i]).toLowerCase()}`, r => r.year && Math.floor(r.year / 10) * 10 === decs[i]) });
 
   // Géneros
   const gc = {}; W.forEach(r => genresOf(r).forEach(g => { gc[g] = (gc[g] || 0) + 1; }));
   const topG = Object.entries(gc).sort((a, b) => b[1] - a[1]).slice(0, 10);
   document.getElementById("wGenreBox").style.height = `${Math.max(topG.length, decs.length, 4) * 26 + 20}px`;
   document.getElementById("wDecBox").style.height = document.getElementById("wGenreBox").style.height;
-  barChart2("wGenreChart", topG.map(g => g[0]), topG.map(g => g[1]), { horizontal: true, color: cssVar("--teal"), tip: v => `${v} películas`, onClick: i => openWatch(topG[i][0]) });
+  barChart2("wGenreChart", topG.map(g => g[0]), topG.map(g => g[1]), { horizontal: true, color: cssVar("--teal"), tip: v => `${v} películas`, onClick: i => openWatchFilter(`Género: ${topG[i][0]}`, r => genresOf(r).includes(topG[i][0])) });
 
   // Directores
   const dr = {}; W.forEach(r => (r.dir || "").split(",").map(d => d.trim()).filter(Boolean).forEach(d => { dr[d] = (dr[d] || 0) + 1; }));
   const topD = Object.entries(dr).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "es")).slice(0, 12);
   document.getElementById("wDirBox").style.height = `${Math.max(topD.length, 4) * 26 + 20}px`;
-  barChart2("wDirChart", topD.map(d => d[0]), topD.map(d => d[1]), { horizontal: true, tip: v => `${v} películas`, onClick: i => openWatch(topD[i][0]) });
+  barChart2("wDirChart", topD.map(d => d[0]), topD.map(d => d[1]), { horizontal: true, tip: v => `${v} películas`, onClick: i => openWatchFilter(`Dirección: ${topD[i][0]}`, r => (r.dir || "").split(",").map(x => x.trim()).includes(topD[i][0])) });
 }
+document.getElementById("wsBestAll").addEventListener("click", () => openWatchFilter("", null, { key: "imdb", dir: "desc" }));
 document.getElementById("view-wstats").addEventListener("click", e => {
   const a = e.target.closest("[data-wk]"); if (!a) return;
   e.preventDefault(); const r = findFilm(a.dataset.wk); if (r) openFicha(r);
