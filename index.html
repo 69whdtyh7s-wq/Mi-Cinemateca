@@ -303,6 +303,11 @@ body.pop-open{overflow:hidden}
 .tile:disabled:hover{background:var(--bg)}
 .tile.busy svg{animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+.set-fold > summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:6px}
+.set-fold > summary::-webkit-details-marker{display:none}
+.set-fold > summary .chev{display:inline-block;font-size:16px;transition:transform .2s}
+.set-fold[open] > summary .chev{transform:rotate(90deg)}
+#layoutDefaults .seg button{padding:6px 12px;font-size:13px}
 .set-caption{margin:10px 4px 4px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
 .set-group{background:var(--bg);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
 .set-row{all:unset;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;min-height:48px;border-bottom:1px solid var(--line);cursor:pointer;font-size:15px;color:var(--ink)}
@@ -717,9 +722,18 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
       </div>
     </div>
 
-    <p class="set-caption">Espacio en este navegador</p>
-    <div class="set-group"><table class="storage-table" id="storageTable"></table></div>
-    <p class="set-foot" id="storageNote"></p>
+    <p class="set-caption">Vista por defecto</p>
+    <div class="set-group" id="layoutDefaults">
+      <div class="set-row static"><span><b>Películas</b></span><div class="seg" data-def="films"><button type="button" data-v="list">Lista</button><button type="button" data-v="cards">Tarjetas</button></div></div>
+      <div class="set-row static"><span><b>Series</b></span><div class="seg" data-def="series"><button type="button" data-v="list">Lista</button><button type="button" data-v="cards">Tarjetas</button></div></div>
+      <div class="set-row static"><span><b>Artistas</b></span><div class="seg" data-def="favs"><button type="button" data-v="list">Lista</button><button type="button" data-v="cards">Tarjetas</button></div></div>
+    </div>
+
+    <details class="set-fold" id="storageFold">
+      <summary class="set-caption">Espacio en este navegador <span class="chev" aria-hidden="true">›</span></summary>
+      <div class="set-group"><table class="storage-table" id="storageTable"></table></div>
+      <p class="set-foot" id="storageNote"></p>
+    </details>
   </div>
 
   <section class="panel welcome" id="welcome" hidden>
@@ -1919,11 +1933,14 @@ function thumb(r){
   const x = typeof tmdbCache !== "undefined" ? tmdbCache[imdbId(r)] : null;
   return x?.p ? `<img class="thumb" src="https://image.tmdb.org/t/p/w92${x.p}" alt="" loading="lazy" decoding="async">` : `<span class="thumb thumb-ph" aria-hidden="true"></span>`;
 }
-let layout = "list";
-try { layout = localStorage.getItem("cinemateca-layout") === "cards" ? "cards" : "list"; } catch(e) {}
+// Vista de cada pestaña: la de Ajustes › Vista por defecto; el botón de la lista la cambia solo mientras usas la app
+const LAYOUT_KEYS = { films: "cinemateca-layout", series: "cinemateca-slayout", favs: "cinemateca-alayout" };
+const defLayout = k => { try { const v = localStorage.getItem(LAYOUT_KEYS[k]); return v === "cards" || v === "list" ? v : (k === "favs" ? "cards" : "list"); } catch(e) { return k === "favs" ? "cards" : "list"; } };
+const layouts = { films: defLayout("films"), series: defLayout("series") };
+let layout = layouts.films;
 document.querySelector(".list-head .seg.layout").addEventListener("click", e => {
   const b = e.target.closest("[data-layout]"); if (!b) return;
-  layout = b.dataset.layout; try { localStorage.setItem("cinemateca-layout", layout); } catch(err) {}
+  layouts[srcKind()] = b.dataset.layout;
   renderFilms();
 });
 document.getElementById("filmCards").addEventListener("click", e => {
@@ -1956,6 +1973,7 @@ function renderFilms(){
     : `<tr><td colspan="9" class="dim">${emptyTodo || "No hay títulos con estos filtros."}</td></tr>`;
   document.getElementById("more").hidden = n <= shown;
   // Vista en tarjetas
+  layout = layouts[srcKind()];
   const cards = layout === "cards";
   document.getElementById("filmTable").hidden = cards;
   document.getElementById("filmCards").hidden = !cards;
@@ -3198,11 +3216,10 @@ async function checkDeaths(){
   if (found){ renderFavs(); renderArtistStats(); }
 }
 
-let aLayout = "cards";
-try { aLayout = localStorage.getItem("cinemateca-alayout") === "list" ? "list" : "cards"; } catch(e) {}
+let aLayout = defLayout("favs");
 document.getElementById("favSeg").addEventListener("click", e => {
   const b = e.target.closest("[data-alayout]"); if (!b) return;
-  aLayout = b.dataset.alayout; try { localStorage.setItem("cinemateca-alayout", aLayout); } catch(err) {}
+  aLayout = b.dataset.alayout;
   applyALayout();
 });
 function applyALayout(){
@@ -4154,6 +4171,18 @@ async function showStorage(){
   document.getElementById("storageNote").textContent = "Las imágenes de los pósters y las fotos no cuentan aquí: el navegador las guarda aparte, en su caché temporal, y las borra solo cuando necesita espacio.";
 }
 document.getElementById("filtersBtn").addEventListener("click", () => togglePanel("filtersBtn", "filtersPanel"));
+// Ajustes › Vista por defecto
+function syncLayoutDefaults(){
+  document.querySelectorAll("#layoutDefaults [data-def]").forEach(g => { const v = defLayout(g.dataset.def); g.querySelectorAll("[data-v]").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === v)); });
+}
+document.getElementById("layoutDefaults").addEventListener("click", e => {
+  const b = e.target.closest("[data-v]"); if (!b) return;
+  const k = b.closest("[data-def]").dataset.def, v = b.dataset.v;
+  try { localStorage.setItem(LAYOUT_KEYS[k], v); } catch(err) {}
+  if (k === "favs"){ aLayout = v; renderFavs(); } else { layouts[k] = v; renderFilms(); }
+  syncLayoutDefaults();
+});
+syncLayoutDefaults();
 
 /* ---------- Modo oscuro ---------- */
 const darkMQ = matchMedia("(prefers-color-scheme: dark)");
