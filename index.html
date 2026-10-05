@@ -183,6 +183,13 @@ th button[data-dir="desc"]::after{content:"▼"}
 .ficha::backdrop{background:rgba(10,10,8,.55)}
 .ficha-back{position:sticky;top:8px;display:block;margin:8px 0 4px 8px;max-width:60%;height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 14px var(--font-body);cursor:pointer;z-index:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ficha-back:hover{border-color:var(--accent)}
+.side-arrow{position:fixed;top:50%;z-index:3;width:44px;height:44px;margin-top:-22px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:400 30px/1 var(--font-body);display:grid;place-items:center;padding:0 0 4px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+.side-arrow:hover:not(:disabled){border-color:var(--accent);background:var(--accent-soft)}
+.side-arrow:disabled{opacity:.3;cursor:default}
+.side-arrow.prev{left:max(6px,calc(50vw - 380px - 58px))}
+.side-arrow.next{right:max(6px,calc(50vw - 380px - 58px))}
+.side-pos{position:fixed;bottom:calc(10px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);z-index:3;font:12px var(--font-data);color:#fff;background:rgba(0,0,0,.55);padding:3px 10px;border-radius:999px;pointer-events:none}
+@media (max-width: 640px){ .side-arrow{width:36px;height:36px;margin-top:-18px;font-size:24px;opacity:.85} .side-arrow:disabled{opacity:0;pointer-events:none} }
 .ficha-close{position:sticky;top:8px;float:right;margin:8px 8px 0 0;width:36px;height:36px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:16px;cursor:pointer;z-index:1}
 .ficha-grid{display:grid;grid-template-columns:200px minmax(0,1fr);gap:20px;padding:20px}
 .ficha-poster img{cursor:zoom-in}
@@ -1760,7 +1767,7 @@ document.getElementById("bigList").addEventListener("click", ev => {
   const dlg = ev.currentTarget;
   if (ev.target === dlg || ev.target.closest("[data-close]")){ dlg.close(); return; }
   const pb = ev.target.closest("button[data-person]");
-  if (pb){ groupReturn = true; dlg.close(); openPerson(+pb.dataset.person || pb.dataset.person); return; }
+  if (pb){ groupReturn = true; dlg.close(); openPerson(+pb.dataset.person || pb.dataset.person, lastGroup ? lastGroup.items.map(o => o.p) : null); return; }
   const b = ev.target.closest("button[data-i]"); if (!b) return;
   const e = EXPAND[dlg.dataset.key]; dlg.close(); const en = e.entries[+b.dataset.i]; e.onPick(en[2] ?? en[0], en[0]);
 });
@@ -1810,7 +1817,7 @@ document.querySelector(".list-head .seg.layout").addEventListener("click", e => 
 });
 document.getElementById("filmCards").addEventListener("click", e => {
   const b = e.target.closest("[data-k]"); if (!b) return;
-  const r = findFilm(b.dataset.k); if (r) openFicha(r);
+  const r = findFilm(b.dataset.k); if (r) openFicha(r, filtered());
 });
 function renderFilms(){
   renderChip();
@@ -2521,7 +2528,7 @@ function fichaHTML(r, x){
   else if (!x) extra = `<p class="ficha-note">Cargando datos de TMDb…</p>`;
   else if (x.none) extra = `<p class="ficha-note">TMDb no tiene esta película.</p>`;
   return `
-    <button class="ficha-close" type="button" aria-label="Cerrar" data-close>✕</button>${backBtn()}
+    <button class="ficha-close" type="button" aria-label="Cerrar" data-close>✕</button>${backBtn()}${sideArrows(fichaList, r)}
     <div class="ficha-grid">
       <div class="ficha-poster">${x?.p ? `<img src="${TMDB_IMG}w342${x.p}" alt="Póster de ${esc(r.title)}" loading="lazy" data-path="${esc(x.p)}" data-title="${esc(r.title)}" title="Ver a pantalla completa">` : `<div class="poster-ph" aria-hidden="true"></div>`}</div>
       <div class="ficha-body">
@@ -2544,8 +2551,11 @@ function fichaHTML(r, x){
 }
 
 let fichaRow = null;
-async function openFicha(r){
+async function openFicha(r, list){
   if (!navInternal) navStack.length = 0;
+  if (list) fichaList = list;
+  else if (!navInternal){ const f = filtered(); fichaList = f.includes(r) ? f : null; }
+  else fichaList = null;
   fichaRow = r;
   const dlg = document.getElementById("ficha");
   const id = imdbId(r);
@@ -3321,7 +3331,7 @@ function personHTML(p){
   ].filter(f => f[1]);
 
   return `
-    <button class="ficha-close" type="button" aria-label="Cerrar" data-close>✕</button>${backBtn()}
+    <button class="ficha-close" type="button" aria-label="Cerrar" data-close>✕</button>${backBtn()}${sideArrows(personList, p)}
     <div class="person-top">
       <div class="person-photo">${x.img ? `<img src="${TMDB_IMG}h632${x.img}" alt="Foto de ${esc(x.n || p.name)}" data-path="${esc(x.img)}" data-title="${esc(x.n || p.name)}" title="Ver a pantalla completa">` : `<span class="fav-photo ph big">${esc(p.name.charAt(0))}</span>`}</div>
       <div class="person-main">
@@ -3365,16 +3375,54 @@ let navInternal = false, navSwitching = false;
 const backBtn = () => navStack.length ? `<button class="ficha-back" type="button" data-back aria-label="Volver">‹ ${esc(navStack[navStack.length - 1].label)}</button>` : "";
 const namesHTML = list => ({ html: list.filter(Boolean).map(n => `<button type="button" class="plink" data-pname="${esc(n)}">${esc(n)}</button>`).join(", ") });
 function curNav(){
-  if (document.getElementById("ficha").open && fichaRow) return { k: "film", r: fichaRow, label: fichaRow.title };
-  if (document.getElementById("personDlg").open && personOpen) return { k: "person", p: personOpen, label: personCache[personOpen.id]?.n || personOpen.name };
+  if (document.getElementById("ficha").open && fichaRow) return { k: "film", r: fichaRow, list: fichaList, label: fichaRow.title };
+  if (document.getElementById("personDlg").open && personOpen) return { k: "person", p: personOpen, list: personList, label: personCache[personOpen.id]?.n || personOpen.name };
   return null;
 }
+/* Anterior / siguiente dentro de la lista de la que se abrió la ficha (flechas a los lados, teclado y deslizar) */
+let fichaList = null, personList = null;
+function sideArrows(list, cur){
+  if (!list || list.length < 2) return "";
+  const i = list.indexOf(cur); if (i < 0) return "";
+  return `<button class="side-arrow prev" type="button" data-step="-1" aria-label="Anterior" ${i === 0 ? "disabled" : ""}>‹</button>
+    <button class="side-arrow next" type="button" data-step="1" aria-label="Siguiente" ${i === list.length - 1 ? "disabled" : ""}>›</button>
+    <span class="side-pos">${i + 1} / ${list.length}</span>`;
+}
+function stepFicha(dir){
+  const fd = document.getElementById("ficha"), pd = document.getElementById("personDlg");
+  if (fd.open && fichaList){
+    const n = fichaList[fichaList.indexOf(fichaRow) + dir]; if (!n) return;
+    navInternal = true; openFicha(n, fichaList); navInternal = false; fd.scrollTop = 0;
+    fd.querySelector(".ficha-grid")?.classList.add(dir > 0 ? "swipe-l" : "swipe-r");
+  } else if (pd.open && personList){
+    const n = personList[personList.indexOf(personOpen) + dir]; if (!n) return;
+    navInternal = true; openPerson(n, personList); navInternal = false; pd.scrollTop = 0;
+    pd.querySelector(".person-top")?.classList.add(dir > 0 ? "swipe-l" : "swipe-r");
+  }
+}
+document.addEventListener("keydown", e => {
+  if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+  if (!document.getElementById("ficha").open && !document.getElementById("personDlg").open) return;
+  if (e.target.closest?.("input, textarea, select")) return;
+  e.preventDefault(); stepFicha(e.key === "ArrowLeft" ? -1 : 1);
+});
+["ficha", "personDlg"].forEach(id => {
+  const d = document.getElementById(id);
+  d.addEventListener("click", e => { const b = e.target.closest("[data-step]"); if (b){ e.stopPropagation(); stepFicha(+b.dataset.step); } }, true);
+  // Deslizar a los lados dentro de la ficha (iPhone / iPad)
+  let x0 = null, y0 = 0;
+  d.addEventListener("touchstart", e => { x0 = e.touches.length === 1 ? e.touches[0].clientX : null; y0 = e.touches[0].clientY; }, { passive: true });
+  d.addEventListener("touchend", e => {
+    if (x0 == null) return; const t = e.changedTouches[0], dx = t.clientX - x0, dy = t.clientY - y0; x0 = null;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) stepFicha(dx < 0 ? 1 : -1);
+  });
+});
 function navOpen(t){
   navSwitching = true;
   ["ficha", "personDlg"].forEach(id => { const d = document.getElementById(id); if (d.open) d.close(); });
   navSwitching = false;
   navInternal = true;
-  if (t.k === "film") openFicha(t.r); else openPerson(t.p);
+  if (t.k === "film") openFicha(t.r, t.list); else openPerson(t.p, t.list);
   navInternal = false;
 }
 function navGo(t){ const c = curNav(); if (c) navStack.push(c); navOpen(t); }
@@ -3395,9 +3443,10 @@ async function openPersonByName(name){
 }
 
 let personOpen = null;
-async function openPerson(id){
+async function openPerson(id, list){
   const p = typeof id === "object" ? id : people.find(x => x.id === id); if (!p) return;
   if (!navInternal) navStack.length = 0;
+  personList = list || null;
   personOpen = p;
   const dlg = document.getElementById("personDlg");
   dlg.innerHTML = personHTML(p);
@@ -3452,11 +3501,14 @@ document.getElementById("personDlg").addEventListener("click", e => {
     const m = document.getElementById("msg"); m.className = "msg"; m.textContent = `${p?.name || "Persona"} quitado de Artistas.`; return;
   }
   const b = e.target.closest("button.pg-item[data-k]");
-  if (b){ const r = findFilm(b.dataset.k); if (r) navGo({ k: "film", r }); }
+  if (b){
+    const grid = b.closest(".poster-grid"), list = grid ? [...grid.querySelectorAll("button.pg-item[data-k]")].map(x => findFilm(x.dataset.k)).filter(Boolean) : null;
+    const r = findFilm(b.dataset.k); if (r) navGo({ k: "film", r, list });
+  }
 });
 document.getElementById("favList").addEventListener("click", e => {
   const open = e.target.closest("[data-open-person]");
-  if (open) openPerson(open.dataset.openPerson);
+  if (open){ const ids = [...document.querySelectorAll("#favList [data-open-person]")].map(b => b.dataset.openPerson); openPerson(open.dataset.openPerson, ids.map(id => people.find(p => p.id === id)).filter(Boolean)); }
 });
 
 /* ---------- Selectores de año deslizables ----------
