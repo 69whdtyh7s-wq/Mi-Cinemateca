@@ -441,6 +441,7 @@ img.flag{display:inline-block;width:20px;height:15px;vertical-align:-2px;border-
 .pg-item img,.pg-item .pg-ph{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:8px;display:block;background:var(--accent-soft)}
 .pg-item b{font-size:13px;font-weight:600;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .pg-item small{font-size:11px;color:var(--muted)}
+.pg-item .pg-ph.pg-empty{display:grid;place-items:center;color:var(--muted);opacity:.8}
 .pg-item em{position:absolute;top:6px;right:6px;font:600 12px var(--font-data);font-style:normal;background:var(--accent);color:#000;border-radius:6px;padding:2px 6px}
 .pg-item em.tm{background:rgba(0,0,0,.65);color:#fff}
 .pg-item:hover b{color:var(--accent-ink);text-decoration:underline}
@@ -1869,11 +1870,11 @@ function fillYearSelects(data){
 function renderHead(){
   const todoSrc = filmSrc === "todo" || filmSrc === "stodo";
   const ss = document.getElementById("sortSel");
-  ss.querySelector('[value="watched"]').textContent = todoSrc ? "Fecha en que la añadiste" : (filmSrc === "series" ? "Fecha en que la puntuaste" : "Fecha en que la viste");
+  ss.querySelector('[value="watched"]').textContent = todoSrc ? "Fecha añadida" : (filmSrc === "series" ? "Fecha puntuada" : "Fecha vista");
   ss.setAttribute("aria-label", "Ordenar por");
   ss.querySelector('[value="mine"]').hidden = todoSrc;
   ss.value = sort.key;
-  const up = sort.dir === "asc", txt = sort.key === "title" || sort.key === "dir" ? (up ? "A → Z" : "Z → A") : ["watched", "year"].includes(sort.key) ? (up ? "Antiguas primero" : "Recientes primero") : (up ? "Menor primero" : "Mayor primero");
+  const up = sort.dir === "asc", txt = sort.key === "title" || sort.key === "dir" ? (up ? "A–Z" : "Z–A") : ["watched", "year"].includes(sort.key) ? (up ? "Antiguas" : "Recientes") : (up ? "Menor" : "Mayor");
   document.getElementById("sortDir").innerHTML = `<span aria-hidden="true">${up ? "↑" : "↓"}</span> ${txt}`;
   const lab = c => c.key === "watched" && todoSrc ? "Añadida" : c.key === "mine" && todoSrc ? "" : c.label;
   document.getElementById("filmHead").innerHTML = COLS.map(c => (c = { ...c, label: lab(c) }, c)).map(c => c.nosort ? `<th>${c.label}</th>` :
@@ -2024,7 +2025,7 @@ function renderFilms(){
     document.getElementById("filmCards").innerHTML = n ? list.slice(0, shown).map(r => {
       const x = typeof tmdbCache !== "undefined" ? tmdbCache[imdbId(r)] : null;
       const tag = newKeys.has(rowKey(r)) ? '<i class="pg-tag">nueva</i>' : updKeys.has(rowKey(r)) ? '<i class="pg-tag upd">actualizada</i>' : "";
-      return `<button type="button" class="pg-item" data-k="${esc(rowKey(r))}">${x?.p ? `<img src="${TMDB_IMG}w185${x.p}" alt="" loading="lazy" decoding="async">` : `<span class="pg-ph" aria-hidden="true"><span>${esc(r.title)}</span></span>`}${tag}<b>${esc(r.title)}</b><small>${[r.year, r.watchedDate ? r.watchedDate.split("-").reverse().join("/") : ""].filter(Boolean).join(" · ")}</small>${r.mine ? `<em>${r.mine}</em>` : ""}</button>`;
+      return `<button type="button" class="pg-item" data-k="${esc(rowKey(r))}">${x?.p ? `<img src="${TMDB_IMG}w185${x.p}" alt="" loading="lazy" decoding="async">` : `<span class="pg-ph pg-empty" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M3 11h18M7 7l2-4M12 7l2-4M17 7l2-4"/></svg></span>`}${tag}<b>${esc(r.title)}</b><small>${[r.year, r.watchedDate ? r.watchedDate.split("-").reverse().join("/") : ""].filter(Boolean).join(" · ")}</small>${r.mine ? `<em>${r.mine}</em>` : ""}</button>`;
     }).join("") : (emptyTodo || `<p class="hint">No hay títulos con estos filtros.</p>`);
   }
 }
