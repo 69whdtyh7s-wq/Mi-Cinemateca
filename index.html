@@ -199,7 +199,14 @@ th button[data-dir="desc"]::after{content:"▼"}
 .ficha-facts{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 14px;margin:14px 0 0;font-size:14px}
 .ficha-facts dt{color:var(--muted)}
 .ficha-facts dd{margin:0}
-.ficha-where{margin:14px 0 0;font-size:14px;display:flex;flex-direction:column;gap:2px}
+.ficha-where{margin:14px 0 0;font-size:14px;display:flex;flex-direction:column;gap:6px}
+.ficha-where p{margin:0}
+.provs{display:flex;flex-wrap:wrap;gap:8px}
+.prov{display:inline-flex;align-items:center;gap:8px;padding:5px 12px 5px 5px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink)!important;text-decoration:none;font-weight:600;font-size:14px}
+.prov:hover{border-color:var(--accent);background:var(--accent-soft)}
+.prov img{width:28px;height:28px;border-radius:7px;object-fit:cover}
+.prov span{white-space:nowrap}
+.prov-src{font-size:12px;color:var(--muted)}
 .ficha-where a{color:var(--accent-ink)}
 .ficha .actions{margin-top:16px}
 .vs li.with-poster{grid-template-columns:22px 34px 1fr auto}
@@ -2413,6 +2420,49 @@ async function tmdbGet(path, params = {}){
 const crewBy = (d, fn) => [...new Set((d.credits?.crew || []).filter(fn).map(c => c.name))];
 const isFresh = id => { const c = tmdbCache[id]; return !!c && (c.none || c.v2); };
 
+// Plataformas en España (datos de JustWatch a través de TMDb)
+function provData(es){
+  const flat = (es?.flatrate || []).concat(es?.free || [], es?.ads || []);
+  const seen = new Set(), wp = [];
+  flat.forEach(p => { if (!seen.has(p.provider_name)){ seen.add(p.provider_name); wp.push({ n: p.provider_name, lg: p.logo_path || "" }); } });
+  const wb = [...new Set((es?.rent || []).concat(es?.buy || []).map(p => p.provider_name))].slice(0, 6);
+  return { w: wp.map(p => p.n).slice(0, 8), wp: wp.slice(0, 8), wb, wl: es?.link || "", wt: Date.now() };
+}
+// Las plataformas cambian a menudo: al abrir la ficha se actualizan si tienen más de una semana
+async function refreshProviders(x){
+  if (!x || x.none || !x.t || !tmdbKey || (x.wt && Date.now() - x.wt < 7 * 864e5)) return false;
+  const d = await tmdbGet(`/${x.k}/${x.t}/watch/providers`);
+  Object.assign(x, provData(d.results?.ES)); saveTmdbCache();
+  return true;
+}
+// Enlace a cada plataforma (búsqueda del título); si no la conocemos, a la página de JustWatch
+const PROV_SEARCH = [
+  [/netflix/i, "https://www.netflix.com/search?q="],
+  [/prime video|amazon/i, "https://www.primevideo.com/search?phrase="],
+  [/disney/i, "https://www.disneyplus.com/search?q="],
+  [/^max\b|hbo/i, "https://play.max.com/search?q="],
+  [/apple tv/i, "https://tv.apple.com/es/search?term="],
+  [/filmin/i, "https://www.filmin.es/buscador?q="],
+  [/movistar/i, "https://ver.movistarplus.es/busqueda/?q="],
+  [/rakuten/i, "https://www.rakuten.tv/es/search?q="],
+  [/google play/i, "https://play.google.com/store/search?c=movies&q="],
+  [/youtube/i, "https://www.youtube.com/results?search_query="]
+];
+const provLink = (name, title, fallback) => { const m = PROV_SEARCH.find(([re]) => re.test(name)); return m ? m[1] + encodeURIComponent(title) : (fallback || ""); };
+function whereHTML(r, x){
+  if (!x || x.none) return "";
+  const title = r.title;
+  const subs = x.wp?.length ? x.wp : (x.w || []).map(n => ({ n, lg: "" }));
+  const chips = subs.map(p => { const href = provLink(p.n, title, x.wl);
+    return `<a class="prov" href="${esc(href)}" target="_blank" rel="noopener" title="Buscar en ${esc(p.n)}">${p.lg ? `<img src="${TMDB_IMG}w92${p.lg}" alt="" loading="lazy">` : ""}<span>${esc(p.n)}</span></a>`; }).join("");
+  return `<div class="ficha-where">
+    <span class="label">Dónde verla en España</span>
+    ${chips ? `<div class="provs">${chips}</div>` : `<p>No está en ninguna plataforma de suscripción ahora mismo.</p>`}
+    ${x.wb?.length ? `<p class="dim">Alquiler o compra: ${esc(x.wb.join(", "))}</p>` : ""}
+    ${x.wl ? `<p class="prov-src"><a href="${esc(x.wl)}" target="_blank" rel="noopener">Ver todas las opciones</a> · Datos de JustWatch</p>` : ""}
+  </div>`;
+}
+
 // Descarga y resume los datos de una película (por su identificador de IMDb)
 async function fetchTmdb(r){
   const id = imdbId(r);
@@ -2431,8 +2481,7 @@ async function fetchTmdb(r){
     a: (d.credits?.cast || []).slice(0, 8).map(c => c.name),
     v: d.vote_average ? Math.round(d.vote_average * 10) / 10 : 0,
     b: d.budget || 0, rv: d.revenue || 0,
-    w: (es?.flatrate || []).map(p => p.provider_name).slice(0, 6),
-    wl: es?.link || "",
+    ...provData(es),
     wr: crewBy(d, c => c.department === "Writing").slice(0, 4),
     mu: crewBy(d, c => c.job === "Original Music Composer" || c.job === "Music").slice(0, 2),
     ph: crewBy(d, c => c.job === "Director of Photography").slice(0, 2),
@@ -2484,7 +2533,7 @@ function fichaHTML(r, x){
         ${x?.o ? `<p class="ficha-overview">${esc(x.o)}</p>` : ""}
         ${extra}
         <dl class="ficha-facts">${facts.map(([k, v]) => `<dt>${k}</dt><dd>${typeof v === "object" ? v.html : esc(String(v))}</dd>`).join("")}</dl>
-        ${x && !x.none ? `<p class="ficha-where"><span class="label">Dónde verla en España</span>${x.w?.length ? esc(x.w.join(", ")) : "No está en ninguna plataforma de suscripción ahora mismo."}${x.wl ? ` <a href="${esc(x.wl)}" target="_blank" rel="noopener">Ver opciones</a>` : ""}</p>` : ""}
+        ${whereHTML(r, x)}
         <div class="actions">
           ${r.url ? `<a class="btn ghost" href="${esc(r.url)}" target="_blank" rel="noopener">Ver en IMDb</a>` : ""}
           ${x?.t ? `<a class="btn ghost" href="https://www.themoviedb.org/${x.k}/${x.t}" target="_blank" rel="noopener">Ver en TMDb</a>` : ""}
@@ -2503,8 +2552,11 @@ async function openFicha(r){
   dlg.innerHTML = fichaHTML(r, tmdbCache[id]);
   if (!dlg.open) dlg.showModal();
   if (tmdbKey && id && !isFresh(id)){
-    try { const x = await fetchTmdb(r); if (dlg.open) dlg.innerHTML = fichaHTML(r, x); }
+    try { const x = await fetchTmdb(r); if (dlg.open && fichaRow === r) dlg.innerHTML = fichaHTML(r, x); }
     catch(e){ if (dlg.open) dlg.querySelector(".ficha-note").textContent = e.message; }
+  } else if (tmdbKey && id){
+    // Plataformas al día
+    try { if (await refreshProviders(tmdbCache[id]) && dlg.open && fichaRow === r){ const st = dlg.scrollTop; dlg.innerHTML = fichaHTML(r, tmdbCache[id]); dlg.scrollTop = st; } } catch(e) {}
   }
 }
 // Póster a pantalla completa
