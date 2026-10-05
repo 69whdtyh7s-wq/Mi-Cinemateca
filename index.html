@@ -447,7 +447,7 @@ img.flag{display:inline-block;width:20px;height:15px;vertical-align:-2px;border-
 .pg-item:hover b{color:var(--accent-ink);text-decoration:underline}
 .pg-item:focus-visible{outline:2px solid var(--accent-ink);outline-offset:3px;border-radius:8px}
 @media (max-width: 640px){
-  .person-top{grid-template-columns:110px minmax(0,1fr);gap:10px 14px;padding:16px;align-items:start}
+  .person-top{grid-template-columns:150px minmax(0,1fr);gap:10px 14px;padding:16px;align-items:start}
   .person-main{display:contents}
   .person-photo{grid-row:1 / span 3}
   .person-main > .ficha-title,.person-main > .ficha-orig,.person-main > .scores{grid-column:2;margin-top:0}
@@ -538,12 +538,20 @@ button.stat:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px
 .bl-bar span{display:block;height:100%;background:var(--amber);border-radius:999px}
 .bl-n{font-family:var(--font-data);font-size:13px;text-align:right;font-variant-numeric:tabular-nums}
 @media (max-width: 640px){
-  .ficha-grid{grid-template-columns:110px minmax(0,1fr);gap:12px 14px;padding:16px}
+  .ficha-grid{grid-template-columns:150px minmax(0,1fr);gap:12px 14px;padding:16px}
   .ficha-title{font-size:1.3rem}
   .ficha-body{display:contents}
   .ficha-poster{grid-row:1 / span 4}
   .ficha-body > .ficha-title,.ficha-body > .ficha-orig,.ficha-body > .ficha-tag,.ficha-body > .scores{grid-column:2;margin-top:0}
   .ficha-body > *:not(.ficha-title):not(.ficha-orig):not(.ficha-tag):not(.scores){grid-column:1 / -1}
+  /* Fichas en el iPhone: carátula grande, notas y botones compactos */
+  .ficha .scores{gap:5px;margin-top:8px}
+  .ficha .score{min-width:0;flex-direction:row;align-items:baseline;gap:4px;padding:2px 7px;font-size:8.5px;border-radius:999px;letter-spacing:.04em}
+  .ficha .score b{font-size:.9rem}
+  .ficha .actions{gap:6px}
+  .ficha .actions .btn{font-size:13px;padding:7px 12px;min-height:0}
+  .ficha .ficha-title{font-size:1.15rem}
+  .ficha-grid{padding-bottom:44px}
 }
 .facts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
 .facts li{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
@@ -638,19 +646,6 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
   .films .c-sub{order:3;flex:1 1 100%;font-size:13px;color:var(--muted)}
   .films .c-sub + .c-sub{margin-top:-2px}
   .tbl{margin-top:0}
-}
-/* iPhone: tarjetas de películas y series con la carátula grande (2 por fila) y la nota más discreta */
-@media (max-width: 640px){
-  .film-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 12px}
-  .film-cards .pg-item img,.film-cards .pg-item .pg-ph{border-radius:10px}
-  .film-cards .pg-item em{top:5px;right:5px;font-size:10px;padding:1px 5px;border-radius:5px}
-  .film-cards .pg-item .pg-tag{font-size:9px}
-  .film-cards .pg-item b{font-size:13px}
-  .film-cards .pg-item small{font-size:11px}
-  .list-head .seg{padding:2px}
-  .list-head .seg button{padding:5px 9px}
-  .list-head .seg svg{width:16px;height:16px}
-  .sort-mini select,.sort-mini button{font-size:12px;padding:5px 8px;border-radius:7px}
 }
 /* iPad (táctil y más ancho que un iPhone): 5 artistas por fila */
 @media (hover: none) and (min-width: 641px){
