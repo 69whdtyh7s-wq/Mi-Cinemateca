@@ -218,6 +218,12 @@ th button[data-dir="desc"]::after{content:"▼"}
 .seg{display:inline-flex;padding:3px;border-radius:10px;background:var(--bg);border:1px solid var(--line);gap:2px}
 .seg button{display:inline-flex;align-items:center;gap:6px;border:0;background:none;color:var(--muted);font:600 13px var(--font-body);padding:6px 10px;border-radius:7px;cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.subtabs{display:flex;gap:4px;padding:4px;border-radius:12px;background:var(--surface);border:1px solid var(--line);align-self:flex-start;max-width:100%}
+.subtabs button{all:unset;box-sizing:border-box;cursor:pointer;padding:9px 18px;border-radius:9px;font:600 15px var(--font-body);color:var(--muted);white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.subtabs button span{font:400 12px var(--font-data);margin-left:4px;color:inherit;opacity:.8}
+.subtabs button[aria-selected="true"]{background:var(--accent);color:#000}
+.subtabs button:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
+.todo-empty{padding:6px 0;line-height:1.5}
 .list-tools{display:flex;gap:8px;align-items:center;margin-left:auto}
 .seg.acts button{color:var(--ink)}
 .seg.acts button:hover{background:var(--surface)}
@@ -954,9 +960,13 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
   </div>
 
   <div class="view" id="view-films" role="tabpanel" aria-labelledby="tab-films" hidden>
+    <div class="subtabs" id="filmSrc" role="tablist" aria-label="Qué lista ver">
+      <button type="button" role="tab" data-src="seen" aria-selected="true">Vistas <span id="cntSeen"></span></button>
+      <button type="button" role="tab" data-src="todo" aria-selected="false">Por ver <span id="cntTodo"></span></button>
+    </div>
     <div class="filters" id="filmFilters">
         <div class="field grow"><label class="label" for="q">Buscar</label><div class="qbox"><input id="q" type="search" placeholder="Título, director o género" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"><button type="button" class="qclear" aria-label="Borrar búsqueda" hidden>✕</button></div></div>
-        <div class="field"><label class="label" for="fWatched">Vista en</label><select id="fWatched"></select></div>
+        <div class="field" id="fWatchedField"><label class="label" for="fWatched">Vista en</label><select id="fWatched"></select></div>
         <div class="field"><label class="label" for="fYear">Estrenada en</label><select id="fYear"></select></div>
         <div class="field mobile-only"><label class="label" for="sortSel">Ordenar por</label><select id="sortSel">
           <option value="watched:desc">Vistas recientes</option>
@@ -1163,10 +1173,54 @@ document.getElementById("types").addEventListener("change", e => {
 
 const counted = () => rows.filter(r => selected.has(typeKey(r.type)));
 
+/* ---------- Películas por ver (Watchlist de IMDb) ---------- */
+const WATCH_KEY = "cinemateca-watch";
+let watch = [], filmSrc = "seen";
+try { watch = JSON.parse(localStorage.getItem(WATCH_KEY) || "[]"); if (!Array.isArray(watch)) watch = []; } catch(e) { watch = []; }
+// Si una película ya está en las vistas, sale de la lista por ver
+function pruneWatch(){
+  if (!rows || !watch.length) return 0;
+  const seen = new Set(rows.map(rowKey)), before = watch.length;
+  watch = watch.filter(r => !seen.has(rowKey(r)));
+  return before - watch.length;
+}
+function saveWatch(){ try { localStorage.setItem(WATCH_KEY, JSON.stringify(watch)); } catch(e) {} syncSrcCounts(); }
+function syncSrcCounts(){
+  const a = document.getElementById("cntSeen"), b = document.getElementById("cntTodo");
+  if (a) a.textContent = rows ? counted().length : "";
+  if (b) b.textContent = watch.length || "";
+}
+const findFilm = k => rows.find(x => rowKey(x) === k) || watch.find(x => rowKey(x) === k);
+function setFilmSrc(src){
+  filmSrc = src === "todo" ? "todo" : "seen";
+  document.querySelectorAll("#filmSrc [data-src]").forEach(b => b.setAttribute("aria-selected", b.dataset.src === filmSrc));
+  document.getElementById("fWatchedField").hidden = filmSrc === "todo";
+  if (filmSrc === "todo"){ document.getElementById("fWatched").value = ""; extra = null; }
+  document.getElementById("roulette").hidden = true;
+  shown = PAGE; renderFilms();
+}
+function loadWatch(list, name, quiet){
+  const before = new Set(watch.map(rowKey));
+  const seen = new Set((rows || []).map(rowKey));
+  const fresh = list.filter(r => !seen.has(rowKey(r))).map(r => ({ ...r, todo: true, mine: null }));
+  const skipped = list.length - fresh.length;
+  const added = fresh.filter(r => !before.has(rowKey(r))).length;
+  if (quiet && !added && fresh.length === watch.length) return;
+  watch = fresh; saveWatch();
+  const msg = document.getElementById("msg"); msg.className = "msg";
+  msg.textContent = `Lista por ver cargada desde ${name || "el archivo"}: ${watch.length} títulos` +
+    (before.size ? ` (${added} ${added === 1 ? "nuevo" : "nuevos"})` : "") +
+    (skipped ? `. ${skipped} que ya has visto no ${skipped === 1 ? "se ha añadido" : "se han añadido"}` : "") + ".";
+  if (!quiet){ showView("films"); setFilmSrc("todo"); } else renderFilms();
+  if (tmdbKey && !bulk && typeof runBulk === "function") runBulk();   // pósters de las nuevas
+}
+document.getElementById("filmSrc").addEventListener("click", e => { const b = e.target.closest("[data-src]"); if (b) setFilmSrc(b.dataset.src); });
+
 function render(){
   const data = counted();
   document.getElementById("filtersDot").hidden = data.length === rows.length;
   document.getElementById("tabCount").textContent = data.length;
+  syncSrcCounts();
 
   // Vistas por año
   const seenYears = []; for (let y = START; y <= NOW; y++) seenYears.push(y);
@@ -1578,7 +1632,8 @@ function fillYearSelects(data){
 function renderHead(){
   const ss = document.getElementById("sortSel"), v = `${sort.key}:${sort.dir}`;
   if ([...ss.options].some(o => o.value === v)) ss.value = v;
-  document.getElementById("filmHead").innerHTML = COLS.map(c => c.nosort ? `<th>${c.label}</th>` :
+  const lab = c => c.key === "watched" && filmSrc === "todo" ? "Añadida" : c.key === "mine" && filmSrc === "todo" ? "" : c.label;
+  document.getElementById("filmHead").innerHTML = COLS.map(c => (c = { ...c, label: lab(c) }, c)).map(c => c.nosort ? `<th>${c.label}</th>` :
     `<th class="${c.num ? "num" : ""}" aria-sort="${sort.key === c.key ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}"><button type="button" data-key="${c.key}" ${sort.key === c.key ? `data-dir="${sort.dir}"` : ""}>${c.label}</button></th>`).join("");
 }
 
@@ -1658,8 +1713,8 @@ function filtered(){
   const q = document.getElementById("q").value.trim().toLowerCase();
   const fw = Number(document.getElementById("fWatched").value) || null;
   const fy = Number(document.getElementById("fYear").value) || null;
-  let list = counted().filter(r =>
-    (!fw || r.watched === fw) && (!fy || r.year === fy) &&
+  let list = (filmSrc === "todo" ? watch : counted()).filter(r =>
+    (filmSrc === "todo" || !fw || r.watched === fw) && (!fy || r.year === fy) &&
     (!q || searchText(r).includes(q)) && (!extra || extra.fn(r)));
   const k = sort.key === "watched" ? "watchedDate" : sort.key, m = sort.dir === "asc" ? 1 : -1;
   list.sort((a, b) => {
@@ -1686,26 +1741,28 @@ document.querySelector(".list-head .seg.layout").addEventListener("click", e => 
 });
 document.getElementById("filmCards").addEventListener("click", e => {
   const b = e.target.closest("[data-k]"); if (!b) return;
-  const r = rows.find(x => rowKey(x) === b.dataset.k); if (r) openFicha(r);
+  const r = findFilm(b.dataset.k); if (r) openFicha(r);
 });
 function renderFilms(){
   renderChip();
   renderHead();
   const list = filtered();
   const n = list.length;
-  document.getElementById("count").textContent = `${n} ${n === 1 ? "título" : "títulos"}` + (n > shown ? ` · mostrando ${shown}` : "");
+  document.getElementById("count").textContent = `${n} ${n === 1 ? "título" : "títulos"}${filmSrc === "todo" ? " por ver" : ""}` + (n > shown ? ` · mostrando ${shown}` : "");
+  const emptyTodo = filmSrc === "todo" && !watch.length
+    ? `<p class="hint todo-empty">Aún no has cargado tu lista de películas por ver. En IMDb abre tu <b>Watchlist</b>, pulsa ⋯ → <em>Export</em> y súbela con <b>Elegir CSV</b>. La app la reconoce sola porque no lleva notas tuyas.</p>` : "";
   const dash = '<span class="dim">—</span>';
   document.getElementById("filmBody").innerHTML = n ? list.slice(0, shown).map(r => `<tr data-k="${esc(rowKey(r))}" tabindex="0">
     <td class="c-title"><div class="t-wrap">${thumb(r)}<div><strong>${esc(r.title)}</strong>${newKeys.has(rowKey(r)) ? ' <span class="new">nueva</span>' : updKeys.has(rowKey(r)) ? ' <span class="new upd">actualizada</span>' : ""}${r.orig && r.orig !== r.title ? `<span class="orig">${esc(r.orig)}</span>` : ""}</div></div></td>
     <td class="num c-meta" data-l="Estreno">${r.year ?? dash}</td>
-    <td class="num c-meta" data-l="Vista">${r.watchedDate ? esc(r.watchedDate.split("-").reverse().join("/")) : dash}</td>
+    <td class="num c-meta" data-l="${r.todo ? "Añadida" : "Vista"}">${r.watchedDate ? esc(r.watchedDate.split("-").reverse().join("/")) : dash}</td>
     <td class="num c-meta" data-l="IMDb">${r.imdb ?? dash}</td>
-    <td class="num c-meta" data-l="Tu nota">${r.mine ? `<span class="mine">${r.mine}</span>` : dash}</td>
+    <td class="num c-meta" data-l="${r.todo ? "" : "Tu nota"}">${r.mine ? `<span class="mine">${r.mine}</span>` : r.todo ? "" : dash}</td>
     <td class="num c-meta c-run" data-l="">${r.runtime ? `${r.runtime} min` : dash}</td>
     <td class="c-sub">${esc(genresOf(r).join(", ")) || dash}</td>
     <td class="c-sub">${esc(r.dir) || dash}</td>
     <td class="c-link">${r.url ? `<a class="imdb" href="${esc(r.url)}" target="_blank" rel="noopener" aria-label="Abrir ${esc(r.title)} en IMDb" title="Abrir en IMDb"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></a>` : dash}</td></tr>`).join("")
-    : `<tr><td colspan="9" class="dim">No hay títulos con estos filtros.</td></tr>`;
+    : `<tr><td colspan="9" class="dim">${emptyTodo || "No hay títulos con estos filtros."}</td></tr>`;
   document.getElementById("more").hidden = n <= shown;
   // Vista en tarjetas
   const cards = layout === "cards";
@@ -1717,7 +1774,7 @@ function renderFilms(){
       const x = typeof tmdbCache !== "undefined" ? tmdbCache[imdbId(r)] : null;
       const tag = newKeys.has(rowKey(r)) ? '<i class="pg-tag">nueva</i>' : updKeys.has(rowKey(r)) ? '<i class="pg-tag upd">actualizada</i>' : "";
       return `<button type="button" class="pg-item" data-k="${esc(rowKey(r))}">${x?.p ? `<img src="${TMDB_IMG}w185${x.p}" alt="" loading="lazy" decoding="async">` : `<span class="pg-ph" aria-hidden="true"><span>${esc(r.title)}</span></span>`}${tag}<b>${esc(r.title)}</b><small>${[r.year, r.watchedDate ? r.watchedDate.split("-").reverse().join("/") : ""].filter(Boolean).join(" · ")}</small>${r.mine ? `<em>${r.mine}</em>` : ""}</button>`;
-    }).join("") : `<p class="hint">No hay títulos con estos filtros.</p>`;
+    }).join("") : (emptyTodo || `<p class="hint">No hay títulos con estos filtros.</p>`);
   }
 }
 
@@ -1821,6 +1878,7 @@ document.getElementById("clear").addEventListener("click", () => {
 });
 
 function openFilms({ watched = "", year = "" }){
+  if (filmSrc !== "seen"){ filmSrc = "seen"; document.querySelectorAll("#filmSrc [data-src]").forEach(b => b.setAttribute("aria-selected", b.dataset.src === "seen")); document.getElementById("fWatchedField").hidden = false; }
   document.getElementById("q").value = "";
   extra = null;
   document.getElementById("fWatched").value = watched;
@@ -2077,10 +2135,10 @@ function spin(){
   box.hidden = false;
   if (!list.length){ box.innerHTML = `<button class="pop-close r-close" type="button" aria-label="Quitar" onclick="this.parentNode.hidden=true">✕</button><p class="r-meta">No hay películas con estos filtros.</p>`; return; }
   const r = list[Math.floor(Math.random() * list.length)];
-  box.innerHTML = `${tmdbCache[imdbId(r)]?.p ? `<img class="r-poster" src="${TMDB_IMG}w185${tmdbCache[imdbId(r)].p}" alt="">` : ""}<button class="pop-close r-close" type="button" id="spinClose" aria-label="Quitar">✕</button><span class="label">Tu película al azar</span>
+  box.innerHTML = `${tmdbCache[imdbId(r)]?.p ? `<img class="r-poster" src="${TMDB_IMG}w185${tmdbCache[imdbId(r)].p}" alt="">` : ""}<button class="pop-close r-close" type="button" id="spinClose" aria-label="Quitar">✕</button><span class="label">${filmSrc === "todo" ? "Para ver hoy" : "Tu película al azar"}</span>
     <p class="r-title">${esc(r.title)}</p>
     <p class="r-meta">${[r.year, r.dir, genresOf(r).join(", "), r.runtime ? `${r.runtime} min` : ""].filter(Boolean).map(esc).join(" · ")}</p>
-    <p class="r-meta">${[r.mine ? `Tu nota: ${r.mine}` : "", r.imdb ? `IMDb: ${fmt1(r.imdb)}` : "", r.watchedDate ? `Vista el ${r.watchedDate.split("-").reverse().join("/")}` : ""].filter(Boolean).join(" · ")}</p>
+    <p class="r-meta">${[r.mine ? `Tu nota: ${r.mine}` : "", r.imdb ? `IMDb: ${fmt1(r.imdb)}` : "", r.watchedDate ? `${r.todo ? "En tu lista desde el" : "Vista el"} ${r.watchedDate.split("-").reverse().join("/")}` : ""].filter(Boolean).join(" · ")}</p>
     <div class="actions">
       <button class="btn" type="button" id="spinAgain">Otra</button>
       <button class="btn ghost" type="button" id="spinFicha">Ver ficha</button>
@@ -2104,7 +2162,7 @@ document.getElementById("spin").addEventListener("click", spin);
 document.getElementById("exportBtn").addEventListener("click", () => {
   const msg = document.getElementById("msg");
   if (isSample){ msg.className = "msg"; msg.textContent = "Todavía no hay datos tuyos que exportar. Sube primero tu CSV."; return; }
-  const blob = new Blob([JSON.stringify({ app: "mi-cinemateca", version: 1, exported: new Date().toISOString(), rows, people }, null, 1)], { type: "application/json" });
+  const blob = new Blob([JSON.stringify({ app: "mi-cinemateca", version: 1, exported: new Date().toISOString(), rows, people, watch }, null, 1)], { type: "application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = `mi-cinemateca-${new Date().toISOString().slice(0, 10)}.json`;
@@ -2246,7 +2304,7 @@ const money = n => n ? n.toLocaleString("es-ES", { style: "currency", currency: 
 function fichaHTML(r, x){
   const dash = '<span class="dim">—</span>';
   const facts = [
-    ["Estreno", r.year], ["Vista", r.watchedDate ? r.watchedDate.split("-").reverse().join("/") : ""],
+    ["Estreno", r.year], [r.todo ? "En tu lista desde" : "Vista", r.watchedDate ? r.watchedDate.split("-").reverse().join("/") : ""],
     ["Duración", r.runtime ? `${r.runtime} min` : ""], ["Dirección", r.dir],
     ["Géneros", genresOf(r).join(", ")],
     ["País", x?.c?.length ? { html: x.c.map(c => `<span class="nowrap">${flagImg(c)}${flagCode(c) ? " " : ""}${esc(regionName(c))}</span>`).join(", ") } : ""],
@@ -2330,12 +2388,12 @@ document.getElementById("ficha").addEventListener("click", e => {
 document.getElementById("filmBody").addEventListener("click", e => {
   if (e.target.closest("a")) return;
   const tr = e.target.closest("tr[data-k]"); if (!tr) return;
-  const r = rows.find(x => rowKey(x) === tr.dataset.k); if (r) openFicha(r);
+  const r = findFilm(tr.dataset.k); if (r) openFicha(r);
 });
 document.getElementById("filmBody").addEventListener("keydown", e => {
   if (e.key !== "Enter") return;
   const tr = e.target.closest("tr[data-k]"); if (!tr) return;
-  const r = rows.find(x => rowKey(x) === tr.dataset.k); if (r) openFicha(r);
+  const r = findFilm(tr.dataset.k); if (r) openFicha(r);
 });
 
 /* ---------- Panel de TMDb: clave y descarga de todas ---------- */
@@ -2367,8 +2425,9 @@ document.getElementById("tmdbBulk").addEventListener("click", () => { if (bulk){
 
 async function runBulk(){
   await tmdbReady;
-  const todo = counted().filter(r => imdbId(r) && !isFresh(imdbId(r)));
-  const total = counted().filter(r => imdbId(r)).length;
+  const pool = counted().concat(watch);
+  const todo = pool.filter(r => imdbId(r) && !isFresh(imdbId(r)));
+  const total = pool.filter(r => imdbId(r)).length;
   const token = bulk = {};
   syncTmdbPanel();
   let i = 0, lastRender = Date.now();
@@ -3330,6 +3389,7 @@ document.querySelector(".tabs").addEventListener("click", e => { const t = e.tar
 
 /* ---------- Carga ---------- */
 function save(){
+  if (pruneWatch()) saveWatch();
   try { localStorage.setItem(DATA_KEY, JSON.stringify({ rows, newKeys: [...newKeys], updKeys: [...updKeys] })); localStorage.removeItem(KEY); } catch(e) {}
 }
 
@@ -3342,11 +3402,15 @@ function load(text, name, opts = {}){
       const backup = JSON.parse(trimmed);
       if (!Array.isArray(backup.rows)) throw new Error("Esta copia de seguridad no es válida.");
       incoming = backup.rows;
+      if (Array.isArray(backup.watch)){ watch = backup.watch.map(r => ({ ...r, todo: true })); saveWatch(); }
       if (Array.isArray(backup.people) && backup.people.length){ const known = new Set(people.map(p => p.id)); backup.people.forEach(p => { if (!known.has(p.id)) people.push(p); }); savePeople(); }
     } else {
       const objs = parseCSV(text);
       if (isPeopleCSV(objs)){ loadPeople(objs, name || "el archivo"); return; }
       incoming = normalize(objs);
+      // Lista de películas por ver: el archivo no trae ninguna nota tuya (o se llama "watchlist")
+      const todoFile = opts.todo || (!opts.seen && (/watch\s*list|por\s*ver/i.test(name || "") || (incoming.length && !incoming.some(r => r.mine))));
+      if (todoFile){ loadWatch(incoming, name, opts.quiet); return; }
     }
     const fields = incoming.fields || ["pos", "type", "watchedDate", "watched", "year", "title", "orig", "url", "imdb", "mine", "runtime", "genres", "dir"];
     if (isSample || !rows){
@@ -3406,7 +3470,8 @@ document.getElementById("confirmReset").addEventListener("click", e => {
   if (e.target === dlg || e.target.closest("#resetCancel")){ dlg.close(); return; }
   if (e.target.closest("#resetExport")){ document.getElementById("exportBtn").click(); return; }
   if (e.target.closest("#resetConfirm")){
-    try { localStorage.removeItem(KEY); localStorage.removeItem(DATA_KEY); } catch(err) {}
+    try { localStorage.removeItem(KEY); localStorage.removeItem(DATA_KEY); localStorage.removeItem(WATCH_KEY); } catch(err) {}
+    watch = []; syncSrcCounts();
     rows = []; isSample = true; newKeys = new Set(); updKeys = new Set(); dataVer++; sort = { ...DEFAULT_SORT }; shown = PAGE; buildTypes(); render();
     const msg = document.getElementById("msg"); msg.className = "msg"; msg.textContent = "Datos borrados de este dispositivo. Sube tu CSV para empezar de nuevo.";
     dlg.close();
@@ -3567,7 +3632,9 @@ showView(location.hash === "#peliculas" ? "films" : (["stats", "films", "year", 
 // Sincronización: si el repositorio tiene datos.csv, se añaden sus películas nuevas
 if (location.protocol.startsWith("http") && !location.hostname.endsWith("claude.ai")){
   fetch("datos.csv", { cache: "no-store" }).then(r => r.ok ? r.text() : null)
-    .then(t => { if (t && t.includes(",")) load(t, "datos.csv de GitHub", { quiet: true }); }).catch(() => {});
+    .then(t => { if (t && t.includes(",")) load(t, "datos.csv de GitHub", { quiet: true, seen: true }); }).catch(() => {})
+    .finally(() => fetch("porver.csv", { cache: "no-store" }).then(r => r.ok ? r.text() : null)
+      .then(t => { if (t && t.includes(",")) load(t, "porver.csv de GitHub", { quiet: true, todo: true }); }).catch(() => {}));
 }
 </script>
 </body>
