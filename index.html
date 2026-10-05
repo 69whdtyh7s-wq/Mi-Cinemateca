@@ -2882,7 +2882,7 @@ async function fetchPerson(p){
   });
   const prev = personCache[p.id] || {};
   personCache[p.id] = { v: 2, t: hit.id, n: d.name || p.name, img: d.profile_path || "", dep: d.known_for_department || "", cr: [...credits.values()],
-    g: d.gender ?? 0, b: d.birthday || "", d: d.deathday || "", pl: d.place_of_birth || "",
+    g: d.gender ?? 0, b: d.birthday || "", d: d.deathday || prev.wd || "", wd: prev.wd, wdT: prev.wdT, pl: d.place_of_birth || "",
     bio: d.biography || prev.bio, bioLang: d.biography ? "es" : prev.bioLang, imdb: d.imdb_id || prev.imdb, aka: (d.also_known_as || prev.aka || []).slice(0, 3) };
   if (!d.biography && prev.bio === undefined) delete personCache[p.id].bio;
   savePersonCache(p.id);
@@ -2908,6 +2908,39 @@ async function fetchPeople(){
     await new Promise(r => setTimeout(r, 150));
   }
   peopleRun = null; st.textContent = ""; renderFavs(); renderArtistStats();
+  checkDeaths();
+}
+
+/* TMDb a veces no tiene la fecha de fallecimiento: se completa con Wikidata (por el código de IMDb).
+   Se revisa cada artista vivo como mucho una vez al mes. */
+let deathRun = false;
+async function checkDeaths(){
+  if (deathRun || !people.length) return;
+  await peopleReady;
+  const MONTH = 30 * 864e5, now = Date.now();
+  const todo = people.map(p => ({ p, x: personCache[p.id], im: personCache[p.id]?.imdb || (/^nm\d+$/.test(p.id) ? p.id : "") }))
+    .filter(o => o.x && !o.x.none && !o.x.d && o.im && (!o.x.wdT || now - o.x.wdT > MONTH));
+  if (!todo.length) return;
+  deathRun = true;
+  let found = 0;
+  try {
+    for (let i = 0; i < todo.length; i += 150){
+      const chunk = todo.slice(i, i + 150);
+      const q = `SELECT ?imdb ?d WHERE { VALUES ?imdb { ${chunk.map(o => `"${o.im}"`).join(" ")} } ?p wdt:P345 ?imdb . ?p wdt:P570 ?d . }`;
+      const res = await fetch("https://query.wikidata.org/sparql?format=json&query=" + encodeURIComponent(q), { headers: { accept: "application/sparql-results+json" } });
+      if (!res.ok) break;
+      const data = await res.json(), dead = new Map();
+      (data.results?.bindings || []).forEach(b => { const d = (b.d?.value || "").replace(/^\+/, "").slice(0, 10); if (/^\d{4}-\d{2}-\d{2}$/.test(d)) dead.set(b.imdb.value, d); });
+      chunk.forEach(o => {
+        o.x.wdT = now;
+        const d = dead.get(o.im);
+        if (d){ o.x.wd = d; o.x.d = d; found++; }
+        savePersonCache(o.p.id);
+      });
+    }
+  } catch(e) {}
+  deathRun = false;
+  if (found){ renderFavs(); renderArtistStats(); }
 }
 
 let aLayout = "cards";
@@ -3192,7 +3225,7 @@ async function fetchPersonDetails(p){
   const d = await tmdbGet(`/person/${x.t}`, { language: "es-ES", append_to_response: "external_ids" });
   let bio = d.biography || "", bioLang = "es";
   if (!bio){ try { bio = (await tmdbGet(`/person/${x.t}`, { language: "en-US" })).biography || ""; bioLang = "en"; } catch(e) {} }
-  Object.assign(x, { bio, bioLang, b: d.birthday || "", d: d.deathday || "", pl: d.place_of_birth || "", imdb: d.imdb_id || d.external_ids?.imdb_id || "",
+  Object.assign(x, { bio, bioLang, b: d.birthday || "", d: d.deathday || x.wd || "", pl: d.place_of_birth || "", imdb: d.imdb_id || d.external_ids?.imdb_id || "",
     aka: (d.also_known_as || []).slice(0, 3), img: x.img || d.profile_path || "" });
   savePersonCache(p.id);
   return x;
@@ -3801,6 +3834,9 @@ if (stored && Array.isArray(stored.rows) && stored.rows.length){
 } else if (saved) load(saved);
 else { rows = []; isSample = true; buildTypes(); render(); }
 showView(location.hash === "#peliculas" ? "films" : (VIEW_SEQ.includes(tab) ? tab : "films"));
+
+// Al abrir: completar fallecimientos que falten en TMDb
+peopleReady.then(() => setTimeout(checkDeaths, 3000));
 
 // Al abrir: comprobar que nada está a la vez en Vistas y en la Watchlist
 { const d = pruneWatch(); if (d.length){ saveWatch(); showDupNotice(d); } }
