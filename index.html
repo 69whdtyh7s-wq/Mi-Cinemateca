@@ -712,10 +712,10 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
   <div class="subtabs stats-nav" id="statsNav" role="tablist" aria-label="Secciones de Stats" hidden>
     <button type="button" role="tab" data-view="stats" aria-selected="true">Películas</button>
     <button type="button" role="tab" data-view="statsArt" aria-selected="false">Artistas</button>
+    <button type="button" role="tab" data-view="wstats" aria-selected="false">Watchlist</button>
     <button type="button" role="tab" data-view="world" aria-selected="false">Mundo</button>
     <button type="button" role="tab" data-view="taste" aria-selected="false">Tus gustos</button>
     <button type="button" role="tab" data-view="year" aria-selected="false">Resumen anual</button>
-    <button type="button" role="tab" data-view="wstats" aria-selected="false">Watchlist</button>
   </div>
 
   <div class="view" id="view-stats" role="tabpanel" aria-labelledby="tab-stats">
@@ -3494,7 +3494,7 @@ setInterval(syncWakeLock, 1500);
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") syncWakeLock(); });
 
 /* ---------- Pestañas ---------- */
-const STATS_SUBS = ["stats", "statsArt", "world", "taste", "year", "wstats"];
+const STATS_SUBS = ["stats", "statsArt", "wstats", "world", "taste", "year"];
 const VIEW_SEQ = ["films", "favs", ...STATS_SUBS];        // orden al deslizar
 let curView = "films", lastStats = "stats";
 function showView(v){
