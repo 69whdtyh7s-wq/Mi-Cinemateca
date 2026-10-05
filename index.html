@@ -181,6 +181,8 @@ th button[data-dir="desc"]::after{content:"▼"}
 #tmdbStatus.err{color:#c0392b}
 .ficha{width:min(760px,calc(100vw - 24px));max-height:calc(100dvh - 24px);border:1px solid var(--line);border-radius:16px;padding:0;background:var(--surface);color:var(--ink);overflow:auto}
 .ficha::backdrop{background:rgba(10,10,8,.55)}
+.ficha-back{position:sticky;top:8px;display:block;margin:8px 0 4px 8px;max-width:60%;height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 14px var(--font-body);cursor:pointer;z-index:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ficha-back:hover{border-color:var(--accent)}
 .ficha-close{position:sticky;top:8px;float:right;margin:8px 8px 0 0;width:36px;height:36px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:16px;cursor:pointer;z-index:1}
 .ficha-grid{display:grid;grid-template-columns:200px minmax(0,1fr);gap:20px;padding:20px}
 .ficha-poster img{cursor:zoom-in}
@@ -2499,14 +2501,14 @@ function fichaHTML(r, x){
   const dash = '<span class="dim">—</span>';
   const facts = [
     ["Estreno", r.year], [r.todo ? "En tu lista desde" : "Vista", r.watchedDate ? r.watchedDate.split("-").reverse().join("/") : ""],
-    ["Duración", r.runtime ? `${r.runtime} min` : ""], ["Dirección", r.dir],
+    ["Duración", r.runtime ? `${r.runtime} min` : ""], ["Dirección", r.dir ? namesHTML(r.dir.split(",").map(t => t.trim())) : ""],
     ["Géneros", genresOf(r).join(", ")],
     ["País", x?.c?.length ? { html: x.c.map(c => `<span class="nowrap">${flagImg(c)}${flagCode(c) ? " " : ""}${esc(regionName(c))}</span>`).join(", ") } : ""],
     ["Idioma original", x?.l ? langName(x.l) : ""],
-    ["Reparto", x?.a?.length ? x.a.join(", ") : ""],
-    ["Guion", x?.wr?.length ? x.wr.join(", ") : ""],
-    ["Música", x?.mu?.length ? x.mu.join(", ") : ""],
-    ["Fotografía", x?.ph?.length ? x.ph.join(", ") : ""],
+    ["Reparto", x?.a?.length ? namesHTML(x.a) : ""],
+    ["Guion", x?.wr?.length ? namesHTML(x.wr) : ""],
+    ["Música", x?.mu?.length ? namesHTML(x.mu) : ""],
+    ["Fotografía", x?.ph?.length ? namesHTML(x.ph) : ""],
     ["Productoras", x?.co?.length ? x.co.join(", ") : ""],
     ["Saga", x?.sg?.n || ""],
     ["Presupuesto", money(x?.b)], ["Recaudación", money(x?.rv)]
@@ -2522,7 +2524,7 @@ function fichaHTML(r, x){
   else if (!x) extra = `<p class="ficha-note">Cargando datos de TMDb…</p>`;
   else if (x.none) extra = `<p class="ficha-note">TMDb no tiene esta película.</p>`;
   return `
-    <button class="ficha-close" type="button" aria-label="Cerrar" data-close>✕</button>
+    <button class="ficha-close" type="button" aria-label="Cerrar" data-close>✕</button>${backBtn()}
     <div class="ficha-grid">
       <div class="ficha-poster">${x?.p ? `<img src="${TMDB_IMG}w342${x.p}" alt="Póster de ${esc(r.title)}" loading="lazy" data-path="${esc(x.p)}" data-title="${esc(r.title)}" title="Ver a pantalla completa">` : `<div class="poster-ph" aria-hidden="true"></div>`}</div>
       <div class="ficha-body">
@@ -2546,6 +2548,7 @@ function fichaHTML(r, x){
 
 let fichaRow = null;
 async function openFicha(r){
+  if (!navInternal) navStack.length = 0;
   fichaRow = r;
   const dlg = document.getElementById("ficha");
   const id = imdbId(r);
@@ -2577,6 +2580,8 @@ document.getElementById("ficha").addEventListener("click", e => {
     const m = document.getElementById("msg"); m.className = "msg"; m.textContent = `Quitada: ${fichaRow.title}.`; return;
   }
   if (img){ openPoster(img.dataset.path, img.dataset.title); return; }
+  if (e.target.closest("[data-back]")){ navBack(); return; }
+  const pn = e.target.closest("[data-pname]"); if (pn){ openPersonByName(pn.dataset.pname); return; }
   if (e.target === dlg || e.target.closest("[data-close]")) dlg.close();
   if (e.target.closest("[data-open-tmdb]")){ dlg.close(); togglePanel("backupBtn", "backupPanel", true); document.getElementById("tmdbKeyInput").focus(); }
 });
@@ -3319,7 +3324,7 @@ function personHTML(p){
   ].filter(f => f[1]);
 
   return `
-    <button class="ficha-close" type="button" aria-label="Cerrar" data-close>✕</button>
+    <button class="ficha-close" type="button" aria-label="Cerrar" data-close>✕</button>${backBtn()}
     <div class="person-top">
       <div class="person-photo">${x.img ? `<img src="${TMDB_IMG}h632${x.img}" alt="Foto de ${esc(x.n || p.name)}" data-path="${esc(x.img)}" data-title="${esc(x.n || p.name)}" title="Ver a pantalla completa">` : `<span class="fav-photo ph big">${esc(p.name.charAt(0))}</span>`}</div>
       <div class="person-main">
@@ -3334,7 +3339,7 @@ function personHTML(p){
         <div class="actions">
           ${x.imdb || /^nm\d+/.test(p.id) ? `<a class="btn ghost" href="https://www.imdb.com/name/${esc(x.imdb || p.id)}/" target="_blank" rel="noopener">Ver en IMDb</a>` : ""}
           ${x.t ? `<a class="btn ghost" href="https://www.themoviedb.org/person/${x.t}" target="_blank" rel="noopener">Ver en TMDb</a>` : ""}
-          <button class="btn ghost" type="button" data-remove-person="${esc(p.id)}">Quitar de Artistas</button>
+          ${people.some(q => q.id === p.id) ? `<button class="btn ghost" type="button" data-remove-person="${esc(p.id)}">Quitar de Artistas</button>` : `<button class="btn" type="button" data-add-temp>+ Añadir a Artistas</button>`}
         </div>
       </div>
     </div>
@@ -3357,9 +3362,45 @@ function personHTML(p){
     </div>` : ""}`;
 }
 
+/* ---------- Navegar entre fichas (película ↔ artista) sin salir ---------- */
+const navStack = [];
+let navInternal = false, navSwitching = false;
+const backBtn = () => navStack.length ? `<button class="ficha-back" type="button" data-back aria-label="Volver">‹ ${esc(navStack[navStack.length - 1].label)}</button>` : "";
+const namesHTML = list => ({ html: list.filter(Boolean).map(n => `<button type="button" class="plink" data-pname="${esc(n)}">${esc(n)}</button>`).join(", ") });
+function curNav(){
+  if (document.getElementById("ficha").open && fichaRow) return { k: "film", r: fichaRow, label: fichaRow.title };
+  if (document.getElementById("personDlg").open && personOpen) return { k: "person", p: personOpen, label: personCache[personOpen.id]?.n || personOpen.name };
+  return null;
+}
+function navOpen(t){
+  navSwitching = true;
+  ["ficha", "personDlg"].forEach(id => { const d = document.getElementById(id); if (d.open) d.close(); });
+  navSwitching = false;
+  navInternal = true;
+  if (t.k === "film") openFicha(t.r); else openPerson(t.p);
+  navInternal = false;
+}
+function navGo(t){ const c = curNav(); if (c) navStack.push(c); navOpen(t); }
+function navBack(){ const t = navStack.pop(); if (t) navOpen(t); }
+// Abrir un artista por su nombre: de tu lista si está; si no, se busca en TMDb
+async function openPersonByName(name){
+  const n = name.toLowerCase();
+  const p = people.find(q => (personCache[q.id]?.n || q.name || "").toLowerCase() === n);
+  if (p) return navGo({ k: "person", p });
+  if (!tmdbKey){ searchFilms(name); return; }
+  try {
+    const res = await tmdbGet("/search/person", { query: name, language: "es-ES", include_adult: "false" });
+    const hit = (res.results || []).find(h => (h.name || "").toLowerCase() === n) || res.results?.[0];
+    if (!hit) return;
+    const known = people.find(q => q.tmdb === hit.id || personCache[q.id]?.t === hit.id);
+    navGo({ k: "person", p: known || { id: `tmdbp-${hit.id}`, tmdb: hit.id, name: hit.name, known: "", pos: 0, added: "", desc: "", temp: true } });
+  } catch(e) {}
+}
+
 let personOpen = null;
 async function openPerson(id){
-  const p = people.find(x => x.id === id); if (!p) return;
+  const p = typeof id === "object" ? id : people.find(x => x.id === id); if (!p) return;
+  if (!navInternal) navStack.length = 0;
   personOpen = p;
   const dlg = document.getElementById("personDlg");
   dlg.innerHTML = personHTML(p);
@@ -3397,6 +3438,14 @@ async function linkMissingToImdb(p){
 document.getElementById("personDlg").addEventListener("click", e => {
   const dlg = e.currentTarget;
   if (e.target === dlg || e.target.closest("[data-close]")){ dlg.close(); return; }
+  if (e.target.closest("[data-back]")){ navBack(); return; }
+  if (e.target.closest("[data-add-temp]") && personOpen){
+    const p = personOpen; delete p.temp;
+    if (!people.some(q => q.id === p.id)) people.push({ ...p, added: todayISO() });
+    savePeople(); renderFavs(); fetchPeople();
+    const st = dlg.scrollTop; dlg.innerHTML = personHTML(p); dlg.scrollTop = st;
+    const m = document.getElementById("msg"); m.className = "msg"; m.textContent = `${personCache[p.id]?.n || p.name} añadido a Artistas.`; return;
+  }
   const img = e.target.closest(".person-photo img");
   if (img){ openPoster(img.dataset.path, img.dataset.title); return; }
   const rm = e.target.closest("[data-remove-person]");
@@ -3406,7 +3455,7 @@ document.getElementById("personDlg").addEventListener("click", e => {
     const m = document.getElementById("msg"); m.className = "msg"; m.textContent = `${p?.name || "Persona"} quitado de Artistas.`; return;
   }
   const b = e.target.closest("button.pg-item[data-k]");
-  if (b){ const r = findFilm(b.dataset.k); if (r) openFicha(r); }
+  if (b){ const r = findFilm(b.dataset.k); if (r) navGo({ k: "film", r }); }
 });
 document.getElementById("favList").addEventListener("click", e => {
   const open = e.target.closest("[data-open-person]");
@@ -3499,6 +3548,7 @@ function openArtistGroup(title, items, flag = ""){
 }
 // Al cerrar la ficha de un artista abierta desde un grupo, se vuelve al grupo
 document.getElementById("personDlg").addEventListener("close", () => {
+  if (navSwitching) return;
   if (groupReturn && lastGroup){ groupReturn = false; openArtistGroup(lastGroup.title, lastGroup.items, lastGroup.flag); }
 });
 const byName = (a, b) => (a.x.n || a.p.name).localeCompare(b.x.n || b.p.name, "es");
