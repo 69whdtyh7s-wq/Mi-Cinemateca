@@ -75,6 +75,11 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center}
 .btn.upload:hover{filter:brightness(.95)}
 .actions{display:flex;gap:8px;flex-wrap:wrap}
 .msg{font-size:14px;color:var(--muted);margin:-12px 0 0}
+.notice{position:relative;background:var(--accent-soft);border:1px solid var(--accent);border-radius:12px;padding:12px 44px 12px 14px;font-size:14px;line-height:1.45}
+.notice b{display:block;margin-bottom:4px;font-size:15px}
+.notice ul{margin:6px 0 0;padding-left:18px}
+.notice a{color:var(--ink);font-weight:600}
+.notice .pop-close{position:absolute;top:8px;right:8px}
 .msg:empty{display:none}
 .msg.err{color:#c0392b}
 
@@ -639,6 +644,7 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
   </header>
 
   <p class="msg" id="msg"></p>
+  <div class="notice" id="dupNotice" role="alert" hidden></div>
 
 
   <!-- Ventanas flotantes de la píldora -->
@@ -1222,11 +1228,25 @@ const WATCH_KEY = "cinemateca-watch";
 let watch = [], filmSrc = "seen";
 try { watch = JSON.parse(localStorage.getItem(WATCH_KEY) || "[]"); if (!Array.isArray(watch)) watch = []; } catch(e) { watch = []; }
 // Si una película ya está en las vistas, sale de la lista por ver
+// Una película no puede estar en Vistas y en la Watchlist a la vez (se compara por su código de IMDb)
+const dupKey = r => imdbId(r) || rowKey(r);
 function pruneWatch(){
-  if (!rows || !watch.length) return 0;
-  const seen = new Set(rows.map(rowKey)), before = watch.length;
-  watch = watch.filter(r => !seen.has(rowKey(r)));
-  return before - watch.length;
+  if (!rows || !watch.length) return [];
+  const seen = new Set(rows.map(dupKey));
+  const removed = watch.filter(r => seen.has(dupKey(r)));
+  if (removed.length) watch = watch.filter(r => !seen.has(dupKey(r)));
+  return removed;
+}
+function showDupNotice(list){
+  if (!list.length) return;
+  const box = document.getElementById("dupNotice");
+  const MAX = 15, names = list.slice(0, MAX).map(r => `<li>${r.url ? `<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title)}</a>` : esc(r.title)}${r.year ? ` (${r.year})` : ""}</li>`).join("");
+  box.innerHTML = `<button class="pop-close" type="button" aria-label="Cerrar aviso">✕</button>
+    <b>${list.length === 1 ? "Esta película estaba" : `Estas ${list.length} películas estaban`} a la vez en Vistas y en tu Watchlist</b>
+    Como ya ${list.length === 1 ? "la has visto, la he quitado" : "las has visto, las he quitado"} de la Watchlist de la app. Quítala${list.length === 1 ? "" : "s"} también de tu Watchlist en IMDb para que no ${list.length === 1 ? "vuelva" : "vuelvan"} a aparecer.
+    <ul>${names}</ul>${list.length > MAX ? `<p>Y ${list.length - MAX} más.</p>` : ""}`;
+  box.hidden = false;
+  box.querySelector(".pop-close").onclick = () => { box.hidden = true; };
 }
 function saveWatch(){ try { localStorage.setItem(WATCH_KEY, JSON.stringify(watch)); } catch(e) {} syncSrcCounts(); if (typeof renderWatchStats === "function") renderWatchStats(); }
 function syncSrcCounts(){
@@ -1245,9 +1265,11 @@ function setFilmSrc(src){
 }
 function loadWatch(list, name, quiet){
   const before = new Set(watch.map(rowKey));
-  const seen = new Set((rows || []).map(rowKey));
-  const fresh = list.filter(r => !seen.has(rowKey(r))).map(r => ({ ...r, todo: true, mine: null }));
-  const skipped = list.length - fresh.length;
+  const seen = new Set((rows || []).map(dupKey));
+  const dups = list.filter(r => seen.has(dupKey(r)));
+  const fresh = list.filter(r => !seen.has(dupKey(r))).map(r => ({ ...r, todo: true, mine: null }));
+  const skipped = dups.length;
+  showDupNotice(dups);
   const added = fresh.filter(r => !before.has(rowKey(r))).length;
   if (quiet && !added && fresh.length === watch.length) return;
   watch = fresh; saveWatch();
@@ -3538,7 +3560,8 @@ document.getElementById("statsNav").addEventListener("click", e => { const b = e
 
 /* ---------- Carga ---------- */
 function save(){
-  if (pruneWatch()) saveWatch();
+  const dups = pruneWatch();
+  if (dups.length){ saveWatch(); showDupNotice(dups); }
   try { localStorage.setItem(DATA_KEY, JSON.stringify({ rows, newKeys: [...newKeys], updKeys: [...updKeys] })); localStorage.removeItem(KEY); } catch(e) {}
 }
 
@@ -3777,6 +3800,9 @@ if (stored && Array.isArray(stored.rows) && stored.rows.length){
 } else if (saved) load(saved);
 else { rows = []; isSample = true; buildTypes(); render(); }
 showView(location.hash === "#peliculas" ? "films" : (VIEW_SEQ.includes(tab) ? tab : "films"));
+
+// Al abrir: comprobar que nada está a la vez en Vistas y en la Watchlist
+{ const d = pruneWatch(); if (d.length){ saveWatch(); showDupNotice(d); } }
 
 // Sincronización: si el repositorio tiene datos.csv, se añaden sus películas nuevas
 if (location.protocol.startsWith("http") && !location.hostname.endsWith("claude.ai")){
