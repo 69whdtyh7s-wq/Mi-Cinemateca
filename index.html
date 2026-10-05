@@ -2665,7 +2665,8 @@ async function tmdbGet(path, params = {}){
 }
 
 const crewBy = (d, fn) => [...new Set((d.credits?.crew || []).filter(fn).map(c => c.name))];
-const isFresh = id => { const c = tmdbCache[id]; return !!c && (c.none || c.v2); };
+// "none" sin nv:2 = no encontrada con la versión antigua: se reintenta (ahora también se busca por título)
+const isFresh = id => { const c = tmdbCache[id]; return !!c && (c.none ? c.nv === 2 : !!c.v2); };
 
 // Plataformas en España (datos de JustWatch a través de TMDb)
 function provData(es){
@@ -2714,8 +2715,20 @@ async function fetchTmdb(r){
   await tmdbReady;
   if (isFresh(id)) return tmdbCache[id];
   const found = await tmdbGet(`/find/${id}`, { external_source: "imdb_id", language: "es-ES" });
-  const hit = found.movie_results?.[0] ? { kind: "movie", ...found.movie_results[0] } : found.tv_results?.[0] ? { kind: "tv", ...found.tv_results[0] } : null;
-  if (!hit){ tmdbCache[id] = { none: 1 }; saveTmdbCache(); return tmdbCache[id]; }
+  let hit = found.movie_results?.[0] ? { kind: "movie", ...found.movie_results[0] } : found.tv_results?.[0] ? { kind: "tv", ...found.tv_results[0] } : null;
+  // Algunas fichas de TMDb no tienen enlazado el código de IMDb: se busca por título y año
+  if (!hit){
+    const tv = isSeriesRow(r), norm = t => (t || "").toLowerCase().normalize("NFD").replace(/[^a-z0-9]/g, "");
+    const params = { query: r.orig || r.title, language: "es-ES", include_adult: "false" };
+    if (r.year) params[tv ? "first_air_date_year" : "year"] = r.year;
+    const tryFind = async p => { const res = await tmdbGet(tv ? "/search/tv" : "/search/movie", p); return res.results || []; };
+    let res = await tryFind(params);
+    if (!res.length && r.orig && r.orig !== r.title) res = await tryFind({ ...params, query: r.title });
+    const names = [r.title, r.orig].map(norm).filter(Boolean);
+    const best = res.find(c => names.includes(norm(c.name || c.title)) || names.includes(norm(c.original_name || c.original_title))) || res[0];
+    if (best) hit = { kind: tv ? "tv" : "movie", ...best };
+  }
+  if (!hit){ tmdbCache[id] = { none: 1, nv: 2 }; saveTmdbCache(); return tmdbCache[id]; }
   const d = await tmdbGet(`/${hit.kind}/${hit.id}`, { language: "es-ES", append_to_response: "credits,watch/providers" });
   const es = d["watch/providers"]?.results?.ES;
   const x = {
