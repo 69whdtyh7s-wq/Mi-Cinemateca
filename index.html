@@ -1300,10 +1300,14 @@ try { watch = JSON.parse(localStorage.getItem(WATCH_KEY) || "[]"); if (!Array.is
 // Una película no puede estar en Vistas y en la Watchlist a la vez (se compara por su código de IMDb)
 const dupKey = r => imdbId(r) || rowKey(r);
 function pruneWatch(){
-  if (!rows || !watch.length) return [];
-  const seen = new Set(rows.map(dupKey));
+  const seen = new Set((rows || []).map(dupKey).concat((typeof series !== "undefined" ? series : []).map(dupKey)));
+  if (!seen.size) return [];
   const removed = watch.filter(r => seen.has(dupKey(r)));
   if (removed.length) watch = watch.filter(r => !seen.has(dupKey(r)));
+  if (typeof swatch !== "undefined" && swatch.length){
+    const rs = swatch.filter(r => seen.has(dupKey(r)));
+    if (rs.length){ swatch = swatch.filter(r => !seen.has(dupKey(r))); try { localStorage.setItem(SWATCH_KEY, JSON.stringify(swatch)); } catch(e) {} removed.push(...rs); }
+  }
   return removed;
 }
 function showDupNotice(list){
@@ -1311,7 +1315,7 @@ function showDupNotice(list){
   const box = document.getElementById("dupNotice");
   const MAX = 15, names = list.slice(0, MAX).map(r => `<li>${r.url ? `<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title)}</a>` : esc(r.title)}${r.year ? ` (${r.year})` : ""}</li>`).join("");
   box.innerHTML = `<button class="pop-close" type="button" aria-label="Cerrar aviso">✕</button>
-    <b>${list.length === 1 ? "Esta película estaba" : `Estas ${list.length} películas estaban`} a la vez en Vistas y en tu Watchlist</b>
+    <b>${list.length === 1 ? "Este título estaba" : `Estos ${list.length} títulos estaban`} a la vez en Vistas y en tu Watchlist</b>
     Como ya ${list.length === 1 ? "la has visto, la he quitado" : "las has visto, las he quitado"} de la Watchlist de la app. Quítala${list.length === 1 ? "" : "s"} también de tu Watchlist en IMDb para que no ${list.length === 1 ? "vuelva" : "vuelvan"} a aparecer.
     <ul>${names}</ul>${list.length > MAX ? `<p>Y ${list.length - MAX} más.</p>` : ""}`;
   box.hidden = false;
@@ -1320,12 +1324,13 @@ function showDupNotice(list){
 function saveWatch(){ try { localStorage.setItem(WATCH_KEY, JSON.stringify(watch)); } catch(e) {} syncSrcCounts(); if (typeof renderWatchStats === "function") renderWatchStats(); }
 function syncSrcCounts(){
   const a = document.getElementById("cntSeen"), b = document.getElementById("cntTodo");
-  if (a) a.textContent = rows ? counted().length : "";
-  if (b) b.textContent = watch.length || "";
+  const ser = typeof srcKind === "function" && srcKind() === "series";
+  if (a) a.textContent = ser ? (series.length || "") : (rows ? counted().length : "");
+  if (b) b.textContent = (ser ? watchSeries().length : watch.filter(r => !isSeriesRow(r)).length) || "";
 }
 /* ---------- Series (su propio CSV) ---------- */
 const SERIES_KEY = "cinemateca-series";
-let series = [], lastFilmSrc = "seen";
+let series = [];
 try { series = JSON.parse(localStorage.getItem(SERIES_KEY) || "[]"); if (!Array.isArray(series)) series = []; } catch(e) { series = []; }
 function saveSeries(){ try { localStorage.setItem(SERIES_KEY, JSON.stringify(series)); } catch(e) {} const el = document.getElementById("tabCountS"); if (el) el.textContent = series.length || ""; if (typeof renderSeriesStats === "function") renderSeriesStats(); }
 const SERIES_TYPES = new Set(["tvseries", "tvminiseries", "seriedetv", "miniseriedetv", "serie", "miniserie"]);
@@ -1338,16 +1343,46 @@ function loadSeries(list, name, quiet){
   series = [...uniq.values()].map(r => ({ ...r, serie: true })); saveSeries();
   const msg = document.getElementById("msg"); msg.className = "msg";
   msg.textContent = `Series cargadas desde ${name || "el archivo"}: ${series.length}` + (before.size ? ` (${added} ${added === 1 ? "nueva" : "nuevas"})` : "") + ".";
-  if (!quiet) showView("series");
-  if (filmSrc === "series"){ shown = PAGE; renderFilms(); }
+  if (!quiet){ showView("series"); setFilmSrc("seen", "series"); }
+  else if (srcKind() === "series"){ shown = PAGE; renderFilms(); }
+  const d = pruneWatch(); if (d.length){ saveWatch(); saveSWatch(); showDupNotice(d); }
   if (tmdbKey && !bulk && typeof runBulk === "function") runBulk();
 }
-const findFilm = k => rows.find(x => rowKey(x) === k) || watch.find(x => rowKey(x) === k) || series.find(x => rowKey(x) === k);
-function setFilmSrc(src){
-  filmSrc = src === "todo" || src === "series" ? src : "seen";
-  if (filmSrc !== "series") lastFilmSrc = filmSrc;
-  document.getElementById("filmSrc").hidden = filmSrc === "series";
-  document.querySelectorAll("#filmSrc [data-src]").forEach(b => b.setAttribute("aria-selected", b.dataset.src === filmSrc));
+const findFilm = k => rows.find(x => rowKey(x) === k) || watch.find(x => rowKey(x) === k) || series.find(x => rowKey(x) === k) || swatch.find(x => rowKey(x) === k);
+/* Películas y Series tienen cada una sus subpestañas Vistas / Watchlist */
+const SWATCH_KEY = "cinemateca-swatch";
+let swatch = [];
+try { swatch = JSON.parse(localStorage.getItem(SWATCH_KEY) || "[]"); if (!Array.isArray(swatch)) swatch = []; } catch(e) { swatch = []; }
+function saveSWatch(){ try { localStorage.setItem(SWATCH_KEY, JSON.stringify(swatch)); } catch(e) {} syncSrcCounts(); }
+const lastSub = { films: "seen", series: "seen" };
+const srcKind = () => filmSrc === "series" || filmSrc === "stodo" ? "series" : "films";
+const watchMovies = () => watch.filter(r => !isSeriesRow(r));
+// Watchlist de series: las series de tu Watchlist general + un CSV aparte solo de series pendientes
+function watchSeries(){
+  const m = new Map();
+  swatch.concat(watch.filter(isSeriesRow)).forEach(r => { const k = dupKey(r); if (!m.has(k)) m.set(k, r); });
+  return [...m.values()];
+}
+function loadSWatch(list, name, quiet){
+  const seenS = new Set(series.map(dupKey));
+  const dups = list.filter(r => seenS.has(dupKey(r)));
+  const m = new Map(); list.filter(r => !seenS.has(dupKey(r))).forEach(r => { if (!m.has(dupKey(r))) m.set(dupKey(r), { ...r, todo: true, mine: null }); });
+  const fresh = [...m.values()];
+  if (quiet && fresh.length === swatch.length && fresh.every((r, i) => dupKey(r) === dupKey(swatch[i]))) return;
+  swatch = fresh; saveSWatch(); showDupNotice(dups);
+  const msg = document.getElementById("msg"); msg.className = "msg";
+  msg.textContent = `Watchlist de series cargada desde ${name || "el archivo"}: ${swatch.length} series.`;
+  if (!quiet){ showView("series"); setFilmSrc("todo", "series"); } else if (srcKind() === "series") renderFilms();
+  if (tmdbKey && !bulk && typeof runBulk === "function") runBulk();
+}
+function setFilmSrc(src, kind){
+  kind = kind || srcKind();
+  const sub = src === "todo" || src === "stodo" ? "todo" : "seen";
+  lastSub[kind] = sub;
+  filmSrc = kind === "series" ? (sub === "todo" ? "stodo" : "series") : (sub === "todo" ? "todo" : "seen");
+  document.getElementById("filmSrc").hidden = false;
+  document.querySelectorAll("#filmSrc [data-src]").forEach(b => b.setAttribute("aria-selected", b.dataset.src === sub));
+  syncSrcCounts();
   document.getElementById("fWatchedField").hidden = filmSrc !== "seen";
   if (filmSrc !== "seen"){ document.getElementById("fWatched").value = ""; extra = null; }
   document.getElementById("roulette").hidden = true;
@@ -1783,7 +1818,8 @@ function fillYearSelects(data){
 function renderHead(){
   const ss = document.getElementById("sortSel"), v = `${sort.key}:${sort.dir}`;
   if ([...ss.options].some(o => o.value === v)) ss.value = v;
-  const lab = c => c.key === "watched" && filmSrc === "todo" ? "Añadida" : c.key === "mine" && filmSrc === "todo" ? "" : c.label;
+  const todoSrc = filmSrc === "todo" || filmSrc === "stodo";
+  const lab = c => c.key === "watched" && todoSrc ? "Añadida" : c.key === "mine" && todoSrc ? "" : c.label;
   document.getElementById("filmHead").innerHTML = COLS.map(c => (c = { ...c, label: lab(c) }, c)).map(c => c.nosort ? `<th>${c.label}</th>` :
     `<th class="${c.num ? "num" : ""}" aria-sort="${sort.key === c.key ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}"><button type="button" data-key="${c.key}" ${sort.key === c.key ? `data-dir="${sort.dir}"` : ""}>${c.label}</button></th>`).join("");
 }
@@ -1864,7 +1900,7 @@ function filtered(){
   const q = document.getElementById("q").value.trim().toLowerCase();
   const fw = Number(document.getElementById("fWatched").value) || null;
   const fy = Number(document.getElementById("fYear").value) || null;
-  let list = (filmSrc === "todo" ? watch : filmSrc === "series" ? series : counted()).filter(r =>
+  let list = (filmSrc === "todo" ? watchMovies() : filmSrc === "series" ? series : filmSrc === "stodo" ? watchSeries() : counted()).filter(r =>
     (filmSrc !== "seen" || !fw || r.watched === fw) && (!fy || r.year === fy) &&
     (!q || searchText(r).includes(q)) && (!extra || extra.fn(r)));
   const k = sort.key === "watched" ? "watchedDate" : sort.key, m = sort.dir === "asc" ? 1 : -1;
@@ -1899,10 +1935,12 @@ function renderFilms(){
   renderHead();
   const list = filtered();
   const n = list.length;
-  document.getElementById("count").textContent = filmSrc === "series" ? `${n} ${n === 1 ? "serie" : "series"}` + (n > shown ? ` · mostrando ${shown}` : "") : `${n} ${n === 1 ? "título" : "títulos"}${filmSrc === "todo" ? " en tu Watchlist" : ""}` + (n > shown ? ` · mostrando ${shown}` : "");
+  document.getElementById("count").textContent = filmSrc === "series" || filmSrc === "stodo" ? `${n} ${n === 1 ? "serie" : "series"}${filmSrc === "stodo" ? " en tu Watchlist" : ""}` + (n > shown ? ` · mostrando ${shown}` : "") : `${n} ${n === 1 ? "título" : "títulos"}${filmSrc === "todo" ? " en tu Watchlist" : ""}` + (n > shown ? ` · mostrando ${shown}` : "");
   const emptyTodo = filmSrc === "series" && !series.length
     ? `<p class="hint todo-empty">Aún no has cargado tus series. Exporta tu lista de series de IMDb (⋯ → <em>Export</em>) y súbela con <b>Elegir CSV</b>. La app la reconoce porque casi todo son series, o si el archivo se llama «series».</p>`
-    : filmSrc === "todo" && !watch.length
+    : filmSrc === "stodo" && !watchSeries().length
+    ? `<p class="hint todo-empty">No tienes series pendientes. Aquí salen las series de tu Watchlist de IMDb; también puedes subir con <b>Elegir CSV</b> una lista aparte solo con series por ver (sin notas tuyas).</p>`
+    : filmSrc === "todo" && !watchMovies().length
     ? `<p class="hint todo-empty">Aún no has cargado tu Watchlist. En IMDb ábrela, pulsa ⋯ → <em>Export</em> y súbela con <b>Elegir CSV</b>. La app la reconoce sola porque no lleva notas tuyas.</p>` : "";
   const dash = '<span class="dim">—</span>';
   document.getElementById("filmBody").innerHTML = n ? list.slice(0, shown).map(r => `<tr data-k="${esc(rowKey(r))}" tabindex="0">
@@ -2031,7 +2069,7 @@ document.getElementById("clear").addEventListener("click", () => {
 });
 
 function openFilms({ watched = "", year = "" }){
-  if (filmSrc !== "seen"){ filmSrc = "seen"; document.querySelectorAll("#filmSrc [data-src]").forEach(b => b.setAttribute("aria-selected", b.dataset.src === "seen")); document.getElementById("fWatchedField").hidden = false; }
+  if (filmSrc !== "seen") setFilmSrc("seen", "films");
   document.getElementById("q").value = "";
   extra = null;
   document.getElementById("fWatched").value = watched;
@@ -2104,7 +2142,7 @@ const yearsRange = () => { const ys = []; for (let y = START; y <= NOW; y++) ys.
 
 /* ---------- Estadísticas de las series ---------- */
 function openSeriesFilter(label, fn, sortBy){
-  showView("series");
+  showView("series"); if (filmSrc !== "series") setFilmSrc("seen", "series");
   document.getElementById("q").value = "";
   extra = fn ? { label, fn } : null;
   if (sortBy) sort = sortBy;
@@ -2194,11 +2232,11 @@ function openWatch(text = ""){
   document.querySelector(".tabs").scrollIntoView({ behavior: motion() ? "smooth" : "auto" });
 }
 function renderWatchStats(){
-  const has = watch.length > 0;
+  const has = watchMovies().length > 0;
   document.getElementById("wsEmpty").hidden = has;
   document.getElementById("wsBody").hidden = !has;
   if (!has) return;
-  const W = watch, n = W.length;
+  const W = watchMovies(), n = W.length;
   const mins = W.reduce((a, r) => a + (r.runtime || 0), 0);
   const withR = W.filter(r => r.imdb), avgI = withR.length ? withR.reduce((a, r) => a + r.imdb, 0) / withR.length : null;
   const withRun = W.filter(r => r.runtime);
@@ -2449,7 +2487,7 @@ function spin(){
   box.hidden = false;
   if (!list.length){ box.innerHTML = `<button class="pop-close r-close" type="button" aria-label="Quitar" onclick="this.parentNode.hidden=true">✕</button><p class="r-meta">No hay películas con estos filtros.</p>`; return; }
   const r = list[Math.floor(Math.random() * list.length)];
-  box.innerHTML = `${tmdbCache[imdbId(r)]?.p ? `<img class="r-poster" src="${TMDB_IMG}w185${tmdbCache[imdbId(r)].p}" alt="">` : ""}<button class="pop-close r-close" type="button" id="spinClose" aria-label="Quitar">✕</button><span class="label">${filmSrc === "todo" ? "Para ver hoy" : "Tu película al azar"}</span>
+  box.innerHTML = `${tmdbCache[imdbId(r)]?.p ? `<img class="r-poster" src="${TMDB_IMG}w185${tmdbCache[imdbId(r)].p}" alt="">` : ""}<button class="pop-close r-close" type="button" id="spinClose" aria-label="Quitar">✕</button><span class="label">${filmSrc === "todo" || filmSrc === "stodo" ? "Para ver hoy" : filmSrc === "series" ? "Tu serie al azar" : "Tu película al azar"}</span>
     <p class="r-title">${esc(r.title)}</p>
     <p class="r-meta">${[r.year, r.dir, genresOf(r).join(", "), r.runtime ? `${r.runtime} min` : ""].filter(Boolean).map(esc).join(" · ")}</p>
     <p class="r-meta">${[r.mine ? `Tu nota: ${r.mine}` : "", r.imdb ? `IMDb: ${fmt1(r.imdb)}` : "", r.watchedDate ? `${r.todo ? "En tu lista desde el" : "Vista el"} ${r.watchedDate.split("-").reverse().join("/")}` : ""].filter(Boolean).join(" · ")}</p>
@@ -2476,7 +2514,7 @@ document.getElementById("spin").addEventListener("click", spin);
 document.getElementById("exportBtn").addEventListener("click", () => {
   const msg = document.getElementById("msg");
   if (isSample){ msg.className = "msg"; msg.textContent = "Todavía no hay datos tuyos que exportar. Sube primero tu CSV."; return; }
-  const blob = new Blob([JSON.stringify({ app: "mi-cinemateca", version: 1, exported: new Date().toISOString(), rows, people, watch, series }, null, 1)], { type: "application/json" });
+  const blob = new Blob([JSON.stringify({ app: "mi-cinemateca", version: 1, exported: new Date().toISOString(), rows, people, watch, series, swatch }, null, 1)], { type: "application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = `mi-cinemateca-${new Date().toISOString().slice(0, 10)}.json`;
@@ -2786,7 +2824,7 @@ document.getElementById("tmdbBulk").addEventListener("click", () => { if (bulk){
 
 async function runBulk(){
   await tmdbReady;
-  const pool = counted().concat(watch, series);
+  const pool = counted().concat(watch, series, swatch);
   const todo = pool.filter(r => imdbId(r) && !isFresh(imdbId(r)));
   const total = pool.filter(r => imdbId(r)).length;
   const token = bulk = {};
@@ -3871,8 +3909,8 @@ function showView(v){
   document.getElementById("sgFilms").hidden = v !== "stats";
   document.getElementById("sgArtists").hidden = v !== "statsArt";
   document.getElementById("view-films").hidden = v !== "films" && v !== "series";
-  if (v === "series" && filmSrc !== "series") setFilmSrc("series");
-  else if (v === "films" && filmSrc === "series") setFilmSrc(lastFilmSrc);
+  if (v === "series" && srcKind() !== "series") setFilmSrc(lastSub.series, "series");
+  else if (v === "films" && srcKind() !== "films") setFilmSrc(lastSub.films, "films");
   document.getElementById("view-year").hidden = v !== "year";
   document.getElementById("view-wstats").hidden = v !== "wstats";
   document.getElementById("view-sstats").hidden = v !== "sstats";
@@ -3915,6 +3953,7 @@ function load(text, name, opts = {}){
       if (!Array.isArray(backup.rows)) throw new Error("Esta copia de seguridad no es válida.");
       incoming = backup.rows;
       if (Array.isArray(backup.series)){ series = backup.series; saveSeries(); }
+      if (Array.isArray(backup.swatch)){ swatch = backup.swatch; saveSWatch(); }
       if (Array.isArray(backup.watch)){ watch = backup.watch.map(r => ({ ...r, todo: true })); saveWatch(); }
       if (Array.isArray(backup.people) && backup.people.length){ const known = new Set(people.map(p => p.id)); backup.people.forEach(p => { if (!known.has(p.id)) people.push(p); }); savePeople(); }
     } else {
@@ -3922,8 +3961,12 @@ function load(text, name, opts = {}){
       if (isPeopleCSV(objs)){ loadPeople(objs, name || "el archivo", opts.quiet); return; }
       incoming = normalize(objs);
       // CSV de series: se llama "series" o casi todo son series
-      const seriesFile = opts.series || (!opts.seen && !opts.todo && (/series/i.test(name || "") || (incoming.length >= 3 && incoming.filter(isSeriesRow).length / incoming.length >= 0.8)));
-      if (seriesFile){ loadSeries(incoming, name, opts.quiet); return; }
+      const seriesFile = opts.series || opts.stodo || (!opts.seen && !opts.todo && (/series/i.test(name || "") || (incoming.length >= 3 && incoming.filter(isSeriesRow).length / incoming.length >= 0.8)));
+      if (seriesFile){
+        if (opts.stodo || (!opts.series && incoming.length && !incoming.some(r => r.mine))) loadSWatch(incoming, name, opts.quiet);
+        else loadSeries(incoming, name, opts.quiet);
+        return;
+      }
       // Lista de películas por ver: el archivo no trae ninguna nota tuya (o se llama "watchlist")
       const todoFile = opts.todo || (!opts.seen && (/watch\s*list|por\s*ver/i.test(name || "") || (incoming.length && !incoming.some(r => r.mine))));
       if (todoFile){ loadWatch(incoming, name, opts.quiet); return; }
@@ -3987,7 +4030,7 @@ document.getElementById("confirmReset").addEventListener("click", e => {
   if (e.target.closest("#resetExport")){ document.getElementById("exportBtn").click(); return; }
   if (e.target.closest("#resetConfirm")){
     try { localStorage.removeItem(KEY); localStorage.removeItem(DATA_KEY); localStorage.removeItem(WATCH_KEY); localStorage.removeItem(SERIES_KEY); } catch(err) {}
-    series = []; saveSeries();
+    series = []; saveSeries(); swatch = []; try { localStorage.removeItem(SWATCH_KEY); } catch(err) {} syncSrcCounts();
     watch = []; syncSrcCounts();
     rows = []; isSample = true; newKeys = new Set(); updKeys = new Set(); dataVer++; sort = { ...DEFAULT_SORT }; shown = PAGE; buildTypes(); render();
     const msg = document.getElementById("msg"); msg.className = "msg"; msg.textContent = "Datos borrados de este dispositivo. Sube tu CSV para empezar de nuevo.";
@@ -4160,6 +4203,8 @@ if (location.protocol.startsWith("http") && !location.hostname.endsWith("claude.
       .then(t => { if (t && t.includes(",")) load(t, "porver.csv de GitHub", { quiet: true, todo: true }); }).catch(() => {})
       .finally(() => fetch("series.csv", { cache: "no-store" }).then(r => r.ok ? r.text() : null)
         .then(t => { if (t && t.includes(",")) load(t, "series.csv de GitHub", { quiet: true, series: true }); }).catch(() => {}))
+      .finally(() => fetch("seriesporver.csv", { cache: "no-store" }).then(r => r.ok ? r.text() : null)
+        .then(t => { if (t && t.includes(",")) load(t, "seriesporver.csv de GitHub", { quiet: true, stodo: true }); }).catch(() => {}))
       .finally(() => fetch("personas.csv", { cache: "no-store" }).then(r => r.ok ? r.text() : null)
         .then(t => { if (t && t.includes(",")) load(t, "personas.csv de GitHub", { quiet: true }); }).catch(() => {})));
 }
