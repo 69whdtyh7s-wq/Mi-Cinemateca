@@ -1618,7 +1618,7 @@ function openExpand(canvasId){
       <li data-label="${esc(String(label).toLowerCase())}">
         ${e.onPick ? `<button type="button" data-i="${i}">` : "<div>"}
           <span class="bl-rank">${i + 1}</span>
-          <span class="bl-name">${esc(label)}${e.entries[i][3] ? " " + flagImg(e.entries[i][3]) : ""}</span>
+          <span class="bl-name">${e.entries[i][3] ? flagImg(e.entries[i][3]) + " " : ""}${esc(label)}</span>
           <span class="bl-bar"><span style="width:${Math.max(2, n / max * 100)}%"></span></span>
           <span class="bl-n">${n}</span>
         ${e.onPick ? "</button>" : "</div>"}
