@@ -191,7 +191,17 @@ th button[data-dir="desc"]::after{content:"▼"}
 .side-pos{position:fixed;bottom:calc(10px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);z-index:3;font:12px var(--font-data);color:#fff;background:rgba(0,0,0,.55);padding:3px 10px;border-radius:999px;pointer-events:none}
 @media (max-width: 640px){ .side-arrow{width:36px;height:36px;margin-top:-18px;font-size:24px;opacity:.85} .side-arrow:disabled{opacity:0;pointer-events:none} }
 .ficha-close{position:sticky;top:8px;float:right;margin:8px 8px 0 0;width:36px;height:36px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:16px;cursor:pointer;z-index:1}
-.ficha-grid{display:grid;grid-template-columns:200px minmax(0,1fr);gap:20px;padding:20px}
+.ficha-grid{display:grid;grid-template-columns:240px minmax(0,1fr);gap:14px 22px;padding:22px 22px 44px}
+.ficha-body{display:contents}
+.ficha-grid{grid-template-rows:repeat(4,auto) 1fr;align-items:start}
+.ficha-poster{grid-row:1 / span 5}
+.ficha-body > .ficha-title,.ficha-body > .ficha-orig,.ficha-body > .ficha-tag,.ficha-body > .scores{grid-column:2;margin-top:0}
+.ficha-body > *:not(.ficha-title):not(.ficha-orig):not(.ficha-tag):not(.scores){grid-column:1 / -1}
+.ficha .scores{gap:5px;margin-top:8px}
+.ficha .score{min-width:0;flex-direction:row;align-items:baseline;gap:5px;padding:2px 9px;font-size:9.5px;border-radius:999px;letter-spacing:.04em}
+.ficha .score b{font-size:1rem}
+.ficha .actions{gap:6px}
+.ficha .actions .btn{font-size:13px;padding:7px 12px;min-height:0}
 .ficha-poster img{cursor:zoom-in}
 .ficha-poster img,.poster-ph{width:100%;aspect-ratio:2/3;border-radius:10px;object-fit:cover;background:var(--accent-soft);display:block}
 .ficha-title{font-family:var(--font-display);font-weight:800;font-size:1.7rem;line-height:1.1;margin:0;padding-right:36px;text-wrap:balance}
@@ -538,20 +548,8 @@ button.stat:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px
 .bl-bar span{display:block;height:100%;background:var(--amber);border-radius:999px}
 .bl-n{font-family:var(--font-data);font-size:13px;text-align:right;font-variant-numeric:tabular-nums}
 @media (max-width: 640px){
-  .ficha-grid{grid-template-columns:150px minmax(0,1fr);gap:12px 14px;padding:16px}
-  .ficha-title{font-size:1.3rem}
-  .ficha-body{display:contents}
-  .ficha-poster{grid-row:1 / span 4}
-  .ficha-body > .ficha-title,.ficha-body > .ficha-orig,.ficha-body > .ficha-tag,.ficha-body > .scores{grid-column:2;margin-top:0}
-  .ficha-body > *:not(.ficha-title):not(.ficha-orig):not(.ficha-tag):not(.scores){grid-column:1 / -1}
-  /* Fichas en el iPhone: carátula grande, notas y botones compactos */
-  .ficha .scores{gap:5px;margin-top:8px}
-  .ficha .score{min-width:0;flex-direction:row;align-items:baseline;gap:4px;padding:2px 7px;font-size:8.5px;border-radius:999px;letter-spacing:.04em}
-  .ficha .score b{font-size:.9rem}
-  .ficha .actions{gap:6px}
-  .ficha .actions .btn{font-size:13px;padding:7px 12px;min-height:0}
+  .ficha-grid{grid-template-columns:150px minmax(0,1fr);gap:12px 14px;padding:16px 16px 44px}
   .ficha .ficha-title{font-size:1.15rem}
-  .ficha-grid{padding-bottom:44px}
 }
 .facts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
 .facts li{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
@@ -2793,8 +2791,7 @@ function fichaHTML(r, x){
   ].filter(f => f[1]);
   const scores = [
     r.mine ? `<span class="score mine-s"><b>${r.mine}</b>Tu nota</span>` : "",
-    r.imdb ? `<span class="score"><b>${fmt1(r.imdb)}</b>IMDb</span>` : "",
-    x?.v ? `<span class="score"><b>${fmt1(x.v)}</b>TMDb</span>` : ""
+    r.imdb ? `<span class="score"><b>${fmt1(r.imdb)}</b>IMDb</span>` : ""
   ].join("");
   let extra = "";
   if (!tmdbKey) extra = `<div class="ficha-note"><p>Añade tu clave de TMDb para ver el póster, la sinopsis, el reparto y dónde verla.</p><button class="btn" type="button" data-open-tmdb>Añadir clave</button></div>`;
