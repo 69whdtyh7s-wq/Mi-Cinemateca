@@ -351,8 +351,10 @@ body.pop-open{overflow:hidden}
 .fav-none{grid-column:1 / -1;display:flex;flex-direction:column;align-items:flex-start;gap:8px}
 .fav-search input{font:16px var(--font-body);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;flex:1;min-width:0}
 .fav{position:relative}
-.fav-flag{position:absolute;top:6px;left:6px;font-size:20px;line-height:1;padding:3px 4px;border-radius:6px;background:rgba(255,255,255,.75);box-shadow:0 1px 3px rgba(0,0,0,.2)}
-.fav-flag-i{display:none;font-size:.95em}
+img.flag{display:inline-block;width:20px;height:15px;vertical-align:-2px;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,.15);object-fit:cover}
+.fav-flag{position:absolute;top:7px;left:7px;line-height:0}
+.fav-flag img.flag{width:26px;height:19.5px;border-radius:3px;box-shadow:0 0 0 1px rgba(0,0,0,.2),0 1px 4px rgba(0,0,0,.3)}
+.fav-flag-i{display:none;margin-left:6px}
 .fav-grid.as-list .fav-flag{display:none}
 .fav-grid.as-list .fav-flag-i{display:inline}
 .fav-remove{position:absolute;top:10px;right:10px;width:28px;height:28px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--muted);cursor:pointer;font-size:12px}
@@ -417,7 +419,8 @@ body.pop-open{overflow:hidden}
   .person-bio,.person-section{padding-inline:16px}
   .poster-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 10px}
   .fav-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-  .fav-flag{font-size:15px;top:4px;left:4px;padding:2px 3px}
+  .fav-flag{top:5px;left:5px}
+  .fav-flag img.flag{width:20px;height:15px}
   .fav-grid:not(.as-list) .fav.panel{border-radius:10px}
   .fav-grid:not(.as-list) .fav-info{padding:7px 8px 9px}
   .fav-grid:not(.as-list) .fav-info h3{font-size:.86rem;line-height:1.15;overflow-wrap:anywhere}
@@ -1615,7 +1618,7 @@ function openExpand(canvasId){
       <li data-label="${esc(String(label).toLowerCase())}">
         ${e.onPick ? `<button type="button" data-i="${i}">` : "<div>"}
           <span class="bl-rank">${i + 1}</span>
-          <span class="bl-name">${esc(label)}</span>
+          <span class="bl-name">${esc(label)}${e.entries[i][3] ? " " + flagImg(e.entries[i][3]) : ""}</span>
           <span class="bl-bar"><span style="width:${Math.max(2, n / max * 100)}%"></span></span>
           <span class="bl-n">${n}</span>
         ${e.onPick ? "</button>" : "</div>"}
@@ -1873,14 +1876,14 @@ function barChart2(key, labels, data, o = {}){
     type: "bar",
     data: { labels, datasets: [{ data, backgroundColor: o.color || cssVar("--amber"), borderRadius: 5, barPercentage: .88, categoryPercentage: .9 }] },
     options: { indexAxis: horizontal ? "y" : "x", maintainAspectRatio: false, animation: { duration: motion(), easing: "easeInOutCubic" },
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => o.tip ? o.tip(c.raw) : String(c.raw) } } },
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => o.tip ? o.tip(c.raw) : String(c.raw) } }, flagLabels: { codes: o.flags || null } },
       layout: { padding: horizontal ? { right: 34 } : { top: 20 } },
       onHover: (e, el) => { e.native.target.style.cursor = el.length && o.onClick ? "pointer" : (EXPAND[o.canvas || key] ? "zoom-in" : "default"); },
       onClick: (e, el) => { if (el.length && o.onClick) o.onClick(el[0].index); else if (!el.length && EXPAND[o.canvas || key]) openExpand(o.canvas || key); },
       scales: horizontal
-        ? { x: { beginAtZero: true, grid: { color: grid }, ticks: { display: false }, border: { display: false } }, y: { grid: { display: false }, ticks: { color: cssVar("--ink"), font: { size: 12 } } } }
+        ? { x: { beginAtZero: true, grid: { color: grid }, ticks: { display: false }, border: { display: false } }, y: { grid: { display: false }, ticks: { color: cssVar("--ink"), font: { size: 12 }, padding: o.flags ? 32 : 3 } } }
         : { x: { grid: { display: false }, ticks: { font: { family: cssVar("--font-data"), size: 11 }, maxRotation: 0, autoSkip: false } }, y: { beginAtZero: true, grid: { color: grid }, ticks: { display: false }, border: { display: false } } } },
-    plugins: [valueLabels({ format: o.format, insideColor: o.insideColor })]
+    plugins: [valueLabels({ format: o.format, insideColor: o.insideColor }), ...(o.flags ? [flagLabels] : [])]
   });
 }
 
@@ -2416,9 +2419,9 @@ function renderWorld(){
   document.getElementById("langHint").textContent = `Películas en ${langs.length} idiomas originales distintos. Toca una barra para ver sus películas.`;
   document.getElementById("countryBox").style.height = h(Math.max(topC.length, topL.length));
   document.getElementById("langBox").style.height = h(Math.max(topC.length, topL.length));
-  setExpand("countryChart", "Países de tus películas", countries.map(c => [countryLabel(c[0]), c[1], c[0]]), pickCountry);
+  setExpand("countryChart", "Países de tus películas", countries.map(c => [regionName(c[0]), c[1], c[0], c[0]]), pickCountry);
   setExpand("langChart", "Idiomas originales", langs.map(l => [langName(l[0]), l[1], l[0]]), pickLang);
-  barChart2("countryChart", topC.map(c => countryLabel(c[0])), topC.map(c => c[1]), { horizontal: true, color: cssVar("--teal"), tip: v => `${v} películas`, onClick: i => pickCountry(topC[i][0]) });
+  barChart2("countryChart", topC.map(c => regionName(c[0])), topC.map(c => c[1]), { horizontal: true, color: cssVar("--teal"), tip: v => `${v} películas`, onClick: i => pickCountry(topC[i][0]), flags: topC.map(c => c[0]) });
   barChart2("langChart", topL.map(l => langName(l[0])), topL.map(l => l[1]), { horizontal: true, tip: v => `${v} películas`, onClick: i => pickLang(topL[i][0]) });
 
   // Cine no anglosajón por año
@@ -2519,7 +2522,36 @@ const pickDirector = d => filterFilms(`Dirección: ${d}`, r => (r.dir || "").spl
 // Bandera (emoji) a partir del código de país; los países que ya no existen no tienen bandera
 const NO_FLAG = new Set(["XC", "XG", "YU", "CS", "DD", "AN", "XK", "XI", "BU", "ZR", "TP"]);
 const FLAG_AS = { SU: "RU" };   // la URSS aparece como Rusia
-const flagOf = c => { const code = FLAG_AS[c] || c; return /^[A-Z]{2}$/.test(code || "") && !NO_FLAG.has(code) ? String.fromCodePoint(...[...code].map(ch => 0x1F1E6 + ch.charCodeAt(0) - 65)) : ""; };
+// Banderas en SVG (flag-icons, servidas desde cdnjs), no los emojis del sistema
+const flagCode = c => { const code = FLAG_AS[c] || c; return /^[A-Z]{2}$/.test(code || "") && !NO_FLAG.has(code) ? code.toLowerCase() : ""; };
+const flagURL = code => `https://cdnjs.cloudflare.com/ajax/libs/flag-icons/7.5.0/flags/4x3/${code}.svg`;
+const flagImg = (c, title = "") => { const k = flagCode(c); return k ? `<img class="flag" src="${flagURL(k)}" alt="" width="20" height="15" loading="lazy" decoding="async"${title ? ` title="${esc(title)}"` : ""}>` : ""; };
+// Para los gráficos (canvas): se precargan las imágenes y se dibujan junto a la etiqueta
+const FLAG_IMGS = {};
+const flagImage = (c, onload) => {
+  const k = flagCode(c); if (!k) return null;
+  let im = FLAG_IMGS[k];
+  if (!im){ im = FLAG_IMGS[k] = new Image(); im.src = flagURL(k); }
+  if (!im.complete && onload) im.addEventListener("load", onload, { once: true });
+  return im;
+};
+const flagLabels = {
+  id: "flagLabels",
+  afterDraw(chart, args, opts){
+    const codes = opts?.codes; if (!codes) return;
+    const y = chart.scales.y; if (!y) return;
+    const ctx = chart.ctx, w = 20, h = 15;
+    y.ticks.forEach((t, i) => {
+      const im = flagImage(codes[t.value ?? i], () => chart.draw()); if (!im || !im.complete || !im.naturalWidth) return;
+      const py = y.getPixelForTick(i), px = y.right - w - 6;
+      ctx.save();
+      ctx.beginPath(); ctx.roundRect ? ctx.roundRect(px, py - h / 2, w, h, 2) : ctx.rect(px, py - h / 2, w, h); ctx.clip();
+      ctx.drawImage(im, px, py - h / 2, w, h);
+      ctx.restore();
+      ctx.save(); ctx.strokeStyle = "rgba(0,0,0,.18)"; ctx.lineWidth = 1; ctx.strokeRect(px + .5, py - h / 2 + .5, w - 1, h - 1); ctx.restore();
+    });
+  }
+};
 // Código de país a partir de su nombre (en español o inglés), para poner la bandera de nacimiento
 let COUNTRY_CODES = null;
 const codeOfCountry = name => {
@@ -2538,8 +2570,7 @@ const codeOfCountry = name => {
   }
   return COUNTRY_CODES.get(norm(name)) || "";
 };
-const birthFlag = pl => flagOf(codeOfCountry(countryOf(pl)));
-const countryLabel = code => { const f = flagOf(code); return f ? `${f} ${regionName(code)}` : regionName(code); };
+const birthCode = pl => codeOfCountry(countryOf(pl));
 const pickCountry = (code, name) => filterFilms(`País: ${name || regionName(code)}`, r => (xOf(r).c || []).includes(code));
 const pickLang = (code, name) => filterFilms(`Idioma: ${name || langName(code)}`, r => xOf(r).l === code);
 const pickActor = a => filterFilms(`Reparto: ${a}`, r => (xOf(r).a || []).includes(a));
@@ -2728,9 +2759,9 @@ function renderFavs(){
         ${c.seen.length ? `<h4>Has visto</h4><ul class="fav-films">${c.seen.sort((a, b) => (b.r.year || 0) - (a.r.year || 0)).map(s => `<li><button type="button" data-k="${esc(rowKey(s.r))}">${esc(s.r.title)}</button><span>${[s.r.year, s.c.j.join(", "), s.r.mine ? `tu nota ${s.r.mine}` : ""].filter(Boolean).join(" · ")}</span></li>`).join("")}</ul>` : ""}
         ${c.missing.length ? `<h4>Te faltan (mejor valoradas en TMDb)</h4><ul class="fav-films">${c.missing.map(m => `<li><a href="https://www.themoviedb.org/movie/${m.id}" target="_blank" rel="noopener">${esc(m.ti)}</a><span>${[m.y, m.j.join(", "), m.v ? `TMDb ${fmt1(m.v)}` : ""].filter(Boolean).join(" · ")}</span></li>`).join("")}</ul>` : `<p class="fav-meta">No te falta ninguna de sus películas conocidas.</p>`}
       </details>` : "";
-    const flag = c.x?.pl ? birthFlag(c.x.pl) : "";
-    const flagT = flag ? ` title="Nació en ${esc(countryOf(c.x.pl))}"` : "";
-    return `<article class="fav panel"><button type="button" class="fav-top" data-open-person="${esc(c.p.id)}" aria-label="Abrir la ficha de ${esc(c.x?.n || c.p.name)}">${photo}${flag ? `<span class="fav-flag"${flagT} aria-hidden="true">${flag}</span>` : ""}<div class="fav-info"><h3>${esc(c.x?.n || c.p.name)}${flag ? `<span class="fav-flag-i"${flagT}> ${flag}</span>` : ""}</h3>${stats}</div></button></article>`;
+    const fc = c.x?.pl ? birthCode(c.x.pl) : "";
+    const flag = fc ? flagImg(fc, `Nació en ${countryOf(c.x.pl)}`) : "";
+    return `<article class="fav panel"><button type="button" class="fav-top" data-open-person="${esc(c.p.id)}" aria-label="Abrir la ficha de ${esc(c.x?.n || c.p.name)}">${photo}${flag ? `<span class="fav-flag">${flag}</span>` : ""}<div class="fav-info"><h3>${esc(c.x?.n || c.p.name)}${flag ? `<span class="fav-flag-i">${flag}</span>` : ""}</h3>${stats}</div></button></article>`;
   }).join("");
 }
 document.getElementById("favList").addEventListener("click", e => {
@@ -3130,24 +3161,24 @@ const countryOf = pl => {
 
 /* Lista de artistas de un grupo (sexo, edad, década…) con enlace a su ficha */
 let lastGroup = null, groupReturn = false;
-function openArtistGroup(title, items){
-  lastGroup = { title, items };
+function openArtistGroup(title, items, flag = ""){
+  lastGroup = { title, items, flag };
   const dlg = document.getElementById("bigList");
   const meta = o => { const x = o.x, y = x.b ? x.b.slice(0, 4) : "";
     const life = x.d ? `${y}–${x.d.slice(0, 4)}` : x.b ? `${ageAt(x.b)} años` : "";
-    const co = countryOf(x.pl), f = co ? flagOf(codeOfCountry(co)) : "";
-    return [life, DEP_ES[x.dep] || x.dep, f ? `${co} ${f}` : co].filter(Boolean).join(" · "); };
+    const co = countryOf(x.pl), f = co ? flagImg(codeOfCountry(co)) : "";
+    return [esc(life), esc(DEP_ES[x.dep] || x.dep || ""), co ? `${esc(co)}${f ? " " + f : ""}` : ""].filter(Boolean).join(" · "); };
   dlg.innerHTML = `
     <button class="ficha-close" type="button" aria-label="Cerrar" data-close>✕</button>
     <div class="big-head">
-      <h2>${esc(title)}</h2>
+      <h2>${esc(title)}${flag ? " " + flagImg(flag) : ""}</h2>
       <p class="hint">${items.length} ${items.length === 1 ? "artista" : "artistas"}. Toca uno para abrir su ficha.</p>
       ${items.length > 8 ? `<input type="search" id="bigFilter" placeholder="Buscar en la lista" aria-label="Buscar en la lista" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">` : ""}
     </div>
     <ol class="big-list people-list">${items.map(o => { const n = o.x.n || o.p.name; return `
       <li data-label="${esc(n.toLowerCase())}"><button type="button" data-person="${esc(String(o.p.id))}">
         ${o.x.img ? `<img class="pl-photo" src="${TMDB_IMG}w92${o.x.img}" alt="" loading="lazy">` : `<span class="pl-photo">${esc(n.charAt(0))}</span>`}
-        <span><span class="pl-name">${esc(n)}</span><span class="pl-meta">${esc(meta(o))}</span></span>
+        <span><span class="pl-name">${esc(n)}</span><span class="pl-meta">${meta(o)}</span></span>
         <span class="pl-go" aria-hidden="true">›</span>
       </button></li>`; }).join("")}</ol>`;
   dlg.querySelector("#bigFilter")?.addEventListener("input", ev => {
@@ -3160,7 +3191,7 @@ function openArtistGroup(title, items){
 }
 // Al cerrar la ficha de un artista abierta desde un grupo, se vuelve al grupo
 document.getElementById("personDlg").addEventListener("close", () => {
-  if (groupReturn && lastGroup){ groupReturn = false; openArtistGroup(lastGroup.title, lastGroup.items); }
+  if (groupReturn && lastGroup){ groupReturn = false; openArtistGroup(lastGroup.title, lastGroup.items, lastGroup.flag); }
 });
 const byName = (a, b) => (a.x.n || a.p.name).localeCompare(b.x.n || b.p.name, "es");
 
@@ -3222,10 +3253,9 @@ function renderArtistStats(){
   const topC = countries.slice(0, 10);
   document.getElementById("birthCountryBox").style.height = `${Math.max(topC.length, deps.length, 4) * 26 + 20}px`;
   document.getElementById("depBox").style.height = document.getElementById("birthCountryBox").style.height;
-  const pickCountry = c => openArtistGroup(`Nacidos en ${withFlag(c)}`, list.filter(o => countryOf(o.x.pl) === c).sort(byName));
-  const withFlag = c => { const f = flagOf(codeOfCountry(c)); return f ? `${c} ${f}` : c; };
-  barChart2("birthCountryChart", topC.map(c => withFlag(c[0])), topC.map(c => c[1]), { horizontal: true, tip: v => `${v} artistas`, onClick: i => pickCountry(topC[i][0]) });
-  setExpand("birthCountryChart", "País de nacimiento de tus artistas", countries.map(c => [withFlag(c[0]), c[1], c[0]]), pickCountry);
+  const pickCountry = c => openArtistGroup(`Nacidos en ${c}`, list.filter(o => countryOf(o.x.pl) === c).sort(byName), codeOfCountry(c));
+  barChart2("birthCountryChart", topC.map(c => c[0]), topC.map(c => c[1]), { horizontal: true, tip: v => `${v} artistas`, onClick: i => pickCountry(topC[i][0]), flags: topC.map(c => codeOfCountry(c[0])) });
+  setExpand("birthCountryChart", "País de nacimiento de tus artistas", countries.map(c => [c[0], c[1], c[0], codeOfCountry(c[0])]), pickCountry);
   barChart2("depChart", deps.map(d => d[0]), deps.map(d => d[1]), { horizontal: true, color: cssVar("--teal"), tip: v => `${v} artistas`,
     onClick: i => openArtistGroup(deps[i][0], list.filter(o => (DEP_ES[o.x.dep] || o.x.dep) === deps[i][0]).sort(byName)) });
 
