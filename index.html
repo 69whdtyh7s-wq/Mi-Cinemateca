@@ -3274,7 +3274,7 @@ async function fetchPeople(){
     await new Promise(r => setTimeout(r, 150));
   }
   peopleRun = null; st.textContent = ""; renderFavs(); renderArtistStats();
-  checkDeaths();
+  checkDeaths().finally(checkCountries);
 }
 
 /* TMDb a veces no tiene la fecha de fallecimiento: se completa con Wikidata (por el código de IMDb).
@@ -3306,6 +3306,43 @@ async function checkDeaths(){
     }
   } catch(e) {}
   deathRun = false;
+  if (found){ renderFavs(); renderArtistStats(); }
+}
+
+// País de nacimiento desde Wikidata (por su id de IMDb) para quien no lo tiene claro en TMDb
+let countryRun = false;
+async function checkCountries(){
+  if (countryRun || !people.length) return;
+  await peopleReady;
+  const MONTH = 30 * 864e5, now = Date.now();
+  const todo = people.map(p => ({ p, x: personCache[p.id], im: personCache[p.id]?.imdb || (/^nm\d+$/.test(p.id) ? p.id : "") }))
+    .filter(o => o.x && !o.x.none && o.im && !codeOfCountry(countryOf(o.x.pl)) && !o.x.wc && (!o.x.wcT || now - o.x.wcT > MONTH));
+  if (!todo.length) return;
+  countryRun = true;
+  let found = 0;
+  try {
+    for (let i = 0; i < todo.length; i += 120){
+      const chunk = todo.slice(i, i + 120);
+      const q = `SELECT ?imdb ?bc ?cc WHERE { VALUES ?imdb { ${chunk.map(o => `"${o.im}"`).join(" ")} } ?p wdt:P345 ?imdb .
+        OPTIONAL { ?p wdt:P19 ?pl . ?pl wdt:P17 ?pc . ?pc wdt:P297 ?bc . }
+        OPTIONAL { ?p wdt:P27 ?cz . ?cz wdt:P297 ?cc . } }`;
+      const res = await fetch("https://query.wikidata.org/sparql?format=json&query=" + encodeURIComponent(q), { headers: { accept: "application/sparql-results+json" } });
+      if (!res.ok) break;
+      const data = await res.json(), birth = new Map(), citiz = new Map();
+      (data.results?.bindings || []).forEach(b => {
+        const k = b.imdb.value;
+        if (b.bc?.value && !birth.has(k)) birth.set(k, b.bc.value.toUpperCase());
+        if (b.cc?.value && !citiz.has(k)) citiz.set(k, b.cc.value.toUpperCase());
+      });
+      chunk.forEach(o => {
+        o.x.wcT = now;
+        const c = birth.get(o.im) || citiz.get(o.im);
+        if (c && /^[A-Z]{2}$/.test(c)){ o.x.wc = c; found++; }
+        savePersonCache(o.p.id);
+      });
+    }
+  } catch(e) {}
+  countryRun = false;
   if (found){ renderFavs(); renderArtistStats(); }
 }
 
@@ -3401,8 +3438,8 @@ function renderFavs(){
         ${c.seen.length ? `<h4>Has visto</h4><ul class="fav-films">${c.seen.sort((a, b) => (b.r.year || 0) - (a.r.year || 0)).map(s => `<li><button type="button" data-k="${esc(rowKey(s.r))}">${esc(s.r.title)}</button><span>${[s.r.year, s.c.j.join(", "), s.r.mine ? `tu nota ${s.r.mine}` : ""].filter(Boolean).join(" · ")}</span></li>`).join("")}</ul>` : ""}
         ${c.missing.length ? `<h4>Te faltan (mejor valoradas en TMDb)</h4><ul class="fav-films">${c.missing.map(m => `<li><a href="https://www.themoviedb.org/movie/${m.id}" target="_blank" rel="noopener">${esc(m.ti)}</a><span>${[m.y, m.j.join(", "), m.v ? `TMDb ${fmt1(m.v)}` : ""].filter(Boolean).join(" · ")}</span></li>`).join("")}</ul>` : `<p class="fav-meta">No te falta ninguna de sus películas conocidas.</p>`}
       </details>` : "";
-    const fc = c.x?.pl ? birthCode(c.x.pl) : "";
-    const flag = fc ? flagImg(fc, `Nació en ${countryOf(c.x.pl)}`) : "";
+    const fc = personCode(c.x);
+    const flag = fc ? flagImg(fc, `Nació en ${personCountry(c.x)}`) : "";
     return `<article class="fav panel"><button type="button" class="fav-top" data-open-person="${esc(c.p.id)}" aria-label="Abrir la ficha de ${esc(c.x?.n || c.p.name)}">${photo}${flag ? `<span class="fav-flag">${flag}</span>` : ""}<div class="fav-info"><h3>${esc(c.x?.n || c.p.name)}${flag ? `<span class="fav-flag-i">${flag}</span>` : ""}</h3>${stats}</div></button></article>`;
   }).join("");
 }
@@ -3657,7 +3694,7 @@ function personHTML(p){
   const facts = [
     ["Especialidad", dep],
     ["Nacimiento", x.b ? `${fmtDateEs(x.b)}${!x.d && age != null ? ` (${age} años)` : ""}` : ""],
-    ["Lugar", x.pl ? (() => { const f = flagImg(birthCode(x.pl)); return f ? { html: `${f} ${esc(x.pl)}` } : x.pl; })() : ""],
+    ["Lugar", x.pl || x.wc ? (() => { const f = flagImg(personCode(x)), t = x.pl || personCountry(x); return f ? { html: `${f} ${esc(t)}` } : t; })() : ""],
     ["Fallecimiento", x.d ? `${fmtDateEs(x.d)}${age != null ? ` (a los ${age} años)` : ""}` : ""],
     ["Conocido por", known.join(", ")],
     ["Primera que viste", firstSeen ? `${firstSeen.r.title}${firstSeen.r.watchedDate ? ` · ${firstSeen.r.watchedDate.split("-").reverse().join("/")}` : ""}` : ""],
@@ -3881,22 +3918,57 @@ const scrubSyncs = ["madeUntil", "yearSel"].map(makeScrubber);
 
 /* ---------- Stats de tus artistas ---------- */
 const GENDER_ES = { 1: "Mujeres", 2: "Hombres", 3: "No binario", 0: "Sin datos" };
+const US_PLACES = ["alabama","alaska","arizona","arkansas","california","colorado","connecticut","delaware","florida","hawaii","idaho","illinois","indiana","iowa","kansas","kentucky","louisiana","maine","maryland","massachusetts","michigan","minnesota","mississippi","missouri","montana","nebraska","nevada","new hampshire","new jersey","new mexico","new york","new york city","north carolina","north dakota","ohio","oklahoma","oregon","pennsylvania","rhode island","south carolina","south dakota","tennessee","texas","utah","vermont","virginia","washington","west virginia","wisconsin","wyoming","district of columbia","washington d.c","washington dc","los angeles","chicago","brooklyn","manhattan","bronx","queens","staten island","hollywood","san francisco","boston","philadelphia","detroit","houston","dallas","atlanta","miami","seattle","nueva york","ny","tx","nj","il","pa","oh","mi","ma","fl"];
+const PLACE_COUNTRY = {
+  "usa": "Estados Unidos", "u.s.a": "Estados Unidos", "u.s": "Estados Unidos", "us": "Estados Unidos", "united states": "Estados Unidos", "united states of america": "Estados Unidos", "america": "Estados Unidos",
+  "ee. uu": "Estados Unidos", "ee.uu": "Estados Unidos", "eeuu": "Estados Unidos", "ee uu": "Estados Unidos", "estados unidos": "Estados Unidos", "estados unidos de america": "Estados Unidos", "etats-unis": "Estados Unidos", "stati uniti": "Estados Unidos", "vereinigte staaten": "Estados Unidos",
+  "uk": "Reino Unido", "u.k": "Reino Unido", "united kingdom": "Reino Unido", "great britain": "Reino Unido", "britain": "Reino Unido", "england": "Reino Unido", "scotland": "Reino Unido", "wales": "Reino Unido", "northern ireland": "Reino Unido",
+  "inglaterra": "Reino Unido", "escocia": "Reino Unido", "gales": "Reino Unido", "irlanda del norte": "Reino Unido", "angleterre": "Reino Unido", "ecosse": "Reino Unido", "london": "Reino Unido", "londres": "Reino Unido",
+  "west germany": "Alemania", "east germany": "Alemania", "gdr": "Alemania", "frg": "Alemania", "ddr": "Alemania", "brd": "Alemania", "weimar republic": "Alemania", "nazi germany": "Alemania", "alemania occidental": "Alemania", "alemania oriental": "Alemania", "allemagne de l'ouest": "Alemania",
+  "russian sfsr": "Rusia", "rsfsr": "Rusia", "ukrainian ssr": "Ucrania", "byelorussian ssr": "Bielorrusia", "belorussian ssr": "Bielorrusia", "georgian ssr": "Georgia", "armenian ssr": "Armenia", "azerbaijan ssr": "Azerbaiyán", "kazakh ssr": "Kazajistán", "uzbek ssr": "Uzbekistán", "latvian ssr": "Letonia", "lithuanian ssr": "Lituania", "estonian ssr": "Estonia", "moldavian ssr": "Moldavia", "kirghiz ssr": "Kirguistán", "tajik ssr": "Tayikistán", "turkmen ssr": "Turkmenistán", "россия": "Rusia", "москва": "Rusia", "russia": "Rusia", "rusia": "Rusia",
+  "korea": "Corea del Sur", "south korea": "Corea del Sur", "republic of korea": "Corea del Sur", "corea": "Corea del Sur", "corea del sur": "Corea del Sur",
+  "czech republic": "Chequia", "czechia": "Chequia", "republica checa": "Chequia", "chequia": "Chequia", "bohemia": "Chequia", "moravia": "Chequia",
+  "turkey": "Turquía", "persia": "Irán", "burma": "Myanmar (Birmania)", "ceylon": "Sri Lanka", "siam": "Tailandia",
+  "rhodesia": "Zimbabue", "southern rhodesia": "Zimbabue", "northern rhodesia": "Zambia", "gold coast": "Ghana", "zaire": "República Democrática del Congo", "belgian congo": "República Democrática del Congo", "dahomey": "Benín", "upper volta": "Burkina Faso",
+  "holland": "Países Bajos", "the netherlands": "Países Bajos", "netherlands": "Países Bajos", "holanda": "Países Bajos",
+  "hong kong": "Hong Kong", "british hong kong": "Hong Kong", "macao": "Macao", "macau": "Macao", "taiwan": "Taiwán", "republic of china": "Taiwán", "people's republic of china": "China", "prc": "China",
+  "kingdom of italy": "Italia", "kingdom of spain": "España", "french algeria": "Argelia", "french indochina": "Vietnam", "dutch east indies": "Indonesia", "newfoundland": "Canadá",
+  "ivory coast": "Côte d'Ivoire", "costa de marfil": "Côte d'Ivoire", "irish free state": "Irlanda", "republic of ireland": "Irlanda", "eire": "Irlanda",
+  "nueva york": "Estados Unidos", "ciudad de mexico": "México", "mexico city": "México", "mexico, d.f": "México", "d.f": "México", "buenos aires": "Argentina", "capital federal": "Argentina", "caba": "Argentina",
+  "madrid": "España", "barcelona": "España", "sevilla": "España", "valencia, espana": "España", "paris": "Francia", "roma": "Italia", "rome": "Italia", "berlin": "Alemania", "toronto": "Canadá", "montreal": "Canadá", "vancouver": "Canadá",
+  "sydney": "Australia", "melbourne": "Australia", "dublin": "Irlanda", "tokyo": "Japón", "tokio": "Japón", "seoul": "Corea del Sur", "seul": "Corea del Sur", "mumbai": "India", "bombay": "India",
+  "quebec": "Canadá", "ontario": "Canadá", "british columbia": "Canadá", "alberta": "Canadá", "manitoba": "Canadá", "nova scotia": "Canadá", "new south wales": "Australia", "victoria, australia": "Australia", "queensland": "Australia",
+  "cataluna": "España", "catalunya": "España", "catalonia": "España", "pais vasco": "España", "basque country": "España", "andalucia": "España", "galicia": "España", "canary islands": "España", "islas canarias": "España",
+  "puerto rico": "Puerto Rico"
+};
+US_PLACES.forEach(k => { if (!PLACE_COUNTRY[k]) PLACE_COUNTRY[k] = "Estados Unidos"; });
+const placeNorm = t => (t || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[.\s]+$/, "").replace(/^the\s+/, "").replace(/\s+/g, " ").trim();
 const countryOf = pl => {
   if (!pl) return "";
-  // "Moscow, USSR [now Russia]" → Rusia
-  const now = pl.match(/\[\s*now\s+([^\]]+)\]/i);
-  const last = (now ? now[1] : pl.replace(/\[[^\]]*\]/g, "")).split(",").pop().trim().replace(/\.$/, "");
-  const MAP = { "USA": "Estados Unidos", "U.S.A": "Estados Unidos", "United States": "Estados Unidos", "United States of America": "Estados Unidos", "EE. UU": "Estados Unidos", "EE.UU": "Estados Unidos", "Estados Unidos": "Estados Unidos",
-    "UK": "Reino Unido", "United Kingdom": "Reino Unido", "England": "Reino Unido", "Scotland": "Reino Unido", "Wales": "Reino Unido", "Northern Ireland": "Reino Unido", "Inglaterra": "Reino Unido", "Escocia": "Reino Unido",
-    "Spain": "España", "France": "Francia", "Italy": "Italia", "Germany": "Alemania", "West Germany": "Alemania", "Japan": "Japón", "Canada": "Canadá", "Australia": "Australia", "Ireland": "Irlanda",
-    "Mexico": "México", "Argentina": "Argentina", "Brazil": "Brasil", "Sweden": "Suecia", "Denmark": "Dinamarca", "Norway": "Noruega", "South Korea": "Corea del Sur", "Korea": "Corea del Sur", "China": "China",
-    "Hong Kong": "Hong Kong", "Taiwan": "Taiwán", "India": "India", "Russia": "Rusia", "USSR": "Rusia", "Soviet Union": "Rusia", "Poland": "Polonia", "Austria": "Austria", "Netherlands": "Países Bajos",
-    "Belgium": "Bélgica", "Switzerland": "Suiza", "New Zealand": "Nueva Zelanda", "Israel": "Israel", "Iran": "Irán", "Greece": "Grecia", "Portugal": "Portugal", "Chile": "Chile", "Colombia": "Colombia",
-    "Cuba": "Cuba", "South Africa": "Sudáfrica", "Hungary": "Hungría", "Czech Republic": "Chequia", "Czechoslovakia": "Chequia", "Finland": "Finlandia", "Turkey": "Turquía", "Puerto Rico": "Puerto Rico" };
-  if (MAP[last]) return MAP[last];
-  const code = codeOfCountry(last);           // cualquier otro idioma → nombre en español
-  return code ? regionName(code) : last;
+  // "Moscow, USSR [now Russia]" → Rusia (también "(now …)", "[actual …]", "heute …")
+  const now = pl.match(/[\[(]\s*(?:now|today|currently|present-day|actual(?:mente)?|hoy|ahora|heute|aujourd'hui|oggi)\s*:?\s*(?:in\s+)?([^\])]+)[\])]/i);
+  const clean = (now ? now[1] : pl).replace(/\[[^\]]*\]|\([^)]*\)/g, "");
+  const parts = clean.split(/\s*[,،、，;]\s*|\s+[-–—]\s+/).map(t => t.trim()).filter(Boolean);
+  // Del final hacia el principio: el país suele ir al final, pero a veces solo hay ciudad o estado
+  for (let i = parts.length - 1; i >= 0; i--){
+    const t = parts[i], n = placeNorm(t);
+    if (PLACE_COUNTRY[n]) return PLACE_COUNTRY[n];
+    const code = codeOfCountry(t);
+    if (code) return regionName(code);
+  }
+  const whole = placeNorm(clean);
+  if (PLACE_COUNTRY[whole]) return PLACE_COUNTRY[whole];
+  return parts.length ? parts[parts.length - 1] : "";
 };
+// País y bandera de un artista: su lugar de nacimiento en TMDb y, si no se entiende o falta, Wikidata
+const personCountry = x => {
+  if (!x) return "";
+  const n = countryOf(x.pl);
+  if (n && codeOfCountry(n)) return n;
+  if (x.wc) return regionName(x.wc);
+  return n;
+};
+const personCode = x => { const n = personCountry(x); return (n && codeOfCountry(n)) || x?.wc || ""; };
 
 /* Lista de artistas de un grupo (sexo, edad, década…) con enlace a su ficha */
 let lastGroup = null, groupReturn = false;
@@ -3905,7 +3977,7 @@ function openArtistGroup(title, items, flag = ""){
   const dlg = document.getElementById("bigList");
   const meta = o => { const x = o.x, y = x.b ? x.b.slice(0, 4) : "";
     const life = x.d ? `${y}–${x.d.slice(0, 4)}` : x.b ? `${ageAt(x.b)} años` : "";
-    const co = countryOf(x.pl), f = co ? flagImg(codeOfCountry(co)) : "";
+    const co = personCountry(x), f = co ? flagImg(personCode(x)) : "";
     return [esc(life), esc(DEP_ES[x.dep] || x.dep || ""), co ? `${esc(co)}${f ? " " + f : ""}` : ""].filter(Boolean).join(" · "); };
   dlg.innerHTML = `
     <button class="ficha-close" type="button" aria-label="Cerrar" data-close>✕</button>
@@ -3989,11 +4061,11 @@ function renderArtistStats(){
 
   // País de nacimiento y especialidad
   const cnt = fn => { const c = {}; list.forEach(o => { const k = fn(o); if (k) c[k] = (c[k] || 0) + 1; }); return Object.entries(c).sort((a, b) => b[1] - a[1]); };
-  const countries = cnt(o => countryOf(o.x.pl)), deps = cnt(o => DEP_ES[o.x.dep] || o.x.dep);
+  const countries = cnt(o => personCountry(o.x)), deps = cnt(o => DEP_ES[o.x.dep] || o.x.dep);
   const topC = countries.slice(0, 10);
   document.getElementById("birthCountryBox").style.height = `${Math.max(topC.length, deps.length, 4) * 26 + 20}px`;
   document.getElementById("depBox").style.height = document.getElementById("birthCountryBox").style.height;
-  const pickCountry = c => openArtistGroup(`Nacidos en ${c}`, list.filter(o => countryOf(o.x.pl) === c).sort(byName), codeOfCountry(c));
+  const pickCountry = c => openArtistGroup(`Nacidos en ${c}`, list.filter(o => personCountry(o.x) === c).sort(byName), codeOfCountry(c));
   barChart2("birthCountryChart", topC.map(c => c[0]), topC.map(c => c[1]), { horizontal: true, tip: v => `${v} artistas`, onClick: i => pickCountry(topC[i][0]), flags: topC.map(c => codeOfCountry(c[0])) });
   setExpand("birthCountryChart", "País de nacimiento de tus artistas", countries.map(c => [c[0], c[1], c[0], codeOfCountry(c[0])]), pickCountry);
   barChart2("depChart", deps.map(d => d[0]), deps.map(d => d[1]), { horizontal: true, color: cssVar("--teal"), tip: v => `${v} artistas`,
