@@ -3309,6 +3309,8 @@ async function checkDeaths(){
   if (found){ renderFavs(); renderArtistStats(); }
 }
 
+// Lo que cuenta como visto para tus artistas: películas vistas y series vistas
+const seenForArtists = () => counted().concat(typeof seriesCounted === "function" ? seriesCounted() : series);
 let aLayout = defLayout("favs");
 const ASORT_KEY = "cinemateca-asort";
 let aSort = { key: "seen", dir: "desc" };
@@ -3343,8 +3345,8 @@ function renderFavs(){
 
   // Tus títulos, indexados por su id de TMDb
   const seenMap = new Map();
-  counted().forEach(r => { const x = tmdbCache[imdbId(r)]; if (x && !x.none && x.t) seenMap.set(`${x.k}:${x.t}`, r); });
-  const pending = counted().filter(r => imdbId(r) && !isFresh(imdbId(r))).length;
+  seenForArtists().forEach(r => { const x = tmdbCache[imdbId(r)]; if (x && !x.none && x.t) seenMap.set(`${x.k}:${x.t}`, r); });
+  const pending = seenForArtists().filter(r => imdbId(r) && !isFresh(imdbId(r))).length;
   const today = new Date().toISOString().slice(0, 10);
 
   const cards = people.map(p => {
@@ -3630,7 +3632,7 @@ async function fetchPersonDetails(p){
 function personHTML(p){
   const x = personCache[p.id] || {};
   const seenMap = new Map();
-  counted().forEach(r => { const c = tmdbCache[imdbId(r)]; if (c && !c.none && c.t) seenMap.set(`${c.k}:${c.t}`, r); });
+  seenForArtists().forEach(r => { const c = tmdbCache[imdbId(r)]; if (c && !c.none && c.t) seenMap.set(`${c.k}:${c.t}`, r); });
   const cr = x.cr || [];
   const today = new Date().getFullYear();
   const movies = cr.filter(c => c.k === "movie" && c.y && +c.y <= today);
@@ -3641,7 +3643,7 @@ function personHTML(p){
   const best = rated.slice().sort((a, b) => b.r.mine - a.r.mine)[0];
   // Las que tienes en tu Watchlist (por su id de TMDb)
   const watchMap = new Map();
-  watch.forEach(w => { const c = tmdbCache[imdbId(w)]; if (c && !c.none && c.t) watchMap.set(`${c.k}:${c.t}`, w); });
+  watch.concat(swatch).forEach(w => { const c = tmdbCache[imdbId(w)]; if (c && !c.none && c.t) watchMap.set(`${c.k}:${c.t}`, w); });
   const inWatch = [...new Map(cr.filter(c => watchMap.has(`${c.k}:${c.id}`) && !seenMap.has(`${c.k}:${c.id}`)).map(c => [`${c.k}:${c.id}`, { c, r: watchMap.get(`${c.k}:${c.id}`) }])).values()]
     .sort((a, b) => (b.r.imdb || 0) - (a.r.imdb || 0));
   const missing = movies.filter(c => !seenMap.has(`movie:${c.id}`) && !watchMap.has(`movie:${c.id}`) && c.c >= 30).sort((a, b) => b.v - a.v || b.c - a.c);
@@ -4000,7 +4002,7 @@ function renderArtistStats(){
   // Datos curiosos
   const byAge = alive.slice().sort((a, b) => a.x.b.localeCompare(b.x.b));
   const youngest = byAge[byAge.length - 1], oldest = byAge[0];
-  const seenMap = new Set(); counted().forEach(r => { const c = tmdbCache[imdbId(r)]; if (c && c.t) seenMap.add(`${c.k}:${c.t}`); });
+  const seenMap = new Set(); seenForArtists().forEach(r => { const c = tmdbCache[imdbId(r)]; if (c && c.t) seenMap.add(`${c.k}:${c.t}`); });
   const mostSeen = list.map(o => ({ o, n: (o.x.cr || []).filter(c => seenMap.has(`${c.k}:${c.id}`)).length })).sort((a, b) => b.n - a.n)[0];
   const bdays = alive.map(o => ({ o, md: o.x.b.slice(5) })).sort((a, b) => a.md.localeCompare(b.md));
   const today = new Date().toISOString().slice(5, 10);
