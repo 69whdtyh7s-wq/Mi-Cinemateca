@@ -744,6 +744,7 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
   </div>
   <div class="subtabs stats-nav" id="statsNav" role="tablist" aria-label="Secciones de Stats" hidden>
     <button type="button" role="tab" data-view="stats" aria-selected="true">Películas</button>
+    <button type="button" role="tab" data-view="sstats" aria-selected="false">Series</button>
     <button type="button" role="tab" data-view="statsArt" aria-selected="false">Artistas</button>
     <button type="button" role="tab" data-view="wstats" aria-selected="false">Watchlist</button>
     <button type="button" role="tab" data-view="world" aria-selected="false">Mundo</button>
@@ -970,6 +971,47 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
     </div>
     <p class="hint" id="favStatus" aria-live="polite"></p>
     <div class="fav-grid" id="favList" hidden></div>
+  </div>
+
+  <div class="view" id="view-sstats" role="tabpanel" hidden>
+    <p class="hint" id="ssEmpty">Aún no has cargado tus series. Súbelas con «Elegir CSV» (o como series.csv en GitHub) y aquí verás sus estadísticas.</p>
+    <div id="ssBody" hidden>
+      <section class="stats" id="ssTiles"></section>
+      <div class="duo">
+        <section class="panel">
+          <h2>Tus series favoritas</h2>
+          <p class="hint">Las que mejor has puntuado. Toca una para ver su ficha.</p>
+          <ol class="vs" id="ssBest"></ol>
+          <button class="expand-btn" type="button" id="ssBestAll">Ver la lista completa</button>
+        </section>
+        <section class="panel">
+          <h2>Datos curiosos</h2>
+          <ul class="facts" id="ssFacts"></ul>
+        </section>
+      </div>
+      <section class="panel">
+        <h2>Series que puntuaste cada año</h2>
+        <p class="hint">Según la fecha en que las puntuaste en IMDb. Toca una barra para verlas.</p>
+        <div class="chart small"><canvas id="sYearChart" aria-label="Series puntuadas por año"></canvas></div>
+      </section>
+      <div class="duo">
+        <section class="panel">
+          <h2>Tus notas</h2>
+          <p class="hint" id="ssRateHint"></p>
+          <div class="chart small"><canvas id="sRateChart" aria-label="Distribución de tus notas a series"></canvas></div>
+        </section>
+        <section class="panel">
+          <h2>Por década de estreno</h2>
+          <p class="hint">Toca una barra para verlas.</p>
+          <div class="chart" id="sDecBox"><canvas id="sDecChart" aria-label="Series por década de estreno"></canvas></div>
+        </section>
+      </div>
+      <section class="panel">
+        <h2>Géneros</h2>
+        <p class="hint">Toca una barra para ver esas series.</p>
+        <div class="chart" id="sGenreBox"><canvas id="sGenreChart" aria-label="Géneros de tus series"></canvas></div>
+      </section>
+    </div>
   </div>
 
   <div class="view" id="view-wstats" role="tabpanel" hidden>
@@ -1285,14 +1327,15 @@ function syncSrcCounts(){
 const SERIES_KEY = "cinemateca-series";
 let series = [], lastFilmSrc = "seen";
 try { series = JSON.parse(localStorage.getItem(SERIES_KEY) || "[]"); if (!Array.isArray(series)) series = []; } catch(e) { series = []; }
-function saveSeries(){ try { localStorage.setItem(SERIES_KEY, JSON.stringify(series)); } catch(e) {} const el = document.getElementById("tabCountS"); if (el) el.textContent = series.length || ""; }
+function saveSeries(){ try { localStorage.setItem(SERIES_KEY, JSON.stringify(series)); } catch(e) {} const el = document.getElementById("tabCountS"); if (el) el.textContent = series.length || ""; if (typeof renderSeriesStats === "function") renderSeriesStats(); }
 const SERIES_TYPES = new Set(["tvseries", "tvminiseries", "seriedetv", "miniseriedetv", "serie", "miniserie"]);
 const isSeriesRow = r => SERIES_TYPES.has(typeKey(r.type));
 function loadSeries(list, name, quiet){
   const before = new Set(series.map(rowKey));
-  const added = list.filter(r => !before.has(rowKey(r))).length;
-  if (quiet && !added && list.length === series.length) return;
-  series = list.map(r => ({ ...r, serie: true })); saveSeries();
+  const uniq = new Map(); list.forEach(r => { if (!uniq.has(rowKey(r))) uniq.set(rowKey(r), r); });
+  const added = [...uniq.keys()].filter(k => !before.has(k)).length;
+  if (quiet && !added && uniq.size === series.length) return;
+  series = [...uniq.values()].map(r => ({ ...r, serie: true })); saveSeries();
   const msg = document.getElementById("msg"); msg.className = "msg";
   msg.textContent = `Series cargadas desde ${name || "el archivo"}: ${series.length}` + (before.size ? ` (${added} ${added === 1 ? "nueva" : "nuevas"})` : "") + ".";
   if (!quiet) showView("series");
@@ -1415,6 +1458,7 @@ function render(){
   fillYearSel(data);
   renderYear();
   renderWatchStats();
+  renderSeriesStats();
   renderWorld();
   if (typeof renderArtistStats === "function") renderArtistStats();
   syncTmdbPanel();
@@ -2057,6 +2101,82 @@ function barChart2(key, labels, data, o = {}){
 
 const filmLink = r => r.url ? `<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title)}</a>` : `<a>${esc(r.title)}</a>`;
 const yearsRange = () => { const ys = []; for (let y = START; y <= NOW; y++) ys.push(y); return ys; };
+
+/* ---------- Estadísticas de las series ---------- */
+function openSeriesFilter(label, fn, sortBy){
+  showView("series");
+  document.getElementById("q").value = "";
+  extra = fn ? { label, fn } : null;
+  if (sortBy) sort = sortBy;
+  shown = PAGE; renderFilms();
+  document.querySelector(".tabs").scrollIntoView({ behavior: motion() ? "smooth" : "auto" });
+}
+function renderSeriesStats(){
+  const has = series.length > 0;
+  document.getElementById("ssEmpty").hidden = has;
+  document.getElementById("ssBody").hidden = !has;
+  if (!has) return;
+  const S = series.filter(isSeriesRow).length ? series.filter(r => isSeriesRow(r)) : series, n = S.length;
+  const rated = S.filter(r => r.mine), avgM = rated.length ? rated.reduce((a, r) => a + r.mine, 0) / rated.length : null;
+  const withI = S.filter(r => r.imdb), avgI = withI.length ? withI.reduce((a, r) => a + r.imdb, 0) / withI.length : null;
+  const minis = S.filter(r => /mini/i.test(r.type || "")).length;
+  document.getElementById("ssTiles").innerHTML = [
+    [fmtInt(n), n === 1 ? "serie" : "series"],
+    [avgM != null ? fmt1(avgM) : "—", "tu nota media"],
+    [avgI != null ? fmt1(avgI) : "—", "nota media en IMDb"],
+    [fmtInt(minis), minis === 1 ? "miniserie" : "miniseries"]
+  ].map(([v, l]) => `<div class="stat"><div class="n">${v}</div><div class="l">${l}</div></div>`).join("");
+
+  const poster = r => tmdbCache[imdbId(r)]?.p ? ` class="with-poster" style="--poster:url(${TMDB_IMG}w92${tmdbCache[imdbId(r)].p})"` : "";
+  const link = r => `<a href="#" data-sk="${esc(rowKey(r))}">${esc(r.title)}</a>`;
+  const best = rated.slice().sort((a, b) => b.mine - a.mine || (b.imdb || 0) - (a.imdb || 0)).slice(0, 10);
+  document.getElementById("ssBest").innerHTML = best.map(r => `<li${poster(r)}><span>${link(r)}<span class="meta">${[r.year, r.imdb ? `IMDb ${fmt1(r.imdb)}` : ""].filter(Boolean).join(" · ")}</span></span><span class="d up">${r.mine}</span></li>`).join("") || `<li class="empty">Sin notas tuyas.</li>`;
+
+  const by = (f, dir = 1, L = S) => L.filter(r => r[f]).slice().sort((a, b) => (a[f] > b[f] ? 1 : a[f] < b[f] ? -1 : 0) * dir)[0];
+  const diff = rated.filter(r => r.imdb).map(r => ({ r, d: r.mine - r.imdb }));
+  const loveMore = diff.slice().sort((a, b) => b.d - a.d)[0], loveLess = diff.slice().sort((a, b) => a.d - b.d)[0];
+  const oldest = by("year"), newest = by("year", -1), topI = by("imdb", -1), lastSeen = by("watchedDate", -1);
+  document.getElementById("ssFacts").innerHTML = [
+    ["La última que puntuaste", lastSeen ? `${link(lastSeen)}<small>${lastSeen.watchedDate.split("-").reverse().join("/")}</small>` : "—"],
+    ["La mejor valorada en IMDb", topI ? `${link(topI)}<small>${fmt1(topI.imdb)}</small>` : "—"],
+    ["La que más te gustó por encima de IMDb", loveMore && loveMore.d > 0 ? `${link(loveMore.r)}<small>tú ${loveMore.r.mine} · IMDb ${fmt1(loveMore.r.imdb)}</small>` : "—"],
+    ["La que menos te convenció", loveLess && loveLess.d < 0 ? `${link(loveLess.r)}<small>tú ${loveLess.r.mine} · IMDb ${fmt1(loveLess.r.imdb)}</small>` : "—"],
+    ["La más antigua", oldest ? `${link(oldest)}<small>${oldest.year}</small>` : "—"],
+    ["La más reciente", newest ? `${link(newest)}<small>${newest.year}</small>` : "—"]
+  ].map(([k, v]) => `<li><span class="k">${k}</span><span class="v">${v}</span></li>`).join("");
+
+  // Por año en que las puntuaste
+  const ys = [...new Set(S.map(r => r.watched).filter(Boolean))].sort((a, b) => a - b);
+  const yrs = []; if (ys.length) for (let y = ys[0]; y <= ys[ys.length - 1]; y++) yrs.push(y);
+  barChart2("sYearChart", yrs, yrs.map(y => S.filter(r => r.watched === y).length), { color: cssVar("--teal"), tip: v => `${v} series`,
+    onClick: i => openSeriesFilter(`Puntuadas en ${yrs[i]}`, r => r.watched === yrs[i]) });
+
+  // Notas
+  const sc = Array.from({ length: 10 }, (_, i) => i + 1);
+  document.getElementById("ssRateHint").textContent = rated.length ? `Has puntuado ${rated.length} de ${n}. Toca una barra para verlas.` : "Sin notas tuyas.";
+  barChart2("sRateChart", sc, sc.map(v => rated.filter(r => r.mine === v).length), { tip: v => `${v} series`,
+    onClick: i => openSeriesFilter(`Tu nota: ${sc[i]}`, r => r.mine === sc[i]) });
+
+  // Décadas
+  const dc = {}; S.forEach(r => { if (r.year){ const d = Math.floor(r.year / 10) * 10; dc[d] = (dc[d] || 0) + 1; } });
+  const decs = Object.keys(dc).map(Number).sort((a, b) => b - a);
+  const decLabel = d => d >= 2000 ? `Años ${d}` : `Años ${String(d).slice(2)}`;
+  document.getElementById("sDecBox").style.height = `${Math.max(decs.length, 4) * 26 + 20}px`;
+  barChart2("sDecChart", decs.map(decLabel), decs.map(d => dc[d]), { horizontal: true, color: cssVar("--teal"), tip: v => `${v} series`,
+    onClick: i => openSeriesFilter(`Estrenadas en los ${decLabel(decs[i]).toLowerCase()}`, r => r.year && Math.floor(r.year / 10) * 10 === decs[i]) });
+
+  // Géneros
+  const gc = {}; S.forEach(r => genresOf(r).forEach(g => { gc[g] = (gc[g] || 0) + 1; }));
+  const topG = Object.entries(gc).sort((a, b) => b[1] - a[1]).slice(0, 12);
+  document.getElementById("sGenreBox").style.height = `${Math.max(topG.length, 4) * 26 + 20}px`;
+  barChart2("sGenreChart", topG.map(g => g[0]), topG.map(g => g[1]), { horizontal: true, tip: v => `${v} series`,
+    onClick: i => openSeriesFilter(`Género: ${topG[i][0]}`, r => genresOf(r).includes(topG[i][0])) });
+}
+document.getElementById("ssBestAll").addEventListener("click", () => openSeriesFilter("", null, { key: "mine", dir: "desc" }));
+document.getElementById("view-sstats").addEventListener("click", e => {
+  const a = e.target.closest("[data-sk]"); if (!a) return;
+  e.preventDefault(); const r = findFilm(a.dataset.sk); if (r) openFicha(r);
+});
 
 /* ---------- Estadísticas de la Watchlist ---------- */
 // Ir a la Watchlist con un filtro exacto (el chip permite quitarlo)
@@ -3733,7 +3853,7 @@ setInterval(syncWakeLock, 1500);
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") syncWakeLock(); });
 
 /* ---------- Pestañas ---------- */
-const STATS_SUBS = ["stats", "statsArt", "wstats", "world", "taste", "year"];
+const STATS_SUBS = ["stats", "sstats", "statsArt", "wstats", "world", "taste", "year"];
 const VIEW_SEQ = ["films", "series", "favs", ...STATS_SUBS];        // orden al deslizar
 let curView = "films", lastStats = "stats";
 function showView(v){
@@ -3755,6 +3875,7 @@ function showView(v){
   else if (v === "films" && filmSrc === "series") setFilmSrc(lastFilmSrc);
   document.getElementById("view-year").hidden = v !== "year";
   document.getElementById("view-wstats").hidden = v !== "wstats";
+  document.getElementById("view-sstats").hidden = v !== "sstats";
   document.getElementById("view-taste").hidden = v !== "taste";
   document.getElementById("view-world").hidden = v !== "world";
   document.getElementById("view-favs").hidden = v !== "favs";
