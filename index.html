@@ -242,6 +242,11 @@ th button[data-dir="desc"]::after{content:"▼"}
 .subtabs button[aria-selected="true"]{background:var(--accent);color:#000}
 .subtabs button:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
 .todo-empty{padding:6px 0;line-height:1.5}
+.sort-mini{display:none;align-items:center;gap:8px;flex-basis:100%;order:3;font-size:13px;color:var(--muted)}
+.sort-mini label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.sort-mini select{flex:1;min-width:0;font:600 14px var(--font-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 8px}
+.sort-mini button{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:7px 10px;font:600 13px var(--font-body);white-space:nowrap;cursor:pointer}
+@media (max-width: 640px){ .sort-mini{display:flex} }
 .list-tools{display:flex;gap:8px;align-items:center;margin-left:auto}
 .seg.acts button{color:var(--ink)}
 .seg.acts button:hover{background:var(--surface)}
@@ -1109,16 +1114,6 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
         <div class="field grow"><label class="label" for="q">Buscar</label><div class="qbox"><input id="q" type="search" placeholder="Título, director o género" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"><button type="button" class="qclear" aria-label="Borrar búsqueda" hidden>✕</button></div></div>
         <div class="field" id="fWatchedField"><label class="label" for="fWatched">Vista en</label><select id="fWatched"></select></div>
         <div class="field"><label class="label" for="fYear">Estrenada en</label><select id="fYear"></select></div>
-        <div class="field mobile-only"><label class="label" for="sortSel">Ordenar por</label><select id="sortSel">
-          <option value="watched:desc">Vistas recientes</option>
-          <option value="watched:asc">Vistas antiguas</option>
-          <option value="title:asc">Título (A–Z)</option>
-          <option value="year:desc">Estreno reciente</option>
-          <option value="year:asc">Estreno antiguo</option>
-          <option value="imdb:desc">Nota IMDb</option>
-          <option value="mine:desc">Tu nota</option>
-          <option value="runtime:desc">Duración</option>
-        </select></div>
         <button class="btn ghost" id="clear" type="button">Quitar filtros</button>
     </div>
     <button class="chip-filter" id="extraChip" type="button" hidden aria-label="Quitar este filtro"><span></span> ✕</button>
@@ -1127,6 +1122,19 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
     <section class="panel">
       <div class="list-head">
         <p class="count" id="count"></p>
+        <div class="sort-mini" id="sortMini">
+          <label for="sortSel">Ordenar por</label>
+          <select id="sortSel">
+            <option value="watched">Fecha</option>
+            <option value="title">Título</option>
+            <option value="year">Año de estreno</option>
+            <option value="imdb">Nota de IMDb</option>
+            <option value="mine">Tu nota</option>
+            <option value="runtime">Duración</option>
+            <option value="dir">Dirección</option>
+          </select>
+          <button type="button" id="sortDir" aria-label="Cambiar el sentido del orden"></button>
+        </div>
         <div class="list-tools">
         <div class="seg acts" role="group" aria-label="Acciones">
           <button type="button" id="spin" title="Película al azar" aria-label="Película al azar"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.2" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg><span>Al azar</span></button>
@@ -1859,9 +1867,14 @@ function fillYearSelects(data){
 }
 
 function renderHead(){
-  const ss = document.getElementById("sortSel"), v = `${sort.key}:${sort.dir}`;
-  if ([...ss.options].some(o => o.value === v)) ss.value = v;
   const todoSrc = filmSrc === "todo" || filmSrc === "stodo";
+  const ss = document.getElementById("sortSel");
+  ss.querySelector('[value="watched"]').textContent = todoSrc ? "Fecha en que la añadiste" : (filmSrc === "series" ? "Fecha en que la puntuaste" : "Fecha en que la viste");
+  ss.setAttribute("aria-label", "Ordenar por");
+  ss.querySelector('[value="mine"]').hidden = todoSrc;
+  ss.value = sort.key;
+  const up = sort.dir === "asc", txt = sort.key === "title" || sort.key === "dir" ? (up ? "A → Z" : "Z → A") : ["watched", "year"].includes(sort.key) ? (up ? "Antiguas primero" : "Recientes primero") : (up ? "Menor primero" : "Mayor primero");
+  document.getElementById("sortDir").innerHTML = `<span aria-hidden="true">${up ? "↑" : "↓"}</span> ${txt}`;
   const lab = c => c.key === "watched" && todoSrc ? "Añadida" : c.key === "mine" && todoSrc ? "" : c.label;
   document.getElementById("filmHead").innerHTML = COLS.map(c => (c = { ...c, label: lab(c) }, c)).map(c => c.nosort ? `<th>${c.label}</th>` :
     `<th class="${c.num ? "num" : ""}" aria-sort="${sort.key === c.key ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}"><button type="button" data-key="${c.key}" ${sort.key === c.key ? `data-dir="${sort.dir}"` : ""}>${c.label}</button></th>`).join("");
@@ -2106,8 +2119,9 @@ document.getElementById("filmHead").addEventListener("click", e => {
   shown = PAGE; renderFilms();
 });
 ["q", "fWatched", "fYear"].forEach(id => document.getElementById(id).addEventListener("input", () => { shown = PAGE; renderFilms(); }));
+document.getElementById("sortDir").addEventListener("click", () => { sort = { ...sort, dir: sort.dir === "asc" ? "desc" : "asc" }; shown = PAGE; renderFilms(); });
 document.getElementById("sortSel").addEventListener("change", e => {
-  const [key, dir] = e.target.value.split(":"); sort = { key, dir }; shown = PAGE; renderFilms();
+  const key = e.target.value; sort = { key, dir: ["title", "dir"].includes(key) ? "asc" : "desc" }; shown = PAGE; renderFilms();
 });
 document.getElementById("more").addEventListener("click", () => { shown += PAGE; renderFilms(); });
 document.getElementById("clear").addEventListener("click", () => {
