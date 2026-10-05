@@ -2555,15 +2555,18 @@ const flagLabels = {
 };
 // Código de país a partir de su nombre (en español o inglés), para poner la bandera de nacimiento
 let COUNTRY_CODES = null;
+const OLD_CODES = new Set(["DD", "SU", "YU", "CS", "BU", "ZR", "TP", "NT", "FX", "AN", "QO", "EU", "EZ", "UN", "ZZ", "XA", "XB", "QU", "UK", "EA", "CP", "DG", "TA", "AC"]);
 const codeOfCountry = name => {
   if (!name) return "";
   const norm = t => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
   if (!COUNTRY_CODES){
     COUNTRY_CODES = new Map();
-    for (const lang of ["en", "es"]){
+    // TMDb escribe el lugar de nacimiento en idiomas variados ("Madrid, Espagne", "Roma, Italia"…)
+    for (const lang of ["en", "es", "fr", "de", "it", "pt", "nl", "ca", "sv", "da", "nb", "fi", "pl", "cs", "hu", "ro", "tr", "el", "ru", "uk", "ja", "zh", "ko", "he", "ar"]){
       let dn; try { dn = new Intl.DisplayNames([lang], { type: "region" }); } catch(e) { continue; }
       for (let a = 65; a <= 90; a++) for (let b = 65; b <= 90; b++){
         const c = String.fromCharCode(a, b);
+        if (OLD_CODES.has(c)) continue;          // códigos antiguos (p. ej. DD = Alemania del Este) que "roban" el nombre actual
         try { const n = dn.of(c); if (n && n !== c && !COUNTRY_CODES.has(norm(n))) COUNTRY_CODES.set(norm(n), c); } catch(e) {}
       }
     }
@@ -3157,7 +3160,9 @@ const countryOf = pl => {
     "Hong Kong": "Hong Kong", "Taiwan": "Taiwán", "India": "India", "Russia": "Rusia", "USSR": "Rusia", "Soviet Union": "Rusia", "Poland": "Polonia", "Austria": "Austria", "Netherlands": "Países Bajos",
     "Belgium": "Bélgica", "Switzerland": "Suiza", "New Zealand": "Nueva Zelanda", "Israel": "Israel", "Iran": "Irán", "Greece": "Grecia", "Portugal": "Portugal", "Chile": "Chile", "Colombia": "Colombia",
     "Cuba": "Cuba", "South Africa": "Sudáfrica", "Hungary": "Hungría", "Czech Republic": "Chequia", "Czechoslovakia": "Chequia", "Finland": "Finlandia", "Turkey": "Turquía", "Puerto Rico": "Puerto Rico" };
-  return MAP[last] || last;
+  if (MAP[last]) return MAP[last];
+  const code = codeOfCountry(last);           // cualquier otro idioma → nombre en español
+  return code ? regionName(code) : last;
 };
 
 /* Lista de artistas de un grupo (sexo, edad, década…) con enlace a su ficha */
