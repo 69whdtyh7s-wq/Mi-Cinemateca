@@ -515,6 +515,8 @@ button.stat:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px
 .facts li:last-child{border-bottom:0}
 .facts .k{color:var(--muted)}
 .facts .v{font-weight:600;text-align:right;min-width:0}
+.facts .v a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--accent)}
+.facts .v a:hover{color:var(--accent-ink)}
 .facts .v small{display:block;font-weight:400;color:var(--muted);font-size:12px}
 .vs{margin:0;padding:0;list-style:none;counter-reset:vs;display:flex;flex-direction:column}
 .vs li{counter-increment:vs;display:grid;grid-template-columns:22px 1fr auto;gap:10px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
@@ -713,6 +715,7 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
     <button type="button" role="tab" data-view="world" aria-selected="false">Mundo</button>
     <button type="button" role="tab" data-view="taste" aria-selected="false">Tus gustos</button>
     <button type="button" role="tab" data-view="year" aria-selected="false">Resumen anual</button>
+    <button type="button" role="tab" data-view="wstats" aria-selected="false">Watchlist</button>
   </div>
 
   <div class="view" id="view-stats" role="tabpanel" aria-labelledby="tab-stats">
@@ -934,6 +937,45 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
     </div>
     <p class="hint" id="favStatus" aria-live="polite"></p>
     <div class="fav-grid" id="favList" hidden></div>
+  </div>
+
+  <div class="view" id="view-wstats" role="tabpanel" hidden>
+    <p class="hint" id="wsEmpty">Aún no has cargado tu Watchlist. Súbela con «Elegir CSV» (en IMDb: Watchlist → ⋯ → Export) y aquí verás sus estadísticas.</p>
+    <div id="wsBody" hidden>
+      <section class="stats" id="wsTiles"></section>
+      <div class="duo">
+        <section class="panel">
+          <h2>Las mejor valoradas que te faltan</h2>
+          <p class="hint">Según la nota de IMDb. Toca una para ver su ficha.</p>
+          <ol class="vs" id="wsBest"></ol>
+        </section>
+        <section class="panel">
+          <h2>Datos curiosos</h2>
+          <ul class="facts" id="wsFacts"></ul>
+        </section>
+      </div>
+      <section class="panel">
+        <h2>Cuándo las añadiste</h2>
+        <p class="hint">Películas que metiste en tu Watchlist cada año.</p>
+        <div class="chart small"><canvas id="wAddedChart" aria-label="Películas añadidas a la Watchlist por año"></canvas></div>
+      </section>
+      <div class="duo">
+        <section class="panel">
+          <h2>Por década de estreno</h2>
+          <div class="chart" id="wDecBox"><canvas id="wDecChart" aria-label="Watchlist por década de estreno"></canvas></div>
+        </section>
+        <section class="panel">
+          <h2>Géneros</h2>
+          <p class="hint">Toca una barra para verlas en tu Watchlist.</p>
+          <div class="chart" id="wGenreBox"><canvas id="wGenreChart" aria-label="Géneros de tu Watchlist"></canvas></div>
+        </section>
+      </div>
+      <section class="panel">
+        <h2>Directores que más esperan</h2>
+        <p class="hint">De quién tienes más películas pendientes. Toca una barra para verlas.</p>
+        <div class="chart" id="wDirBox"><canvas id="wDirChart" aria-label="Directores con más películas en tu Watchlist"></canvas></div>
+      </section>
+    </div>
   </div>
 
   <div class="view" id="view-year" role="tabpanel" aria-labelledby="tab-year" hidden>
@@ -1184,7 +1226,7 @@ function pruneWatch(){
   watch = watch.filter(r => !seen.has(rowKey(r)));
   return before - watch.length;
 }
-function saveWatch(){ try { localStorage.setItem(WATCH_KEY, JSON.stringify(watch)); } catch(e) {} syncSrcCounts(); }
+function saveWatch(){ try { localStorage.setItem(WATCH_KEY, JSON.stringify(watch)); } catch(e) {} syncSrcCounts(); if (typeof renderWatchStats === "function") renderWatchStats(); }
 function syncSrcCounts(){
   const a = document.getElementById("cntSeen"), b = document.getElementById("cntTodo");
   if (a) a.textContent = rows ? counted().length : "";
@@ -1301,6 +1343,7 @@ function render(){
   renderExtras(data);
   fillYearSel(data);
   renderYear();
+  renderWatchStats();
   renderWorld();
   if (typeof renderArtistStats === "function") renderArtistStats();
   syncTmdbPanel();
@@ -1941,6 +1984,79 @@ function barChart2(key, labels, data, o = {}){
 
 const filmLink = r => r.url ? `<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title)}</a>` : `<a>${esc(r.title)}</a>`;
 const yearsRange = () => { const ys = []; for (let y = START; y <= NOW; y++) ys.push(y); return ys; };
+
+/* ---------- Estadísticas de la Watchlist ---------- */
+function openWatch(text = ""){
+  showView("films"); setFilmSrc("todo");
+  document.getElementById("q").value = text; shown = PAGE; renderFilms();
+  document.querySelector(".tabs").scrollIntoView({ behavior: motion() ? "smooth" : "auto" });
+}
+function renderWatchStats(){
+  const has = watch.length > 0;
+  document.getElementById("wsEmpty").hidden = has;
+  document.getElementById("wsBody").hidden = !has;
+  if (!has) return;
+  const W = watch, n = W.length;
+  const mins = W.reduce((a, r) => a + (r.runtime || 0), 0);
+  const withR = W.filter(r => r.imdb), avgI = withR.length ? withR.reduce((a, r) => a + r.imdb, 0) / withR.length : null;
+  const withRun = W.filter(r => r.runtime);
+  const fmtD = d => d ? d.split("-").reverse().join("/") : "";
+  const since = W.map(r => r.watchedDate).filter(Boolean).sort();
+  const days = since.length ? Math.round((Date.now() - new Date(since[0] + "T12:00")) / 864e5) : null;
+  document.getElementById("wsTiles").innerHTML = [
+    [fmtInt(n), n === 1 ? "título pendiente" : "títulos pendientes"],
+    [`${fmtInt(mins / 60)} h`, `para verlas todas (${(mins / 1440).toFixed(1).replace(".", ",")} días)`],
+    [avgI != null ? fmt1(avgI) : "—", "nota media en IMDb"],
+    [withRun.length ? `${fmtInt(mins / withRun.length)} min` : "—", "duración media"]
+  ].map(([v, l]) => `<div class="stat"><div class="n">${v}</div><div class="l">${l}</div></div>`).join("");
+
+  // Mejor valoradas
+  const best = withR.slice().sort((a, b) => b.imdb - a.imdb || (b.year || 0) - (a.year || 0)).slice(0, 10);
+  document.getElementById("wsBest").innerHTML = best.map(r => `<li${tmdbCache[imdbId(r)]?.p ? ` class="with-poster" style="--poster:url(${TMDB_IMG}w92${tmdbCache[imdbId(r)].p})"` : ""}><span><a href="#" data-wk="${esc(rowKey(r))}">${esc(r.title)}</a><span class="meta">${[r.year, (r.dir || "").split(",")[0], r.runtime ? `${r.runtime} min` : ""].filter(Boolean).map(esc).join(" · ")}</span></span><span class="d up">${fmt1(r.imdb)}</span></li>`).join("") || `<li class="empty">Sin notas de IMDb.</li>`;
+
+  // Datos curiosos
+  const by = (f, dir = 1) => W.filter(r => r[f]).slice().sort((a, b) => (a[f] > b[f] ? 1 : a[f] < b[f] ? -1 : 0) * dir)[0];
+  const oldestAdded = by("watchedDate"), newestAdded = by("watchedDate", -1), longest = by("runtime", -1), shortest = by("runtime");
+  const oldestFilm = by("year"), newestFilm = by("year", -1);
+  const link = r => `<a href="#" data-wk="${esc(rowKey(r))}">${esc(r.title)}</a>`;
+  document.getElementById("wsFacts").innerHTML = [
+    ["La que más tiempo lleva esperando", oldestAdded ? `${link(oldestAdded)}<small>desde el ${fmtD(oldestAdded.watchedDate)}${days != null ? ` · ${fmtInt(days)} días` : ""}</small>` : "—"],
+    ["La última que añadiste", newestAdded ? `${link(newestAdded)}<small>${fmtD(newestAdded.watchedDate)}</small>` : "—"],
+    ["La más larga", longest ? `${link(longest)}<small>${longest.runtime} min</small>` : "—"],
+    ["La más corta", shortest ? `${link(shortest)}<small>${shortest.runtime} min</small>` : "—"],
+    ["La más antigua", oldestFilm ? `${link(oldestFilm)}<small>${oldestFilm.year}</small>` : "—"],
+    ["La más reciente", newestFilm ? `${link(newestFilm)}<small>${newestFilm.year}</small>` : "—"]
+  ].map(([k, v]) => `<li><span class="k">${k}</span><span class="v">${v}</span></li>`).join("");
+
+  // Añadidas por año
+  const ys = [...new Set(W.map(r => r.watched).filter(Boolean))].sort((a, b) => a - b);
+  const yrs = []; if (ys.length) for (let y = ys[0]; y <= ys[ys.length - 1]; y++) yrs.push(y);
+  barChart2("wAddedChart", yrs, yrs.map(y => W.filter(r => r.watched === y).length), { color: cssVar("--teal"), tip: v => `${v} películas` });
+
+  // Décadas
+  const dc = {}; W.forEach(r => { if (r.year){ const d = Math.floor(r.year / 10) * 10; dc[d] = (dc[d] || 0) + 1; } });
+  const decs = Object.keys(dc).map(Number).sort((a, b) => b - a);
+  const decLabel = d => d >= 2000 ? `Años ${d}` : `Años ${String(d).slice(2)}`;
+  document.getElementById("wDecBox").style.height = `${Math.max(decs.length, 4) * 26 + 20}px`;
+  barChart2("wDecChart", decs.map(decLabel), decs.map(d => dc[d]), { horizontal: true, tip: v => `${v} películas` });
+
+  // Géneros
+  const gc = {}; W.forEach(r => genresOf(r).forEach(g => { gc[g] = (gc[g] || 0) + 1; }));
+  const topG = Object.entries(gc).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  document.getElementById("wGenreBox").style.height = `${Math.max(topG.length, decs.length, 4) * 26 + 20}px`;
+  document.getElementById("wDecBox").style.height = document.getElementById("wGenreBox").style.height;
+  barChart2("wGenreChart", topG.map(g => g[0]), topG.map(g => g[1]), { horizontal: true, color: cssVar("--teal"), tip: v => `${v} películas`, onClick: i => openWatch(topG[i][0]) });
+
+  // Directores
+  const dr = {}; W.forEach(r => (r.dir || "").split(",").map(d => d.trim()).filter(Boolean).forEach(d => { dr[d] = (dr[d] || 0) + 1; }));
+  const topD = Object.entries(dr).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "es")).slice(0, 12);
+  document.getElementById("wDirBox").style.height = `${Math.max(topD.length, 4) * 26 + 20}px`;
+  barChart2("wDirChart", topD.map(d => d[0]), topD.map(d => d[1]), { horizontal: true, tip: v => `${v} películas`, onClick: i => openWatch(topD[i][0]) });
+}
+document.getElementById("view-wstats").addEventListener("click", e => {
+  const a = e.target.closest("[data-wk]"); if (!a) return;
+  e.preventDefault(); const r = findFilm(a.dataset.wk); if (r) openFicha(r);
+});
 
 /* ---------- Estadísticas nuevas ---------- */
 function renderExtras(data){
@@ -3057,7 +3173,12 @@ function personHTML(p){
   const rated = seen.filter(s => s.r.mine);
   const avg = rated.length ? rated.reduce((a, s) => a + s.r.mine, 0) / rated.length : null;
   const best = rated.slice().sort((a, b) => b.r.mine - a.r.mine)[0];
-  const missing = movies.filter(c => !seenMap.has(`movie:${c.id}`) && c.c >= 30).sort((a, b) => b.v - a.v || b.c - a.c);
+  // Las que tienes en tu Watchlist (por su id de TMDb)
+  const watchMap = new Map();
+  watch.forEach(w => { const c = tmdbCache[imdbId(w)]; if (c && !c.none && c.t) watchMap.set(`${c.k}:${c.t}`, w); });
+  const inWatch = [...new Map(cr.filter(c => watchMap.has(`${c.k}:${c.id}`) && !seenMap.has(`${c.k}:${c.id}`)).map(c => [`${c.k}:${c.id}`, { c, r: watchMap.get(`${c.k}:${c.id}`) }])).values()]
+    .sort((a, b) => (b.r.imdb || 0) - (a.r.imdb || 0));
+  const missing = movies.filter(c => !seenMap.has(`movie:${c.id}`) && !watchMap.has(`movie:${c.id}`) && c.c >= 30).sort((a, b) => b.v - a.v || b.c - a.c);
   const known = cr.slice().sort((a, b) => b.c - a.c).slice(0, 4).map(c => c.ti);
   const age = ageAt(x.b, x.d || null);
   const dep = x.dep ? (DEP_ES[x.dep] || x.dep) : "";
@@ -3101,9 +3222,14 @@ function personHTML(p){
       ${seen.length ? `<div class="poster-grid">${seen.map(s => `<button type="button" class="pg-item" data-k="${esc(rowKey(s.r))}">${poster(tmdbCache[imdbId(s.r)]?.p || s.c.p, s.r.title)}<b>${esc(s.r.title)}</b><small>${[s.r.year, s.c.j.join(", ")].filter(Boolean).join(" · ")}</small>${s.r.mine ? `<em>${s.r.mine}</em>` : ""}</button>`).join("")}</div>`
         : `<p class="hint">${Object.keys(tmdbCache).length ? "Todavía no has visto nada suyo, o faltan datos de TMDb de tus películas." : "Descarga los datos de TMDb de tus películas para ver cuáles has visto."}</p>`}
     </div>
+    ${inWatch.length ? `<div class="person-section">
+      <h3>En tu Watchlist <span>${inWatch.length}</span></h3>
+      <p class="hint">Las tienes pendientes, de mejor a peor nota en IMDb. Toca una para ver su ficha.</p>
+      <div class="poster-grid">${inWatch.map(s => `<button type="button" class="pg-item" data-k="${esc(rowKey(s.r))}">${poster(tmdbCache[imdbId(s.r)]?.p || s.c.p, s.r.title)}<b>${esc(s.r.title)}</b><small>${[s.r.year, s.c.j.join(", ")].filter(Boolean).map(esc).join(" · ")}</small>${s.r.imdb ? `<em class="tm">${fmt1(s.r.imdb)}</em>` : ""}</button>`).join("")}</div>
+    </div>` : ""}
     ${missing.length ? `<div class="person-section">
-      <h3>Te faltan <span>${missing.length}</span></h3>
-      <p class="hint">Sus películas que no has visto, de mejor a peor valorada en TMDb. Toca una para verla en IMDb.</p>
+      <h3>${inWatch.length ? "Otras que te faltan" : "Te faltan"} <span>${missing.length}</span></h3>
+      <p class="hint">Sus películas que no has visto, de mejor a peor nota. TMDb no da la nota de IMDb, así que se ordenan por la de TMDb. Toca una para verla en IMDb.</p>
       <div class="poster-grid">${missing.slice(0, 24).map(m => `<a class="pg-item" data-mid="${m.id}" href="${m.im ? `https://www.imdb.com/title/${m.im}/` : `https://www.imdb.com/find/?q=${encodeURIComponent(m.ti + (m.y ? " " + m.y : ""))}&s=tt`}" target="_blank" rel="noopener">${poster(m.p, m.ti)}<b>${esc(m.ti)}</b><small>${[m.y, m.j.join(", ")].filter(Boolean).join(" · ")}</small>${m.v ? `<em class="tm">${fmt1(m.v)}</em>` : ""}</a>`).join("")}</div>
       ${missing.length > 24 ? `<p class="hint">Y ${missing.length - 24} más en su página de TMDb.</p>` : ""}
     </div>` : ""}`;
@@ -3158,7 +3284,7 @@ document.getElementById("personDlg").addEventListener("click", e => {
     const m = document.getElementById("msg"); m.className = "msg"; m.textContent = `${p?.name || "Persona"} quitado de Artistas.`; return;
   }
   const b = e.target.closest("button.pg-item[data-k]");
-  if (b){ const r = rows.find(x => rowKey(x) === b.dataset.k); if (r) openFicha(r); }
+  if (b){ const r = findFilm(b.dataset.k); if (r) openFicha(r); }
 });
 document.getElementById("favList").addEventListener("click", e => {
   const open = e.target.closest("[data-open-person]");
@@ -3354,7 +3480,7 @@ setInterval(syncWakeLock, 1500);
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") syncWakeLock(); });
 
 /* ---------- Pestañas ---------- */
-const STATS_SUBS = ["stats", "statsArt", "world", "taste", "year"];
+const STATS_SUBS = ["stats", "statsArt", "world", "taste", "year", "wstats"];
 const VIEW_SEQ = ["films", "favs", ...STATS_SUBS];        // orden al deslizar
 let curView = "films", lastStats = "stats";
 function showView(v){
@@ -3373,6 +3499,7 @@ function showView(v){
   document.getElementById("sgArtists").hidden = v !== "statsArt";
   document.getElementById("view-films").hidden = v !== "films";
   document.getElementById("view-year").hidden = v !== "year";
+  document.getElementById("view-wstats").hidden = v !== "wstats";
   document.getElementById("view-taste").hidden = v !== "taste";
   document.getElementById("view-world").hidden = v !== "world";
   document.getElementById("view-favs").hidden = v !== "favs";
