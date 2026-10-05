@@ -99,12 +99,9 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center}
 .view.swipe-r{animation:swipeR .28s ease-out}
 @keyframes swipeL{from{transform:translateX(40px);opacity:.3}to{transform:none;opacity:1}}
 @keyframes swipeR{from{transform:translateX(-40px);opacity:.3}to{transform:none;opacity:1}}
-.sgroup > summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;padding:10px 4px;border-bottom:2px solid var(--line);font-family:var(--font-display);font-weight:800;font-size:1.6rem;letter-spacing:-.01em;color:var(--ink);-webkit-user-select:none;user-select:none}
-.sgroup > summary::-webkit-details-marker{display:none}
-.sgroup > summary .chev{flex:0 0 auto;color:var(--muted);transition:transform .2s}
-.sgroup:not([open]) > summary .chev{transform:rotate(-90deg)}
-.sgroup > summary:hover .chev{color:var(--ink)}
-.sgroup > summary:focus-visible{outline:2px solid var(--accent-ink);outline-offset:3px;border-radius:6px}
+.stats-nav{margin:-4px 0 2px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.stats-nav::-webkit-scrollbar{display:none}
+.stats-nav button{padding:8px 14px;font-size:14px}
 .sgroup-body{display:flex;flex-direction:column;gap:24px;padding-top:18px}
 
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
@@ -709,14 +706,17 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
     <button class="tab" role="tab" id="tab-films" aria-controls="view-films" aria-selected="true" data-view="films">Películas <span id="tabCount"></span></button>
     <button class="tab" role="tab" id="tab-favs" aria-controls="view-favs" aria-selected="false" data-view="favs">Artistas <span id="tabCountA" class="tab-n"></span></button>
     <button class="tab" role="tab" id="tab-stats" aria-controls="view-stats" aria-selected="false" data-view="stats">Stats</button>
-    <button class="tab" role="tab" id="tab-taste" aria-controls="view-taste" aria-selected="false" data-view="taste">Tus gustos</button>
-    <button class="tab" role="tab" id="tab-world" aria-controls="view-world" aria-selected="false" data-view="world">Mundo</button>
-    <button class="tab" role="tab" id="tab-year" aria-controls="view-year" aria-selected="false" data-view="year">Resumen anual</button>
+  </div>
+  <div class="subtabs stats-nav" id="statsNav" role="tablist" aria-label="Secciones de Stats" hidden>
+    <button type="button" role="tab" data-view="stats" aria-selected="true">Películas</button>
+    <button type="button" role="tab" data-view="statsArt" aria-selected="false">Artistas</button>
+    <button type="button" role="tab" data-view="world" aria-selected="false">Mundo</button>
+    <button type="button" role="tab" data-view="taste" aria-selected="false">Tus gustos</button>
+    <button type="button" role="tab" data-view="year" aria-selected="false">Resumen anual</button>
   </div>
 
   <div class="view" id="view-stats" role="tabpanel" aria-labelledby="tab-stats">
-    <details class="sgroup" id="sgFilms" open>
-    <summary><span>Películas</span><svg class="chev" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+    <div class="sgroup" id="sgFilms">
     <div class="sgroup-body">
     <section class="stats" id="stats"></section>
 
@@ -763,10 +763,10 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
       </section>
     </div>
     </div>
-    </details>
+    </div>
 
-    <details class="sgroup" id="sgArtists" open hidden>
-    <summary><span>Artistas</span><svg class="chev" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+    <div class="sgroup" id="sgArtists" hidden>
+    <p class="hint" id="artistStatsEmpty" hidden>Todavía no tienes artistas. Añádelos en la pestaña Artistas (botón +) o sube tu lista de personas de IMDb con «Elegir CSV».</p>
     <div class="sgroup-body">
     <section class="panel artist-stats" id="artistStats" hidden>
       <p class="hint" id="artistHint"></p>
@@ -785,7 +785,7 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
       </div>
     </section>
     </div>
-    </details>
+    </div>
 
   </div>
 
@@ -962,7 +962,7 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
   <div class="view" id="view-films" role="tabpanel" aria-labelledby="tab-films" hidden>
     <div class="subtabs" id="filmSrc" role="tablist" aria-label="Qué lista ver">
       <button type="button" role="tab" data-src="seen" aria-selected="true">Vistas <span id="cntSeen"></span></button>
-      <button type="button" role="tab" data-src="todo" aria-selected="false">Por ver <span id="cntTodo"></span></button>
+      <button type="button" role="tab" data-src="todo" aria-selected="false">Watchlist <span id="cntTodo"></span></button>
     </div>
     <div class="filters" id="filmFilters">
         <div class="field grow"><label class="label" for="q">Buscar</label><div class="qbox"><input id="q" type="search" placeholder="Título, director o género" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"><button type="button" class="qclear" aria-label="Borrar búsqueda" hidden>✕</button></div></div>
@@ -1208,7 +1208,7 @@ function loadWatch(list, name, quiet){
   if (quiet && !added && fresh.length === watch.length) return;
   watch = fresh; saveWatch();
   const msg = document.getElementById("msg"); msg.className = "msg";
-  msg.textContent = `Lista por ver cargada desde ${name || "el archivo"}: ${watch.length} títulos` +
+  msg.textContent = `Watchlist cargada desde ${name || "el archivo"}: ${watch.length} títulos` +
     (before.size ? ` (${added} ${added === 1 ? "nuevo" : "nuevos"})` : "") +
     (skipped ? `. ${skipped} que ya has visto no ${skipped === 1 ? "se ha añadido" : "se han añadido"}` : "") + ".";
   if (!quiet){ showView("films"); setFilmSrc("todo"); } else renderFilms();
@@ -1382,7 +1382,7 @@ function fillUntil(data){
   document.addEventListener("touchstart", e => {
     x0 = null; dec = null;
     if (e.touches.length > 1 || document.body.classList.contains("pop-open") || document.querySelector("dialog[open]")) return;
-    if (!e.target.closest(".view") || hScroller(e.target)) return;
+    if (!e.target.closest(".view, .wrap") || e.target.closest("header") || hScroller(e.target)) return;
     x0 = lx = e.touches[0].clientX; y0 = ly = e.touches[0].clientY; t0 = performance.now();
   }, { passive: true });
   document.addEventListener("touchmove", e => {
@@ -1400,11 +1400,10 @@ function fillUntil(data){
     const dx = (t ? t.clientX : lx) - x0, dy = (t ? t.clientY : ly) - y0, dt = performance.now() - t0;
     x0 = null;
     if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.2 || dt > 1500) return;
-    const tabs = [...document.querySelectorAll(".tab")].filter(b => !b.hidden);
-    const i = tabs.findIndex(b => b.getAttribute("aria-selected") === "true");
-    const next = tabs[i + (dx < 0 ? 1 : -1)]; if (!next) return;
-    showView(next.dataset.view);
-    const view = document.getElementById("view-" + next.dataset.view);
+    const i = VIEW_SEQ.indexOf(curView);
+    const nextV = VIEW_SEQ[i + (dx < 0 ? 1 : -1)]; if (!nextV) return;
+    showView(nextV);
+    const view = document.getElementById("view-" + (nextV === "statsArt" ? "stats" : nextV));
     view.classList.remove("swipe-l", "swipe-r"); void view.offsetWidth;
     view.classList.add(dx < 0 ? "swipe-l" : "swipe-r");
     const bar = document.querySelector(".tabs"), top = bar.getBoundingClientRect().top + scrollY - (parseFloat(getComputedStyle(bar).top) || 0);
@@ -1437,12 +1436,6 @@ document.querySelectorAll(".qbox").forEach(box => {
   h.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); home(); } });
 })();
 
-/* Recordar qué secciones de Stats están plegadas */
-["sgFilms", "sgArtists"].forEach(id => {
-  const d = document.getElementById(id);
-  try { if (localStorage.getItem("cinemateca-fold-" + id) === "0") d.open = false; } catch(e) {}
-  d.addEventListener("toggle", () => { try { localStorage.setItem("cinemateca-fold-" + id, d.open ? "1" : "0"); } catch(e) {} });
-});
 
 /* Selector Años / Décadas en el mismo gráfico */
 let madeMode = "year";   // al abrir la app, siempre por años
@@ -1748,9 +1741,9 @@ function renderFilms(){
   renderHead();
   const list = filtered();
   const n = list.length;
-  document.getElementById("count").textContent = `${n} ${n === 1 ? "título" : "títulos"}${filmSrc === "todo" ? " por ver" : ""}` + (n > shown ? ` · mostrando ${shown}` : "");
+  document.getElementById("count").textContent = `${n} ${n === 1 ? "título" : "títulos"}${filmSrc === "todo" ? " en tu Watchlist" : ""}` + (n > shown ? ` · mostrando ${shown}` : "");
   const emptyTodo = filmSrc === "todo" && !watch.length
-    ? `<p class="hint todo-empty">Aún no has cargado tu lista de películas por ver. En IMDb abre tu <b>Watchlist</b>, pulsa ⋯ → <em>Export</em> y súbela con <b>Elegir CSV</b>. La app la reconoce sola porque no lleva notas tuyas.</p>` : "";
+    ? `<p class="hint todo-empty">Aún no has cargado tu Watchlist. En IMDb ábrela, pulsa ⋯ → <em>Export</em> y súbela con <b>Elegir CSV</b>. La app la reconoce sola porque no lleva notas tuyas.</p>` : "";
   const dash = '<span class="dim">—</span>';
   document.getElementById("filmBody").innerHTML = n ? list.slice(0, shown).map(r => `<tr data-k="${esc(rowKey(r))}" tabindex="0">
     <td class="c-title"><div class="t-wrap">${thumb(r)}<div><strong>${esc(r.title)}</strong>${newKeys.has(rowKey(r)) ? ' <span class="new">nueva</span>' : updKeys.has(rowKey(r)) ? ' <span class="new upd">actualizada</span>' : ""}${r.orig && r.orig !== r.title ? `<span class="orig">${esc(r.orig)}</span>` : ""}</div></div></td>
@@ -3267,7 +3260,7 @@ function renderArtistStats(){
   const list = people.map(p => ({ p, x: personCache[p.id] })).filter(o => o.x && !o.x.none);
   const withB = list.filter(o => o.x.b);
   box.hidden = !list.length;
-  document.getElementById("sgArtists").hidden = !list.length;
+  document.getElementById("artistStatsEmpty").hidden = !!list.length;
   if (!list.length) return;
   const pending = people.length - list.length + list.filter(o => o.x.g === undefined).length;
   document.getElementById("artistHint").textContent = `${people.length} artistas en tu lista${pending ? `. Faltan datos de ${pending}: abre la pestaña Artistas para que se descarguen` : ""}. Toca un número, una barra o un nombre para ver los artistas.`;
@@ -3361,9 +3354,23 @@ setInterval(syncWakeLock, 1500);
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") syncWakeLock(); });
 
 /* ---------- Pestañas ---------- */
+const STATS_SUBS = ["stats", "statsArt", "world", "taste", "year"];
+const VIEW_SEQ = ["films", "favs", ...STATS_SUBS];        // orden al deslizar
+let curView = "films", lastStats = "stats";
 function showView(v){
-  document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.view === v));
-  document.getElementById("view-stats").hidden = v !== "stats";
+  if (!VIEW_SEQ.includes(v)) v = "films";
+  curView = v;
+  const inStats = STATS_SUBS.includes(v);
+  if (inStats) lastStats = v;
+  const top = inStats ? "stats" : v;
+  document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.view === top));
+  const nav = document.getElementById("statsNav");
+  nav.hidden = !inStats;
+  nav.querySelectorAll("[data-view]").forEach(b => b.setAttribute("aria-selected", b.dataset.view === v));
+  if (inStats){ const b = nav.querySelector(`[data-view="${v}"]`); if (nav.scrollWidth > nav.clientWidth) nav.scrollTo({ left: Math.max(0, b.offsetLeft - nav.offsetLeft - 40), behavior: "smooth" }); }
+  document.getElementById("view-stats").hidden = v !== "stats" && v !== "statsArt";
+  document.getElementById("sgFilms").hidden = v !== "stats";
+  document.getElementById("sgArtists").hidden = v !== "statsArt";
   document.getElementById("view-films").hidden = v !== "films";
   document.getElementById("view-year").hidden = v !== "year";
   document.getElementById("view-taste").hidden = v !== "taste";
@@ -3372,7 +3379,7 @@ function showView(v){
   if (v === "favs"){ renderFavs(); fetchPeople(); }
   try { localStorage.setItem("cinemateca-tab", v); } catch(e) {}
   // En pantallas estrechas, que la pestaña activa quede siempre a la vista
-  const bar = document.querySelector(".tabs"), t = document.querySelector(`.tab[data-view="${v}"]`);
+  const bar = document.querySelector(".tabs"), t = document.querySelector(`.tab[data-view="${top}"]`);
   if (bar.scrollWidth > bar.clientWidth){
     const left = t.offsetLeft - bar.offsetLeft - 16, right = left + t.offsetWidth + 32;
     if (left < bar.scrollLeft || right > bar.scrollLeft + bar.clientWidth) bar.scrollTo({ left: Math.max(0, left), behavior: motion() ? "smooth" : "auto" });
@@ -3385,7 +3392,8 @@ function syncTabsFade(){
 }
 document.querySelector(".tabs").addEventListener("scroll", syncTabsFade, { passive: true });
 addEventListener("resize", syncTabsFade);
-document.querySelector(".tabs").addEventListener("click", e => { const t = e.target.closest(".tab"); if (t) showView(t.dataset.view); });
+document.querySelector(".tabs").addEventListener("click", e => { const t = e.target.closest(".tab"); if (t) showView(t.dataset.view === "stats" ? lastStats : t.dataset.view); });
+document.getElementById("statsNav").addEventListener("click", e => { const b = e.target.closest("[data-view]"); if (b) showView(b.dataset.view); });
 
 /* ---------- Carga ---------- */
 function save(){
@@ -3627,7 +3635,7 @@ if (stored && Array.isArray(stored.rows) && stored.rows.length){
   rows = stored.rows; newKeys = new Set(stored.newKeys || []); updKeys = new Set(stored.updKeys || []); isSample = false; buildTypes(); render();
 } else if (saved) load(saved);
 else { rows = []; isSample = true; buildTypes(); render(); }
-showView(location.hash === "#peliculas" ? "films" : (["stats", "films", "year", "taste", "world", "favs"].includes(tab) ? tab : "films"));
+showView(location.hash === "#peliculas" ? "films" : (VIEW_SEQ.includes(tab) ? tab : "films"));
 
 // Sincronización: si el repositorio tiene datos.csv, se añaden sus películas nuevas
 if (location.protocol.startsWith("http") && !location.hostname.endsWith("claude.ai")){
