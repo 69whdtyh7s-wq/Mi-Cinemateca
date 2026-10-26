@@ -129,6 +129,7 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center}
 .chart{position:relative;height:320px}
 .chart.scroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
 .chart-inner{position:relative;height:100%;min-width:100%}
+#ssBody:not([hidden]),#wsBody:not([hidden]){display:flex;flex-direction:column;gap:24px}
 .duo{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:24px}
 .panel-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:12px}
 .head-tools{display:flex;flex-wrap:wrap;align-items:end;gap:12px}
@@ -234,7 +235,12 @@ th button[data-dir="desc"]::after{content:"▼"}
 .prov-src{font-size:12px;color:var(--muted)}
 .ficha-where a{color:var(--accent-ink)}
 .ficha-curio{margin:16px 0 0;font-size:14px}
-.ficha-curio .label{display:block;margin-bottom:6px}
+.ficha-curio summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;padding:8px 0;font-weight:600;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.ficha-curio summary::-webkit-details-marker{display:none}
+.ficha-curio summary::before{content:"▸";display:inline-block;transition:transform .15s;color:var(--muted)}
+.ficha-curio[open] summary::before{transform:rotate(90deg)}
+.ficha-curio summary small{font-weight:400;color:var(--muted)}
+.ficha-curio ul{margin-top:10px}
 .ficha-curio ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;line-height:1.5;max-width:65ch}
 .ficha-curio .curio-src{margin:8px 0 0;font-size:12px;color:var(--muted)}
 .ficha-curio .curio-src a{color:var(--accent-ink)}
@@ -253,6 +259,7 @@ th button[data-dir="desc"]::after{content:"▼"}
 .fav-rate{padding:0 12px 12px}
 .fav-grid:not(.as-list) .fav-rate{padding:0 8px 9px}
 .fav-grid:not(.as-list) .fav-rate .star{font-size:.82rem}
+@media (max-width: 640px){ .fav-grid:not(.as-list) .fav-rate{display:none} }
 .ficha .actions{margin-top:16px}
 .vs li.with-poster{grid-template-columns:22px 34px 1fr auto}
 .vs li.with-poster::after{content:"";grid-column:2;grid-row:1;width:34px;height:51px;border-radius:4px;background:var(--poster) center/cover}
@@ -983,6 +990,7 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
       <div class="panel-head">
         <h2>Detrás de la cámara</h2>
         <div class="field"><label class="label" for="crewSel">Ver</label><select id="crewSel">
+          <option value="dir" selected>Directores</option>
           <option value="wr">Guionistas</option>
           <option value="mu">Compositores</option>
           <option value="ph">Directores de fotografía</option>
@@ -2234,6 +2242,14 @@ function valueLabels(opts = {}){
           ctx.textAlign = inside ? "right" : "left"; ctx.textBaseline = "middle";
           ctx.fillStyle = inside ? (opts.insideColor || "#000") : cssVar("--ink");
           ctx.fillText(t, inside ? bar.x - 5 : bar.x + 5, bar.y);
+        } else if (opts.vertical && opts.vertical()){
+          // iPhone: valor escrito en vertical, dentro de la barra (o justo encima si no cabe)
+          const inside = bar.base - bar.y >= tw + 10;
+          ctx.save(); ctx.font = `600 10px ${cssVar("--font-data")}`;
+          ctx.translate(bar.x, inside ? bar.y + 5 : bar.y - 4); ctx.rotate(-Math.PI / 2);
+          ctx.textBaseline = "middle"; ctx.textAlign = inside ? "right" : "left";
+          ctx.fillStyle = inside ? (opts.insideColor || "#000") : cssVar("--ink");
+          ctx.fillText(t, 0, 0); ctx.restore();
         } else {
           const inside = bar.base - bar.y >= 18 && tw + 2 <= bar.width;
           ctx.textAlign = "center"; ctx.textBaseline = inside ? "top" : "bottom";
@@ -2249,18 +2265,22 @@ function valueLabels(opts = {}){
 function barChart2(key, labels, data, o = {}){
   charts[key]?.destroy();
   const horizontal = !!o.horizontal, grid = cssVar("--line");
+  const phoneNow = () => matchMedia("(max-width: 640px)").matches;
+  const vert = !horizontal && o.verticalPhone ? phoneNow : null;      // años y valores en vertical solo en móvil
+  const xRot = () => vert && vert() ? 90 : 0;
   charts[key] = new Chart(document.getElementById(o.canvas || key), {
     type: "bar",
     data: { labels, datasets: [{ data, backgroundColor: o.color || cssVar("--amber"), borderRadius: 5, barPercentage: .88, categoryPercentage: .9 }] },
     options: { indexAxis: horizontal ? "y" : "x", maintainAspectRatio: false, animation: { duration: motion(), easing: "easeInOutCubic" },
       plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => o.tip ? o.tip(c.raw) : String(c.raw) } }, flagLabels: { codes: o.flags || null } },
-      layout: { padding: horizontal ? { right: 34 } : { top: 20 } },
+      layout: { padding: horizontal ? { right: 34 } : { top: vert && vert() ? 36 : 20 } },
+      onResize: vert ? (ch => { const t = ch.options.scales.x.ticks, r = xRot(), top = r ? 36 : 20; if (t.minRotation !== r || ch.options.layout.padding.top !== top){ t.minRotation = t.maxRotation = r; ch.options.layout.padding.top = top; ch.update("none"); } }) : undefined,
       onHover: (e, el) => { e.native.target.style.cursor = el.length && o.onClick ? "pointer" : (EXPAND[o.canvas || key] ? "zoom-in" : "default"); },
       onClick: (e, el) => { if (el.length && o.onClick) o.onClick(el[0].index); else if (!el.length && EXPAND[o.canvas || key]) openExpand(o.canvas || key); },
       scales: horizontal
         ? { x: { beginAtZero: true, grid: { color: grid }, ticks: { display: false }, border: { display: false } }, y: { grid: { display: false }, ticks: { color: cssVar("--ink"), font: { size: 12 }, padding: o.flags ? 32 : 3 } } }
-        : { x: { grid: { display: false }, ticks: { font: { family: cssVar("--font-data"), size: 11 }, maxRotation: 0, autoSkip: false } }, y: { beginAtZero: true, grid: { color: grid }, ticks: { display: false }, border: { display: false } } } },
-    plugins: [valueLabels({ format: o.format, insideColor: o.insideColor }), ...(o.flags ? [flagLabels] : [])]
+        : { x: { grid: { display: false }, ticks: { font: { family: cssVar("--font-data"), size: 11 }, minRotation: xRot(), maxRotation: xRot(), autoSkip: false } }, y: { beginAtZero: true, grid: { color: grid }, ticks: { display: false }, border: { display: false } } } },
+    plugins: [valueLabels({ format: o.format, insideColor: o.insideColor, vertical: vert }), ...(o.flags ? [flagLabels] : [])]
   });
 }
 
@@ -2440,7 +2460,7 @@ function renderExtras(data){
   document.getElementById("hoursHint").textContent = withRun
     ? `En total llevas ${fmtInt(totalH)} horas de cine, unos ${fmtInt(totalH / 24)} días seguidos. La duración media es de ${fmtInt(data.reduce((a, r) => a + (r.runtime || 0), 0) / withRun)} minutos.`
     : "Este archivo no trae la duración de las películas.";
-  barChart2("hoursChart", years, hours.map(h => Math.round(h)), { color: cssVar("--teal"), format: v => `${v} h`, tip: v => `${v} horas`,
+  barChart2("hoursChart", years, hours.map(h => Math.round(h)), { color: cssVar("--teal"), format: v => `${v} h`, tip: v => `${v} horas`, verticalPhone: true,
     onClick: i => openFilms({ watched: years[i] }) });
 
   // Géneros
@@ -2922,33 +2942,19 @@ async function fetchCurios(r){
   } catch(e) { return { items: [], fail: true }; }   // sin conexión o error: no se guarda, se reintentará
   return out;
 }
-// Datos curiosos calculados con lo que ya sabemos de la película (si la Wikipedia no tiene sección)
-function derivedCurios(r, x){
-  const out = [];
-  if (x && !x.none){
-    if (x.b && x.rv){
-      const ratio = x.rv / x.b;
-      out.push(ratio >= 1
-        ? `Costó ${money(x.b)} y recaudó ${money(x.rv)}: ${ratio >= 2 ? `multiplicó su presupuesto por ${ratio.toFixed(1).replace(".", ",")}` : "recuperó su inversión"}.`
-        : `Costó ${money(x.b)} y recaudó ${money(x.rv)}, así que no llegó a cubrir su presupuesto en taquilla.`);
-    } else if (x.b) out.push(`Tuvo un presupuesto de ${money(x.b)}.`);
-    else if (x.rv) out.push(`Recaudó ${money(x.rv)} en taquilla.`);
-    if (x.ot && x.ot !== r.title) out.push(`Su título original es «${x.ot}».`);
-    if (x.sg?.n) out.push(`Forma parte de la saga «${x.sg.n}».`);
-    if (x.co?.length > 1) out.push(`En su producción participaron ${x.co.length > 3 ? "varias productoras, entre ellas " : ""}${x.co.slice(0, 3).join(", ")}.`);
-  }
-  if (r.runtime >= 170) out.push(`Dura ${r.runtime} minutos: es una película especialmente larga.`);
-  return out;
-}
 function curioHTML(r, x){
-  const id = imdbId(r), c = id && curioCache[id];
-  const wiki = c?.items?.length ? c.items : null;
-  const items = wiki || derivedCurios(r, x);
-  if (!items.length) return "";
-  return `<div class="ficha-curio"><span class="label">Curiosidades</span>
-    <ul>${items.map(t => `<li>${esc(t)}</li>`).join("")}</ul>
-    ${wiki && c.url ? `<p class="curio-src">Fuente: <a href="${esc(c.url)}" target="_blank" rel="noopener">Wikipedia</a> (CC BY-SA)</p>` : ""}</div>`;
+  const id = imdbId(r); if (!id) return "";
+  const c = curioCache[id], items = c?.items?.length ? c.items : [];
+  const imdb = `https://www.imdb.com/title/${id}/trivia/`;
+  const body = items.length
+    ? `<ul>${items.map(t => `<li>${esc(t)}</li>`).join("")}</ul>
+       <p class="curio-src">${c.url ? `Fuente: <a href="${esc(c.url)}" target="_blank" rel="noopener">Wikipedia</a> (CC BY-SA) · ` : ""}<a href="${esc(imdb)}" target="_blank" rel="noopener">Ver más en IMDb</a> (en inglés)</p>`
+    : `<p class="curio-src">${c ? "No hay curiosidades en español para esta película." : "Buscando curiosidades…"} <a href="${esc(imdb)}" target="_blank" rel="noopener">Ver las curiosidades de IMDb</a> (en inglés)</p>`;
+  return `<details class="ficha-curio"${curioOpen ? " open" : ""}><summary>Curiosidades${items.length ? ` <small>${items.length}</small>` : ""}</summary>${body}</details>`;
 }
+// Se recuerda si está desplegada para que no se cierre al recargar los datos de la ficha
+let curioOpen = false;
+document.getElementById("ficha").addEventListener("toggle", e => { if (e.target.classList?.contains("ficha-curio")) curioOpen = e.target.open; }, true);
 async function loadCurios(r){
   const id = imdbId(r);
   if (!id) return;
@@ -2963,6 +2969,7 @@ async function openFicha(r, list){
   if (list) fichaList = list;
   else if (!navInternal){ const f = filtered(); fichaList = f.includes(r) ? f : null; }
   else fichaList = null;
+  if (fichaRow !== r || !document.getElementById("ficha").open) curioOpen = false;
   fichaRow = r;
   const dlg = document.getElementById("ficha");
   const id = imdbId(r);
@@ -3172,15 +3179,18 @@ function renderWorld(){
     .map(o => `<li><span>${filmLink(o.r)}<span class="meta">${[o.r.year, o.x.b ? `presupuesto ${big(o.x.b)}` : ""].filter(Boolean).join(" · ")}</span></span><span class="d down">${big(o.x.rv)}</span></li>`).join("") || `<li class="empty">Sin datos de taquilla.</li>`;
 }
 
-const CREW_LABEL = { wr: ["guionistas", "Guion"], mu: ["compositores", "Música"], ph: ["directores de fotografía", "Fotografía"], co: ["productoras", "Productora"] };
+const CREW_LABEL = { dir: ["directores", "Dirección"], wr: ["guionistas", "Guion"], mu: ["compositores", "Música"], ph: ["directores de fotografía", "Fotografía"], co: ["productoras", "Productora"] };
 function renderCrew(){
   const k = document.getElementById("crewSel").value;
-  const c = {}; worldItems.forEach(o => (o.x[k] || []).forEach(n => { c[n] = (c[n] || 0) + 1; }));
+  // Los directores salen de tu lista de IMDb; el resto del equipo, de TMDb
+  const c = {};
+  if (k === "dir") counted().forEach(r => (r.dir || "").split(",").map(d => d.trim()).filter(Boolean).forEach(n => { c[n] = (c[n] || 0) + 1; }));
+  else worldItems.forEach(o => (o.x[k] || []).forEach(n => { c[n] = (c[n] || 0) + 1; }));
   const all = Object.entries(c).sort((a, b) => b[1] - a[1]), top = all.slice(0, 15);
-  const old = worldItems.filter(o => !o.x.v2).length;
+  const old = k === "dir" ? 0 : worldItems.filter(o => !o.x.v2).length;
   document.getElementById("crewHint").textContent = top.length
     ? `Los ${CREW_LABEL[k][0]} que más se repiten en tus películas. Toca una barra para ver sus películas.` + (old ? ` ${old} películas se descargaron antes de añadir estos datos: pulsa "Continuar descarga" en el menú de ajustes (engranaje) para completarlas.` : "")
-    : `Todavía no hay datos de ${CREW_LABEL[k][0]}. Pulsa "Continuar descarga" en el menú de ajustes (engranaje).`;
+    : k === "dir" ? "Tu lista no trae directores." : `Todavía no hay datos de ${CREW_LABEL[k][0]}. Pulsa "Continuar descarga" en el menú de ajustes (engranaje).`;
   document.getElementById("crewBox").style.height = `${Math.max(top.length, 5) * 26 + 20}px`;
   setExpand("crewChart", CREW_LABEL[k][0].charAt(0).toUpperCase() + CREW_LABEL[k][0].slice(1), all, n => pickCrew(k, n));
   barChart2("crewChart", top.map(t => t[0]), top.map(t => t[1]), { horizontal: true, tip: v => `${v} películas`, onClick: i => pickCrew(k, top[i][0]) });
@@ -3254,7 +3264,7 @@ const birthCode = pl => codeOfCountry(countryOf(pl));
 const pickCountry = (code, name) => filterFilms(`País: ${name || regionName(code)}`, r => (xOf(r).c || []).includes(code));
 const pickLang = (code, name) => filterFilms(`Idioma: ${name || langName(code)}`, r => xOf(r).l === code);
 const pickActor = a => filterFilms(`Reparto: ${a}`, r => (xOf(r).a || []).includes(a));
-const pickCrew = (k, n) => filterFilms(`${CREW_LABEL[k][1]}: ${n}`, r => (xOf(r)[k] || []).includes(n));
+const pickCrew = (k, n) => k === "dir" ? pickDirector(n) : filterFilms(`${CREW_LABEL[k][1]}: ${n}`, r => (xOf(r)[k] || []).includes(n));
 const pickProv = p => filterFilms(`Disponible en: ${p}`, r => (xOf(r).w || []).includes(p));
 
 /* ---------- Favoritos: lista de personas de IMDb ---------- */
