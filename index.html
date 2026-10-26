@@ -18,7 +18,7 @@ body{margin:0}
 img{max-width:100%}
 [hidden]{display:none!important}
 </style>
-<title>Mi Cinemateca</title>
+<title>Cinemateca</title>
 <link rel="icon" type="image/svg+xml" href='data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"%3E %3Crect width="64" height="64" rx="14" fill="%235a9a91"/%3E %3Cpath d="M42 46 Q50 56 58 55" fill="none" stroke="%23d9ad4f" stroke-width="5" stroke-linecap="round"/%3E %3Ccircle cx="32" cy="31" r="20" fill="%23f2ead8" stroke="%23231f19" stroke-width="2"/%3E %3Cg fill="%235a9a91"%3E %3Ccircle cx="32" cy="20" r="5"/%3E %3Ccircle cx="42.5" cy="27.6" r="5"/%3E %3Ccircle cx="38.5" cy="39.9" r="5"/%3E %3Ccircle cx="25.5" cy="39.9" r="5"/%3E %3Ccircle cx="21.5" cy="27.6" r="5"/%3E %3C/g%3E %3Ccircle cx="32" cy="31" r="3" fill="%23cf8f3a"/%3E %3C/svg%3E'>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
@@ -233,6 +233,26 @@ th button[data-dir="desc"]::after{content:"▼"}
 .prov span{white-space:nowrap}
 .prov-src{font-size:12px;color:var(--muted)}
 .ficha-where a{color:var(--accent-ink)}
+.ficha-curio{margin:16px 0 0;font-size:14px}
+.ficha-curio .label{display:block;margin-bottom:6px}
+.ficha-curio ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;line-height:1.5;max-width:65ch}
+.ficha-curio .curio-src{margin:8px 0 0;font-size:12px;color:var(--muted)}
+.ficha-curio .curio-src a{color:var(--accent-ink)}
+.rate{margin:14px 0 0}
+.rate .label{display:block;margin-bottom:4px;font-size:14px;color:var(--muted)}
+.rate .rate-hint{margin:4px 0 0;font-size:12px;color:var(--muted)}
+.stars{display:flex;flex-wrap:wrap;align-items:center;gap:2px 8px}
+.st-row{display:flex;gap:1px}
+.star{position:relative;display:inline-block;font-size:.95rem;line-height:1;color:var(--line);user-select:none;-webkit-user-select:none}
+.star.full{color:#d9ad4f}
+.st-hit{position:absolute;top:-8px;bottom:-8px;left:-1px;right:-1px;padding:0;margin:0;border:0;background:none;cursor:pointer;opacity:0;-webkit-tap-highlight-color:transparent}
+.st-num{font-size:12px;font-weight:700;color:var(--ink)}
+.rate .star{font-size:1.5rem}
+.rate .st-row{gap:2px}
+.rate .st-num{font-size:1rem}
+.fav-rate{padding:0 12px 12px}
+.fav-grid:not(.as-list) .fav-rate{padding:0 8px 9px}
+.fav-grid:not(.as-list) .fav-rate .star{font-size:.82rem}
 .ficha .actions{margin-top:16px}
 .vs li.with-poster{grid-template-columns:22px 34px 1fr auto}
 .vs li.with-poster::after{content:"";grid-column:2;grid-row:1;width:34px;height:51px;border-radius:4px;background:var(--poster) center/cover}
@@ -679,7 +699,7 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
 <div class="wrap">
   <header>
     <div>
-      <h1 id="homeLink" role="link" tabindex="0" title="Ir al inicio"><svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" aria-hidden="true"> <rect width="64" height="64" rx="14" fill="#5a9a91"/> <path d="M42 46 Q50 56 58 55" fill="none" stroke="#d9ad4f" stroke-width="5" stroke-linecap="round"/> <circle cx="32" cy="31" r="20" fill="#f2ead8" stroke="#231f19" stroke-width="2"/> <g fill="#5a9a91"> <circle cx="32" cy="20" r="5"/> <circle cx="42.5" cy="27.6" r="5"/> <circle cx="38.5" cy="39.9" r="5"/> <circle cx="25.5" cy="39.9" r="5"/> <circle cx="21.5" cy="27.6" r="5"/> </g> <circle cx="32" cy="31" r="3" fill="#cf8f3a"/> </svg><span>Mi Cinemateca</span></h1>
+      <h1 id="homeLink" role="link" tabindex="0" title="Ir al inicio"><svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" aria-hidden="true"> <rect width="64" height="64" rx="14" fill="#5a9a91"/> <path d="M42 46 Q50 56 58 55" fill="none" stroke="#d9ad4f" stroke-width="5" stroke-linecap="round"/> <circle cx="32" cy="31" r="20" fill="#f2ead8" stroke="#231f19" stroke-width="2"/> <g fill="#5a9a91"> <circle cx="32" cy="20" r="5"/> <circle cx="42.5" cy="27.6" r="5"/> <circle cx="38.5" cy="39.9" r="5"/> <circle cx="25.5" cy="39.9" r="5"/> <circle cx="21.5" cy="27.6" r="5"/> </g> <circle cx="32" cy="31" r="3" fill="#cf8f3a"/> </svg><span>Cinemateca</span></h1>
       <p class="sub">Estadísticas de lo que has visto, a partir de tu lista de IMDb.</p>
     </div>
   <div class="pill" role="toolbar" aria-label="Opciones">
@@ -1018,6 +1038,7 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
           <select id="favSort">
             <option value="seen">Títulos vistos</option>
             <option value="pct">% de su carrera visto</option>
+            <option value="score">Tu puntuación (1–10)</option>
             <option value="avg">Tu nota media</option>
             <option value="total">Películas en su carrera</option>
             <option value="name">Nombre</option>
@@ -1397,8 +1418,15 @@ function pruneWatch(){
   }
   return removed;
 }
+const DUPSEEN_KEY = "cinemateca-dup-avisados";
 function showDupNotice(list){
-  if (!list.length) return;
+  // Cada título se avisa una sola vez: si el CSV de GitHub lo vuelve a traer, se quita en silencio
+  let avisados = []; try { avisados = JSON.parse(localStorage.getItem(DUPSEEN_KEY) || "[]"); if (!Array.isArray(avisados)) avisados = []; } catch(e) {}
+  const ya = new Set(avisados);
+  const nuevos = list.filter(r => !ya.has(dupKey(r)));
+  if (!nuevos.length) return;
+  try { localStorage.setItem(DUPSEEN_KEY, JSON.stringify([...ya, ...nuevos.map(dupKey)])); } catch(e) {}
+  list = nuevos;
   const box = document.getElementById("dupNotice");
   const MAX = 15, names = list.slice(0, MAX).map(r => `<li>${r.url ? `<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title)}</a>` : esc(r.title)}${r.year ? ` (${r.year})` : ""}</li>`).join("");
   box.innerHTML = `<button class="pop-close" type="button" aria-label="Cerrar aviso">✕</button>
@@ -2616,7 +2644,7 @@ document.getElementById("exportBtn").addEventListener("click", () => {
   const blob = new Blob([JSON.stringify({ app: "mi-cinemateca", version: 1, exported: new Date().toISOString(), rows, people, watch, series, swatch }, null, 1)], { type: "application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `mi-cinemateca-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `cinemateca-${new Date().toISOString().slice(0, 10)}.json`;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   msg.className = "msg"; msg.textContent = `Copia exportada con ${rows.length} títulos.`;
@@ -2842,6 +2870,7 @@ function fichaHTML(r, x){
         ${extra}
         <dl class="ficha-facts">${facts.map(([k, v]) => `<dt>${k}</dt><dd>${typeof v === "object" ? v.html : esc(String(v))}</dd>`).join("")}</dl>
         ${whereHTML(r, x)}
+        <div id="curioBox">${curioHTML(r, x)}</div>
         <div class="actions">
           ${r.url ? `<a class="btn ghost" href="${esc(r.url)}" target="_blank" rel="noopener">Ver en IMDb</a>` : ""}
           <button class="btn ghost" type="button" data-edit>Cambiar nota o fecha</button>
@@ -2849,6 +2878,83 @@ function fichaHTML(r, x){
         </div>
       </div>
     </div>`;
+}
+
+/* ---------- Curiosidades (en español) ----------
+   Se buscan en la Wikipedia en español a través de Wikidata (por el código de IMDb) y se muestra su
+   sección "Curiosidades" si la tiene. Si no, se muestran datos curiosos sacados de los datos de TMDb. */
+const CURIO_KEY = "cinemateca-curiosidades";
+let curioCache = {};
+try { curioCache = JSON.parse(localStorage.getItem(CURIO_KEY) || "{}") || {}; } catch(e) { curioCache = {}; }
+function saveCurio(){
+  try { localStorage.setItem(CURIO_KEY, JSON.stringify(curioCache)); }
+  catch(e){ const ks = Object.keys(curioCache); ks.slice(0, Math.ceil(ks.length / 2)).forEach(k => delete curioCache[k]); try { localStorage.setItem(CURIO_KEY, JSON.stringify(curioCache)); } catch(e2) {} }
+}
+const wikiApi = (host, params) => { const u = new URL(`https://${host}/w/api.php`); Object.entries({ format: "json", origin: "*", ...params }).forEach(([k, v]) => u.searchParams.set(k, v)); return fetch(u).then(r => { if (!r.ok) throw new Error("wiki"); return r.json(); }); };
+async function fetchCurios(r){
+  const id = imdbId(r);
+  if (!id) return { items: [] };
+  const c = curioCache[id];
+  if (c && Date.now() - c.t < 30 * 864e5) return c;
+  let out = { t: Date.now(), items: [], url: "" };
+  try {
+    const found = await wikiApi("www.wikidata.org", { action: "query", list: "search", srsearch: `haswbstatement:P345=${id}`, srlimit: 1 });
+    const qid = found.query?.search?.[0]?.title;
+    if (qid){
+      const ent = await wikiApi("www.wikidata.org", { action: "wbgetentities", ids: qid, props: "sitelinks", sitefilter: "eswiki" });
+      const page = ent.entities?.[qid]?.sitelinks?.eswiki?.title;
+      if (page){
+        out.url = "https://es.wikipedia.org/wiki/" + encodeURIComponent(page.replace(/ /g, "_"));
+        const secs = await wikiApi("es.wikipedia.org", { action: "parse", page, prop: "sections", redirects: 1 });
+        const sec = (secs.parse?.sections || []).find(x => /curiosidades|datos curiosos|an[eé]cdotas|trivia/i.test(x.line.replace(/<[^>]+>/g, "")));
+        if (sec){
+          const body = await wikiApi("es.wikipedia.org", { action: "parse", page, section: sec.index, prop: "text", disableeditsection: 1, redirects: 1 });
+          const doc = new DOMParser().parseFromString(body.parse?.text?.["*"] || "", "text/html");
+          doc.querySelectorAll("sup, style, script, .mw-editsection, table, .navbox, .reflist, .thumb").forEach(n => n.remove());
+          const clean = t => t.replace(/\[\s*\d+\s*\]/g, "").replace(/\s+/g, " ").trim();
+          let items = [...doc.querySelectorAll("li")].map(n => clean(n.textContent));
+          if (!items.length) items = [...doc.querySelectorAll("p")].map(n => clean(n.textContent));
+          out.items = items.filter(t => t.length > 25).slice(0, 8);
+        }
+      }
+    }
+    curioCache[id] = out; saveCurio();
+  } catch(e) { return { items: [], fail: true }; }   // sin conexión o error: no se guarda, se reintentará
+  return out;
+}
+// Datos curiosos calculados con lo que ya sabemos de la película (si la Wikipedia no tiene sección)
+function derivedCurios(r, x){
+  const out = [];
+  if (x && !x.none){
+    if (x.b && x.rv){
+      const ratio = x.rv / x.b;
+      out.push(ratio >= 1
+        ? `Costó ${money(x.b)} y recaudó ${money(x.rv)}: ${ratio >= 2 ? `multiplicó su presupuesto por ${ratio.toFixed(1).replace(".", ",")}` : "recuperó su inversión"}.`
+        : `Costó ${money(x.b)} y recaudó ${money(x.rv)}, así que no llegó a cubrir su presupuesto en taquilla.`);
+    } else if (x.b) out.push(`Tuvo un presupuesto de ${money(x.b)}.`);
+    else if (x.rv) out.push(`Recaudó ${money(x.rv)} en taquilla.`);
+    if (x.ot && x.ot !== r.title) out.push(`Su título original es «${x.ot}».`);
+    if (x.sg?.n) out.push(`Forma parte de la saga «${x.sg.n}».`);
+    if (x.co?.length > 1) out.push(`En su producción participaron ${x.co.length > 3 ? "varias productoras, entre ellas " : ""}${x.co.slice(0, 3).join(", ")}.`);
+  }
+  if (r.runtime >= 170) out.push(`Dura ${r.runtime} minutos: es una película especialmente larga.`);
+  return out;
+}
+function curioHTML(r, x){
+  const id = imdbId(r), c = id && curioCache[id];
+  const wiki = c?.items?.length ? c.items : null;
+  const items = wiki || derivedCurios(r, x);
+  if (!items.length) return "";
+  return `<div class="ficha-curio"><span class="label">Curiosidades</span>
+    <ul>${items.map(t => `<li>${esc(t)}</li>`).join("")}</ul>
+    ${wiki && c.url ? `<p class="curio-src">Fuente: <a href="${esc(c.url)}" target="_blank" rel="noopener">Wikipedia</a> (CC BY-SA)</p>` : ""}</div>`;
+}
+async function loadCurios(r){
+  const id = imdbId(r);
+  if (!id) return;
+  const res = await fetchCurios(r);
+  const dlg = document.getElementById("ficha"), box = dlg.querySelector("#curioBox");
+  if (dlg.open && fichaRow === r && box) box.innerHTML = curioHTML(r, tmdbCache[id]);
 }
 
 let fichaRow = null;
@@ -2862,6 +2968,7 @@ async function openFicha(r, list){
   const id = imdbId(r);
   dlg.innerHTML = fichaHTML(r, tmdbCache[id]);
   if (!dlg.open) dlg.showModal();
+  loadCurios(r);
   if (tmdbKey && id && !isFresh(id)){
     try { const x = await fetchTmdb(r); if (dlg.open && fichaRow === r) dlg.innerHTML = fichaHTML(r, x); }
     catch(e){ if (dlg.open) dlg.querySelector(".ficha-note").textContent = e.message; }
@@ -3401,7 +3508,7 @@ function renderFavs(){
   const byName = (a, b) => (a.x?.n || a.p.name).localeCompare(b.x?.n || b.p.name, "es");
   const idx = new Map(people.map((p, i) => [p.id, i]));
   const val = c => ({
-    seen: c.seen.length, total: c.total || null, avg: c.avg,
+    seen: c.seen.length, total: c.total || null, avg: c.avg, score: c.p.score || null,
     pct: c.total ? c.seenMovies / c.total : null,
     birth: c.x?.b ? -Date.parse(c.x.b) : null, // más edad = valor mayor
     added: idx.get(c.p.id), name: null
@@ -3440,7 +3547,7 @@ function renderFavs(){
       </details>` : "";
     const fc = personCode(c.x);
     const flag = fc ? flagImg(fc, `Nació en ${personCountry(c.x)}`) : "";
-    return `<article class="fav panel"><button type="button" class="fav-top" data-open-person="${esc(c.p.id)}" aria-label="Abrir la ficha de ${esc(c.x?.n || c.p.name)}">${photo}${flag ? `<span class="fav-flag">${flag}</span>` : ""}<div class="fav-info"><h3>${esc(c.x?.n || c.p.name)}${flag ? `<span class="fav-flag-i">${flag}</span>` : ""}</h3>${stats}</div></button></article>`;
+    return `<article class="fav panel"><button type="button" class="fav-top" data-open-person="${esc(c.p.id)}" aria-label="Abrir la ficha de ${esc(c.x?.n || c.p.name)}">${photo}${flag ? `<span class="fav-flag">${flag}</span>` : ""}<div class="fav-info"><h3>${esc(c.x?.n || c.p.name)}${flag ? `<span class="fav-flag-i">${flag}</span>` : ""}</h3>${stats}</div></button><div class="fav-rate">${starsHTML(c.p.id, c.p.score || 0)}</div></article>`;
   }).join("");
 }
 document.getElementById("favList").addEventListener("click", e => {
@@ -3666,6 +3773,31 @@ async function fetchPersonDetails(p){
   return x;
 }
 
+// 10 estrellas: cada una es 1 punto (de 1 a 10)
+function starsHTML(pid, score){
+  let h = "";
+  for (let i = 1; i <= 10; i++) h += `<span class="star ${score >= i ? "full" : ""}">★<button type="button" class="st-hit" data-rate="${i}" aria-label="Puntuar ${i} de 10"></button></span>`;
+  return `<div class="stars" data-pid="${esc(pid)}" role="group" aria-label="Tu puntuación"><span class="st-row">${h}</span><span class="st-num">${score ? score + "/10" : ""}</span></div>`;
+}
+function rateHTML(p){
+  const q = people.find(x => x.id === p.id);
+  if (!q) return `<div class="rate"><span class="label">Tu puntuación</span><p class="rate-hint">Añádelo a Artistas para puntuarlo.</p></div>`;
+  return `<div class="rate"><span class="label">Tu puntuación</span>${starsHTML(q.id, q.score || 0)}<p class="rate-hint">Toca una estrella para puntuar de 1 a 10. Toca la misma otra vez para quitar la puntuación.</p></div>`;
+}
+// Un solo manejador para las estrellas de la tarjeta y de la ficha
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-rate]"); if (!b) return;
+  const box = b.closest(".stars"); if (!box) return;
+  const q = people.find(x => x.id === box.dataset.pid); if (!q) return;
+  e.stopPropagation();
+  const n = +b.dataset.rate;
+  if (q.score === n) delete q.score; else q.score = n;
+  savePeople();
+  document.querySelectorAll(".stars").forEach(el => { if (el.dataset.pid === q.id) el.outerHTML = starsHTML(q.id, q.score || 0); });
+  const dlg = document.getElementById("personDlg");
+  if (dlg.open && personOpen && personOpen.id === q.id){ const st = dlg.scrollTop; dlg.innerHTML = personHTML(personOpen); dlg.scrollTop = st; }
+  if (aSort.key === "score") renderFavs();
+}, true);
 function personHTML(p){
   const x = personCache[p.id] || {};
   const seenMap = new Map();
@@ -3690,6 +3822,7 @@ function personHTML(p){
   const pct = movies.length ? Math.round(seenMovies / movies.length * 100) : 0;
   const firstSeen = seen.slice().sort((a, b) => (a.r.watchedDate || "").localeCompare(b.r.watchedDate || ""))[0];
 
+  const mine = (people.find(q => q.id === p.id) || {}).score || 0;
   const poster = (path, alt) => path ? `<img src="${TMDB_IMG}w185${path}" alt="${esc(alt)}" loading="lazy">` : `<span class="pg-ph" aria-hidden="true"></span>`;
   const facts = [
     ["Especialidad", dep],
@@ -3712,7 +3845,9 @@ function personHTML(p){
           <span class="score mine-s"><b>${seen.length}</b>Vistos</span>
           ${movies.length ? `<span class="score"><b>${pct}%</b>De sus películas</span>` : ""}
           ${avg != null ? `<span class="score"><b>${fmt1(avg)}</b>Tu nota media</span>` : ""}
+          ${mine ? `<span class="score mine-s"><b>${mine}</b>Tu puntuación</span>` : ""}
         </div>
+        ${rateHTML(p)}
         <dl class="ficha-facts">${facts.map(([k, v]) => `<dt>${k}</dt><dd>${typeof v === "object" ? v.html : esc(String(v))}</dd>`).join("")}</dl>
         <div class="actions">
           ${x.imdb || /^nm\d+/.test(p.id) ? `<a class="btn ghost" href="https://www.imdb.com/name/${esc(x.imdb || p.id)}/" target="_blank" rel="noopener">Ver en IMDb</a>` : ""}
