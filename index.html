@@ -2911,32 +2911,46 @@ function saveCurio(){
   catch(e){ const ks = Object.keys(curioCache); ks.slice(0, Math.ceil(ks.length / 2)).forEach(k => delete curioCache[k]); try { localStorage.setItem(CURIO_KEY, JSON.stringify(curioCache)); } catch(e2) {} }
 }
 const wikiApi = (host, params) => { const u = new URL(`https://${host}/w/api.php`); Object.entries({ format: "json", origin: "*", ...params }).forEach(([k, v]) => u.searchParams.set(k, v)); return fetch(u).then(r => { if (!r.ok) throw new Error("wiki"); return r.json(); }); };
+// Texto de una sección de Wikipedia: lista (curiosidades) o párrafos (producción)
+async function wikiSection(host, page, re, asParas){
+  const secs = await wikiApi(host, { action: "parse", page, prop: "sections", redirects: 1 });
+  const sec = (secs.parse?.sections || []).find(x => re.test(x.line.replace(/<[^>]+>/g, "")));
+  if (!sec) return [];
+  const body = await wikiApi(host, { action: "parse", page, section: sec.index, prop: "text", disableeditsection: 1, redirects: 1 });
+  const doc = new DOMParser().parseFromString(body.parse?.text?.["*"] || "", "text/html");
+  doc.querySelectorAll("sup, style, script, .mw-editsection, table, .navbox, .reflist, .thumb, figure, .hatnote").forEach(n => n.remove());
+  const clean = t => t.replace(/\[[^\]]{1,12}\]/g, "").replace(/\s+/g, " ").trim();
+  const cut = t => { if (t.length <= 300) return t; const k = t.slice(0, 300), e = Math.max(k.lastIndexOf(". "), k.lastIndexOf("? ")); return e > 120 ? k.slice(0, e + 1) : k.replace(/\s\S*$/, "") + "…"; };
+  let items = [...doc.querySelectorAll(asParas ? "p" : "li")].map(n => clean(n.textContent));
+  if (!items.length) items = [...doc.querySelectorAll(asParas ? "li" : "p")].map(n => clean(n.textContent));
+  return items.filter(t => t.length > 40).slice(0, asParas ? 6 : 8).map(cut);
+}
 async function fetchCurios(r){
   const id = imdbId(r);
   if (!id) return { items: [] };
   const c = curioCache[id];
-  if (c && Date.now() - c.t < 30 * 864e5) return c;
-  let out = { t: Date.now(), items: [], url: "" };
+  if (c && c.v === 3 && Date.now() - c.t < 30 * 864e5) return c;
+  let out = { v: 3, t: Date.now(), items: [], url: "", src: "" };
   try {
     const found = await wikiApi("www.wikidata.org", { action: "query", list: "search", srsearch: `haswbstatement:P345=${id}`, srlimit: 1 });
     const qid = found.query?.search?.[0]?.title;
     if (qid){
-      const ent = await wikiApi("www.wikidata.org", { action: "wbgetentities", ids: qid, props: "sitelinks", sitefilter: "eswiki" });
-      const page = ent.entities?.[qid]?.sitelinks?.eswiki?.title;
-      if (page){
-        out.url = "https://es.wikipedia.org/wiki/" + encodeURIComponent(page.replace(/ /g, "_"));
-        const secs = await wikiApi("es.wikipedia.org", { action: "parse", page, prop: "sections", redirects: 1 });
-        const sec = (secs.parse?.sections || []).find(x => /curiosidades|datos curiosos|an[eé]cdotas|trivia/i.test(x.line.replace(/<[^>]+>/g, "")));
-        if (sec){
-          const body = await wikiApi("es.wikipedia.org", { action: "parse", page, section: sec.index, prop: "text", disableeditsection: 1, redirects: 1 });
-          const doc = new DOMParser().parseFromString(body.parse?.text?.["*"] || "", "text/html");
-          doc.querySelectorAll("sup, style, script, .mw-editsection, table, .navbox, .reflist, .thumb").forEach(n => n.remove());
-          const clean = t => t.replace(/\[\s*\d+\s*\]/g, "").replace(/\s+/g, " ").trim();
-          let items = [...doc.querySelectorAll("li")].map(n => clean(n.textContent));
-          if (!items.length) items = [...doc.querySelectorAll("p")].map(n => clean(n.textContent));
-          out.items = items.filter(t => t.length > 25).slice(0, 8);
-        }
+      const ent = await wikiApi("www.wikidata.org", { action: "wbgetentities", ids: qid, props: "sitelinks", sitefilter: "eswiki|enwiki" });
+      const sl = ent.entities?.[qid]?.sitelinks || {};
+      const es = sl.eswiki?.title, en = sl.enwiki?.title;
+      const link = (host, t) => `https://${host}/wiki/` + encodeURIComponent(t.replace(/ /g, "_"));
+      const tries = [
+        es && ["es.wikipedia.org", es, /curiosidades|datos curiosos|an[eé]cdotas|trivia/i, false, "Wikipedia en español"],
+        en && ["en.wikipedia.org", en, /trivia|in popular culture/i, false, "Wikipedia (en inglés)"],
+        es && ["es.wikipedia.org", es, /producci[oó]n|rodaje|reparto|desarrollo|filmaci[oó]n/i, true, "Wikipedia en español"],
+        en && ["en.wikipedia.org", en, /production|filming|casting|development/i, true, "Wikipedia (en inglés)"]
+      ].filter(Boolean);
+      for (const [host, page, re, paras, label] of tries){
+        let items = [];
+        try { items = await wikiSection(host, page, re, paras); } catch(e) {}
+        if (items.length){ out.items = items; out.url = link(host, page); out.src = label; break; }
       }
+      if (!out.url && (es || en)){ out.url = es ? link("es.wikipedia.org", es) : link("en.wikipedia.org", en); }
     }
     curioCache[id] = out; saveCurio();
   } catch(e) { return { items: [], fail: true }; }   // sin conexión o error: no se guarda, se reintentará
@@ -2948,8 +2962,8 @@ function curioHTML(r, x){
   const imdb = `https://www.imdb.com/title/${id}/trivia/`;
   const body = items.length
     ? `<ul>${items.map(t => `<li>${esc(t)}</li>`).join("")}</ul>
-       <p class="curio-src">${c.url ? `Fuente: <a href="${esc(c.url)}" target="_blank" rel="noopener">Wikipedia</a> (CC BY-SA) · ` : ""}<a href="${esc(imdb)}" target="_blank" rel="noopener">Ver más en IMDb</a> (en inglés)</p>`
-    : `<p class="curio-src">${c ? "No hay curiosidades en español para esta película." : "Buscando curiosidades…"} <a href="${esc(imdb)}" target="_blank" rel="noopener">Ver las curiosidades de IMDb</a> (en inglés)</p>`;
+       <p class="curio-src">${c.url ? `Fuente: <a href="${esc(c.url)}" target="_blank" rel="noopener">${esc(c.src || "Wikipedia")}</a> (CC BY-SA) · ` : ""}<a href="${esc(imdb)}" target="_blank" rel="noopener">Ver más en IMDb</a> (en inglés)</p>`
+    : `<p class="curio-src">${c ? "No he encontrado curiosidades de esta película." : "Buscando curiosidades…"} <a href="${esc(imdb)}" target="_blank" rel="noopener">Ver las curiosidades de IMDb</a> (en inglés)</p>`;
   return `<details class="ficha-curio"${curioOpen ? " open" : ""}><summary>Curiosidades${items.length ? ` <small>${items.length}</small>` : ""}</summary>${body}</details>`;
 }
 // Se recuerda si está desplegada para que no se cierre al recargar los datos de la ficha
