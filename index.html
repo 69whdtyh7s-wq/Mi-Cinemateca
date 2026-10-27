@@ -4333,7 +4333,18 @@ function load(text, name, opts = {}){
       if (Array.isArray(backup.series)){ series = backup.series; saveSeries(); }
       if (Array.isArray(backup.swatch)){ swatch = backup.swatch; saveSWatch(); }
       if (Array.isArray(backup.watch)){ watch = backup.watch.map(r => ({ ...r, todo: true })); saveWatch(); }
-      if (Array.isArray(backup.people) && backup.people.length){ const known = new Set(people.map(p => p.id)); backup.people.forEach(p => { if (!known.has(p.id)) people.push(p); }); savePeople(); }
+      if (Array.isArray(backup.people) && backup.people.length){
+        // Los artistas nuevos se añaden; en los que ya existen, la puntuación de la copia sustituye a la del dispositivo (si la copia trae una)
+        const byId = new Map(people.map(p => [String(p.id), p]));
+        backup.people.forEach(p => {
+          const cur = byId.get(String(p.id));
+          if (!cur){ people.push(p); return; }
+          if (+p.score > 0) cur.score = +p.score;
+          Object.keys(p).forEach(k => { if (cur[k] == null || cur[k] === "") cur[k] = p[k]; });
+        });
+        savePeople();
+        try { renderFavs(); if (typeof renderArtistStats === "function") renderArtistStats(); } catch(e) {}
+      }
     } else {
       const objs = parseCSV(text);
       if (isPeopleCSV(objs)){ loadPeople(objs, name || "el archivo", opts.quiet); return; }
