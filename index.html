@@ -336,6 +336,10 @@ body.no-data .view{display:none!important}
 .pop.sheet{overscroll-behavior:contain;touch-action:pan-y}
 .pop.sheet.dragging{transition:none}
 .pop.sheet.settling{transition:transform .22s cubic-bezier(.2,.8,.2,1)}
+/* Fichas y ventanas: arrastrar hacia abajo para cerrar */
+dialog{overscroll-behavior:contain}
+dialog.dragging{transition:none}
+dialog.settling{transition:transform .22s cubic-bezier(.2,.8,.2,1)}
 /* Deslizar hacia abajo para recargar (app en pantalla de inicio) */
 .ptr{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 6px);z-index:60;width:40px;height:40px;margin-left:-20px;border-radius:50%;background:var(--surface);color:var(--accent-ink);border:1px solid var(--line);box-shadow:0 4px 14px rgba(0,0,0,.15);display:grid;place-items:center;transform:translateY(-70px);opacity:0;pointer-events:none}
 .ptr.back{transition:transform .25s ease,opacity .25s}
@@ -4490,6 +4494,52 @@ document.getElementById("backupBtn").addEventListener("click", () => togglePanel
 document.getElementById("themeBtn").addEventListener("click", () => togglePanel("themeBtn", "themePanel"));
 document.querySelector('label.tile[for="file"]').addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); document.getElementById("file").click(); } });
 document.getElementById("file").addEventListener("change", closePops);
+
+// Fichas y ventanas (iPhone / iPad): arrastrar hacia abajo para cerrar
+(() => {
+  if (!("ontouchstart" in window)) return;
+  let dlg = null, tgt = null, x0 = 0, y0 = 0, t0 = 0, dy = 0, drag = false, track = false;
+  const scrolled = () => {
+    for (let el = tgt; el && el !== dlg; el = el.parentElement){
+      if (el.scrollTop > 0){ const o = getComputedStyle(el).overflowY; if (o === "auto" || o === "scroll") return true; }
+    }
+    return dlg.scrollTop > 0;
+  };
+  document.addEventListener("touchstart", e => {
+    track = drag = false;
+    if (e.touches.length > 1 || !(e.target instanceof Element)) return;
+    const d = e.target.closest("dialog[open]");
+    if (!d || e.target.closest("input, select, textarea, .scrub")) return;
+    dlg = d; tgt = e.target; x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = performance.now(); dy = 0; track = true;
+  }, { passive: true });
+  document.addEventListener("touchmove", e => {
+    if (!track) return;
+    const dx = e.touches[0].clientX - x0, d = e.touches[0].clientY - y0;
+    if (!drag){
+      if (Math.max(Math.abs(dx), Math.abs(d)) < 8) return;
+      if (Math.abs(dx) > Math.abs(d) || d < 0 || scrolled()){ track = false; return; }
+      drag = true; dlg.classList.remove("settling"); dlg.classList.add("dragging");
+    }
+    e.preventDefault();
+    dy = Math.max(0, d);
+    dlg.style.transform = `translateY(${dy}px)`;
+  }, { passive: false });
+  const end = () => {
+    if (!drag){ track = false; return; }
+    const d = dlg; drag = track = false;
+    d.classList.remove("dragging"); d.classList.add("settling");
+    const fast = dy > 40 && dy / Math.max(1, performance.now() - t0) > 0.5;
+    if (dy > Math.min(120, d.offsetHeight * 0.25) || fast){
+      d.style.transform = `translateY(${innerHeight}px)`;
+      setTimeout(() => { d.close(); d.classList.remove("settling"); d.style.transform = ""; }, 220);
+    } else {
+      d.style.transform = "";
+      setTimeout(() => d.classList.remove("settling"), 240);
+    }
+  };
+  document.addEventListener("touchend", end);
+  document.addEventListener("touchcancel", end);
+})();
 
 // Recargar (las web apps del iPhone no tienen botón de recargar)
 document.getElementById("reloadBtn").addEventListener("click", async () => {
