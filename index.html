@@ -17,6 +17,7 @@
 body{margin:0}
 img{max-width:100%}
 [hidden]{display:none!important}
+
 </style>
 <title>Cinemateca</title>
 <link rel="icon" type="image/svg+xml" href='data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"%3E %3Crect width="64" height="64" rx="14" fill="%235a9a91"/%3E %3Cpath d="M42 46 Q50 56 58 55" fill="none" stroke="%23d9ad4f" stroke-width="5" stroke-linecap="round"/%3E %3Ccircle cx="32" cy="31" r="20" fill="%23f2ead8" stroke="%23231f19" stroke-width="2"/%3E %3Cg fill="%235a9a91"%3E %3Ccircle cx="32" cy="20" r="5"/%3E %3Ccircle cx="42.5" cy="27.6" r="5"/%3E %3Ccircle cx="38.5" cy="39.9" r="5"/%3E %3Ccircle cx="25.5" cy="39.9" r="5"/%3E %3Ccircle cx="21.5" cy="27.6" r="5"/%3E %3C/g%3E %3Ccircle cx="32" cy="31" r="3" fill="%23cf8f3a"/%3E %3C/svg%3E'>
@@ -704,6 +705,19 @@ button,.btn,.chip,.tab,a{touch-action:manipulation;-webkit-tap-highlight-color:t
   .fav-grid:not(.as-list) .fav-photo.ph{font-size:2.2rem}
 }
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
+/* Escritorio: aprovechar el ancho de pantalla */
+@media (min-width: 1100px){
+  .wrap{max-width:min(1880px,100%);padding-inline:clamp(24px,3vw,56px)}
+  .duo{grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr))}
+  .film-cards{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+  .poster-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
+  .fav-grid:not(.as-list){grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
+  .minor{grid-template-columns:repeat(auto-fit,minmax(110px,auto))}
+}
+@media (min-width: 1700px){
+  .film-cards{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
+  .chart{height:360px}
+}
 </style>
 </head>
 <body>
