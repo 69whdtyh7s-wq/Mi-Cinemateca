@@ -12,7 +12,7 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 11,nm0186505,2019-07-30,2019-07-30,,"Bryan Cranston","Breaking Bad","7 de marzo de 1956"
 12,nm0644022,2019-07-30,2019-07-30,,"Bob Odenkirk","Nobody","22 de octubre de 1962"
 13,nm0000867,2019-07-30,2019-07-30,,"Jason Bateman","Arrested Development","14 de enero de 1969"
-14,nm0000228,2019-07-30,2019-07-30,,"Kevin Spacey","L.A. Confidential","26 de julio de 1959"
+14,nm0000228,2019-07-30,2019-07-30,,"Kevin Spacey","The Usual Suspects","26 de julio de 1959"
 15,nm0000197,2019-07-30,2019-07-30,,"Jack Nicholson","Chinatown","22 de abril de 1937"
 16,nm0000619,2019-07-30,2019-07-30,,"Tim Roth","Rob Roy","14 de mayo de 1961"
 17,nm0000179,2019-07-30,2019-07-30,,"Jude Law","The Talented Mr. Ripley","29 de diciembre de 1972"
@@ -34,13 +34,13 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 33,nm0000190,2019-07-30,2019-07-30,,"Matthew McConaughey","Interstellar","4 de noviembre de 1969"
 34,nm0000353,2019-07-30,2019-07-30,,"Willem Dafoe","Spider-Man","22 de julio de 1955"
 35,nm0000450,2019-07-30,2019-07-30,,"Philip Seymour Hoffman","The Master","23 de julio de 1967"
-36,nm1706767,2019-07-30,2019-07-30,,"Jonah Hill","22 Jump Street","20 de diciembre de 1983"
+36,nm1706767,2019-07-30,2019-07-30,,"Jonah Hill","21 Jump Street","20 de diciembre de 1983"
 37,nm0200452,2019-07-30,2019-07-30,,"Paul Dano","There Will Be Blood","19 de junio de 1984"
 38,nm0915208,2019-07-30,2019-07-30,,"Naomi Watts","Mulholland Dr.","28 de septiembre de 1968"
-39,nm0001250,2019-07-30,2019-07-30,,"Charlotte Gainsbourg","Nymphomaniac: Vol. II","21 de julio de 1971"
+39,nm0001250,2019-07-30,2019-07-30,,"Charlotte Gainsbourg","Antichrist","21 de julio de 1971"
 40,nm0000658,2019-07-30,2019-07-30,,"Meryl Streep","Mamma Mia!","22 de junio de 1949"
 41,nm0000124,2019-07-30,2019-07-30,,"Jennifer Connelly","A Beautiful Mind","12 de diciembre de 1970"
-42,nm0000531,2019-07-30,2019-07-30,,"Frances McDormand","Fargo","23 de junio de 1957"
+42,nm0000531,2019-07-30,2019-07-30,,"Frances McDormand","Three Billboards Outside Ebbing, Missouri","23 de junio de 1957"
 43,nm0000234,2019-07-30,2019-07-30,,"Charlize Theron","Monster","7 de agosto de 1975"
 44,nm0000194,2019-07-30,2019-07-30,,"Julianne Moore","Far from Heaven","3 de diciembre de 1960"
 45,nm0000235,2019-07-30,2019-07-30,,"Uma Thurman","Kill Bill: Vol. 1","29 de abril de 1970"
@@ -82,7 +82,7 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 81,nm0001467,2019-07-30,2019-07-30,,"Jared Leto","Dallas Buyers Club","26 de diciembre de 1971"
 82,nm0000673,2019-07-30,2019-07-30,,"Marisa Tomei","The Wrestler","4 de diciembre de 1964"
 83,nm0000093,2019-07-31,2019-07-31,,"Brad Pitt","Fight Club","18 de diciembre de 1963"
-84,nm0000138,2019-07-31,2019-07-31,,"Leonardo DiCaprio","The Departed","11 de noviembre de 1974"
+84,nm0000138,2019-07-31,2019-07-31,,"Leonardo DiCaprio","The Aviator","11 de noviembre de 1974"
 85,nm0000199,2019-07-31,2019-07-31,,"Al Pacino","Serpico","25 de abril de 1940"
 86,nm0000233,2019-07-31,2019-07-31,,"Quentin Tarantino","Reservoir Dogs","27 de marzo de 1963"
 87,nm0000686,2019-07-31,2019-07-31,,"Christopher Walken","Catch Me If You Can","31 de marzo de 1943"
@@ -133,7 +133,7 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 132,nm0087249,2019-08-13,2019-08-13,,"Eduardo Blanco","El hijo de la novia","28 de febrero de 1958"
 133,nm0706567,2019-08-13,2019-08-13,,"Pablo Rago","El secreto de sus ojos","24 de septiembre de 1972"
 134,nm1011070,2019-08-13,2019-08-13,,"Marta Etura","Ofrenda a la tormenta","28 de octubre de 1978"
-135,nm0285120,2019-08-13,2019-08-13,,"Claudia Fontán","El hijo de la novia","4 de octubre de 1966"
+135,nm0285120,2019-08-13,2019-08-13,,"Claudia Fontán","Amor en custodia","4 de octubre de 1966"
 136,nm0078452,2019-08-13,2019-08-13,,"Valeria Bertuccelli","La reina del miedo","30 de noviembre de 1969"
 137,nm0324813,2019-08-13,2019-08-13,,"Gabriel Goity","El encargado","23 de octubre de 1959"
 138,nm0608187,2019-08-13,2019-08-13,,"Mercedes Morán","Neruda","21 de septiembre de 1955"
@@ -261,7 +261,7 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 260,nm1208167,2019-08-22,2019-08-22,,"Diane Kruger","Inglourious Basterds","15 de julio de 1976"
 261,nm0491259,2019-08-22,2019-08-22,,"Mélanie Laurent","Inglourious Basterds","21 de febrero de 1983"
 262,nm0910607,2019-08-22,2019-08-22,,"Christoph Waltz","Django Unchained","4 de octubre de 1956"
-263,nm0117709,2019-08-22,2019-08-22,,"Daniel Brühl","Inglourious Basterds","16 de junio de 1978"
+263,nm0117709,2019-08-22,2019-08-22,,"Daniel Brühl","Rush","16 de junio de 1978"
 264,nm0000237,2019-08-22,2019-08-22,,"John Travolta","Pulp Fiction","18 de febrero de 1954"
 265,nm0000246,2019-08-22,2019-08-22,,"Bruce Willis","Die Hard","19 de marzo de 1955"
 266,nm0000655,2019-08-22,2019-08-22,,"Eric Stoltz","Pulp Fiction","30 de septiembre"
@@ -291,20 +291,20 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 290,nm0005351,2019-10-11,2019-10-11,,"Ryan Reynolds","Deadpool 2","23 de octubre de 1976"
 291,nm0189144,2019-10-17,2019-10-17,,"David Cross","Arrested Development","4 de abril de 1964"
 292,nm0000532,2019-10-20,2019-10-20,,"Malcolm McDowell","A Clockwork Orange","13 de junio de 1943"
-293,nm0000140,2019-10-26,2019-10-26,,"Michael Douglas","Wall Street","25 de septiembre de 1944"
+293,nm0000140,2019-10-26,2019-10-26,,"Michael Douglas","Behind the Candelabra","25 de septiembre de 1944"
 294,nm0000347,2019-10-29,2019-10-29,,"Tim Curry","Congo","19 de abril de 1946"
 295,nm0000701,2019-10-29,2019-10-29,,"Kate Winslet","Eternal Sunshine of the Spotless Mind","5 de octubre de 1975"
 296,nm0749263,2019-10-29,2019-10-29,,"Mark Ruffalo","Spotlight","22 de noviembre de 1967"
 297,nm0000379,2019-10-29,2019-10-29,,"Kirsten Dunst","Spider-Man","30 de abril de 1982"
 298,nm0327273,2019-10-29,2019-10-29,,"Michel Gondry","Eternal Sunshine of the Spotless Mind","8 de mayo de 1963"
-299,nm0148418,2019-10-29,2019-10-29,,"Michael Cera","Scott Pilgrim vs. the World","7 de junio de 1988"
+299,nm0148418,2019-10-29,2019-10-29,,"Michael Cera","Superbad","7 de junio de 1988"
 300,nm0004715,2019-10-29,2019-10-29,,"Will Arnett","The LEGO Movie","4 de mayo de 1970"
 301,nm0002071,2019-10-29,2019-10-29,,"Will Ferrell","Talladega Nights: The Ballad of Ricky Bobby","16 de julio de 1967"
 302,nm0000163,2019-10-29,2019-10-29,,"Dustin Hoffman","The Graduate","8 de agosto de 1937"
 303,nm0355024,2019-10-29,2019-10-29,,"Tony Hale","Arrested Development","30 de septiembre de 1970"
 304,nm0001787,2019-10-29,2019-10-29,,"Jeffrey Tambor","Transparent","8 de julio de 1944"
 305,nm0001857,2019-10-29,2019-10-29,,"Henry Winkler","The Waterboy","30 de octubre de 1945"
-306,nm0001774,2019-10-29,2019-10-29,,"Ben Stiller","Zoolander","30 de noviembre de 1965"
+306,nm0001774,2019-10-29,2019-10-29,,"Ben Stiller","Tropic Thunder","30 de noviembre de 1965"
 307,nm0001835,2019-10-29,2019-10-29,,"Carl Weathers","Rocky","14 de enero de 1948"
 308,nm0385644,2019-10-29,2019-10-29,,"Cheryl Hines","Curb Your Enthusiasm","21 de septiembre de 1965"
 309,nm0507659,2019-10-29,2019-10-29,,"Richard Lewis","Robin Hood: Men in Tights","29 de junio de 1947"
@@ -327,10 +327,10 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 326,nm0526019,2019-10-30,2019-10-30,,"Diego Luna","Rogue One","29 de diciembre de 1979"
 327,nm0001201,2019-11-02,2019-11-02,,"Mia Farrow","Rosemary's Baby","9 de febrero de 1945"
 328,nm0000157,2019-11-02,2019-11-02,,"Linda Hamilton","Terminator 2: Judgment Day","26 de septiembre de 1956"
-329,nm0000216,2019-11-02,2019-11-02,,"Arnold Schwarzenegger","The 6th Day","30 de julio de 1947"
+329,nm0000216,2019-11-02,2019-11-02,,"Arnold Schwarzenegger","Terminator 2: Judgment Day","30 de julio de 1947"
 330,nm0000411,2019-11-02,2019-11-02,,"Edward Furlong","Terminator 2: Judgment Day","2 de agosto de 1977"
 331,nm0001598,2019-11-02,2019-11-02,,"Robert Patrick","Terminator 2: Judgment Day","5 de noviembre de 1958"
-332,nm0005154,2019-11-02,2019-11-02,,"Lucy Liu","Charlie's Angels","2 de diciembre de 1968"
+332,nm0005154,2019-11-02,2019-11-02,,"Lucy Liu","Kill Bill: Vol. 1","2 de diciembre de 1968"
 333,nm0005170,2019-11-02,2019-11-02,,"Bernie Mac","The Bernie Mac Show","5 de octubre de 1957"
 334,nm0000193,2019-11-02,2019-11-02,,"Demi Moore","Striptease","11 de noviembre de 1962"
 335,nm0001233,2019-11-02,2019-11-02,,"Robert Forster","Jackie Brown","13 de julio de 1941"
@@ -394,7 +394,7 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 393,nm1551598,2019-11-06,2019-11-06,,"Justin Roiland","Rick and Morty","21 de febrero de 1980"
 394,nm1875238,2019-11-07,2019-11-07,,"Jessica Barden","Hanna","21 de julio de 1992"
 395,nm3867299,2019-11-07,2019-11-07,,"Alex Lawther","The End of the F***ing World","4 de mayo de 1995"
-396,nm0085312,2019-11-07,2019-11-07,,"Jack Black","High Fidelity","28 de agosto de 1969"
+396,nm0085312,2019-11-07,2019-11-07,,"Jack Black","School of Rock","28 de agosto de 1969"
 397,nm0151419,2019-11-07,2019-11-07,,"Kyle Chandler","Argo","17 de septiembre de 1965"
 398,nm0785227,2019-11-07,2019-11-07,,"Andy Serkis","War for the Planet of the Apes","20 de abril de 1964"
 399,nm0000552,2019-11-08,2019-11-08,,"Eddie Murphy","Harlem Nights","3 de abril de 1961"
@@ -455,7 +455,7 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 454,nm0108962,2019-11-14,2019-11-14,,"Dady Brieva","Más que un hombre","5 de marzo de 1957"
 455,nm0127925,2019-11-14,2019-11-14,,"Nicolás Cabré","Sin código","6 de febrero de 1980"
 456,nm0130335,2019-11-14,2019-11-14,,"Manuel Callau","Gasoleros","26 de agosto de 1946"
-457,nm0590476,2019-11-14,2019-11-14,,"Cecilia Milone","Verdad consecuencia","7 de marzo de 1969"
+457,nm0590476,2019-11-14,2019-11-14,,"Cecilia Milone","Gasoleros","7 de marzo de 1969"
 458,nm0705299,2019-11-14,2019-11-14,,"Rubén Rada","Rada","16 de julio de 1943"
 459,nm0692613,2019-11-14,2019-11-14,,"Favio Posca","Brave","22 de diciembre de 1966"
 460,nm0019046,2019-11-14,2019-11-14,,"Graciela Alfano","La Argentina de Tato","14 de diciembre de 1952"
@@ -470,12 +470,12 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 469,nm0326680,2019-11-14,2019-11-14,,"Benny Golson","The Terminal","25 de enero de 1929"
 470,nm0001051,2019-11-14,2019-11-14,,"Bill Clinton","The President Is Missing","19 de agosto de 1946"
 471,nm0550368,2019-11-14,2019-11-14,,"Wynton Marsalis","A Star Is Born","18 de octubre de 1961"
-472,nm0795147,2019-11-14,2019-11-14,,"Wayne Shorter","Glengarry Glen Ross","25 de agosto de 1933"
+472,nm0795147,2019-11-14,2019-11-14,,"Wayne Shorter","The Fugitive","25 de agosto de 1933"
 473,nm1743784,2019-11-14,2019-11-14,,"McCoy Tyner","The Descendants","11 de diciembre de 1938"
 474,nm0002537,2019-11-14,2019-11-14,,"Miles Davis","Adrift","25 de mayo de 1926"
 475,nm0428033,2019-11-14,2019-11-14,,"Elvin Jones","The General's Daughter","9 de septiembre de 1927"
 476,nm0455052,2019-11-14,2019-11-14,,"Martin Luther King Jr.","Freedom Writers","15 de enero de 1929"
-477,nm1054474,2019-11-14,2019-11-14,,"Alex Acuna","Battleship",
+477,nm1054474,2019-11-14,2019-11-14,,"Alex Acuña","Battleship",
 478,nm0106558,2019-11-14,2019-11-14,,"Randy Brecker","Arthur","27 de noviembre de 1945"
 479,nm0168220,2019-11-14,2019-11-14,,"Wayne Cochran","C.C. & Company","10 de mayo de 1939"
 480,nm0172182,2019-11-14,2019-11-14,,"Bootsy Collins","Undercover Brother","26 de octubre de 1951"
@@ -517,7 +517,7 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 516,nm0000004,2019-11-14,2019-11-14,,"John Belushi","Saturday Night Live","24 de enero de 1949"
 517,nm0001006,2019-11-14,2019-11-14,,"John Candy","Planes, Trains & Automobiles","31 de octubre de 1950"
 518,nm0000213,2019-11-14,2019-11-14,,"Winona Ryder","Bram Stoker's Dracula","29 de octubre de 1971"
-519,nm0000249,2019-11-14,2019-11-14,,"James Woods","Vampires","18 de abril de 1947"
+519,nm0000249,2019-11-14,2019-11-14,,"James Woods","Salvador","18 de abril de 1947"
 520,nm0000493,2019-11-14,2019-11-14,,"Jack Lemmon","The Apartment","8 de febrero de 1925"
 521,nm0000188,2019-11-14,2019-11-14,,"Steve Martin","Roxanne","14 de agosto de 1945"
 522,nm0490980,2019-11-14,2019-11-14,,"Cyndi Lauper","Cyndi Lauper: Girls Just Want to Have Fun","22 de junio de 1953"
@@ -644,7 +644,7 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 643,nm0285113,2019-11-25,2019-11-25,,"Horacio Fontova","Soy tóxico","30 de octubre de 1946"
 644,nm0865578,2019-11-25,2019-11-25,,"Daniel Tognetti","PuntoDoc","23 de enero de 1970"
 645,nm4622349,2019-11-25,2019-11-25,,"Julia Mengolini","Bendita TV",
-646,nm0678683,2019-11-25,2019-11-25,,"Roberto Pettinato","Primicias","13 de diciembre de 1955"
+646,nm0678683,2019-11-25,2019-11-25,,"Roberto Pettinato","Samy y yo","13 de diciembre de 1955"
 647,nm3902700,2019-11-25,2019-11-25,,"Malena Pichot","Viudas Negras: P*tas y Chorras",
 648,nm1881804,2019-11-25,2019-11-25,,"Julián Kartún","Aventuras de Corazón Roto",
 649,nm0530048,2019-11-25,2019-11-25,,"Charo López","La regenta","28 de octubre de 1943"
@@ -716,7 +716,7 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 715,nm2023399,2019-12-02,2019-12-02,,"Michael Peterson","Soupçons","23 de octubre de 1943"
 716,nm5308683,2019-12-02,2019-12-02,,"David Rudolf","Soupçons",
 717,nm1239499,2019-12-02,2019-12-02,,"Rory Kinnear","The Imitation Game","17 de febrero de 1976"
-718,nm0446672,2019-12-02,2019-12-02,,"Michael Kelly","Dawn of the Dead","22 de mayo de 1969"
+718,nm0446672,2019-12-02,2019-12-02,,"Michael Kelly","Chronicle","22 de mayo de 1969"
 719,nm1813221,2019-12-02,2019-12-02,,"Gugu Mbatha-Raw","Belle","21 de abril de 1983"
 720,nm0923299,2019-12-02,2019-12-02,,"Eleonora Wexler","Valientes","2 de abril de 1974"
 721,nm1375877,2019-12-02,2019-12-02,,"Juan Minujín","El marginal","20 de mayo de 1975"
@@ -738,7 +738,7 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 737,nm0591485,2019-12-03,2019-12-03,,"Liza Minnelli","Cabaret","12 de marzo de 1946"
 738,nm3037166,2019-12-03,2019-12-03,,"Esperanza Spalding","Roman J. Israel, Esq.","18 de octubre de 1984"
 739,nm1215542,2019-12-03,2019-12-03,,"Louis Johnson","Yes Man","13 de abril de 1955"
-740,nm0005567,2019-12-03,2019-12-03,,"Stevie Wonder","Jungle Fever","13 de mayo de 1950"
+740,nm0005567,2019-12-03,2019-12-03,,"Stevie Wonder","The Woman in Red","13 de mayo de 1950"
 741,nm0004720,2019-12-03,2019-12-03,,"Patti Austin","Magic City","10 de agosto de 1950"
 742,nm0005384,2019-12-03,2019-12-03,,"Diana Ross","The Wiz","26 de marzo de 1944"
 743,nm0005493,2019-12-03,2019-12-03,,"Justin Timberlake","Trolls","31 de enero de 1981"
@@ -764,7 +764,7 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 763,nm0299078,2019-12-06,2019-12-06,,"Joaquín Furriel","El patrón, radiografía de un crimen","26 de agosto de 1974"
 764,nm3259453,2019-12-06,2019-12-06,,"Diego Cremonesi","Rojo",
 765,nm0799193,2019-12-06,2019-12-06,,"Soledad Silveyra","Vidas robadas","13 de febrero de 1952"
-766,nm0000620,2019-12-06,2019-12-06,,"Mickey Rourke","Sin City","16 de septiembre de 1952"
+766,nm0000620,2019-12-06,2019-12-06,,"Mickey Rourke","The Wrestler","16 de septiembre de 1952"
 767,nm0000569,2019-12-06,2019-12-06,,"Gwyneth Paltrow","Shakespeare in Love","27 de septiembre de 1972"
 768,nm0000932,2019-12-06,2019-12-06,,"Halle Berry","Catwoman","14 de agosto de 1966"
 769,nm0209404,2019-12-06,2019-12-06,,"Rodrigo de la Serna","Diarios de motocicleta","18 de abril de 1976"
@@ -772,13 +772,13 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 771,nm0001806,2019-12-06,2019-12-06,,"John Turturro","Fading Gigolo","28 de febrero de 1957"
 772,nm0327944,2019-12-06,2019-12-06,,"Alejandro G. Iñárritu","Biutiful","15 de agosto de 1963"
 773,nm0138612,2019-12-06,2019-12-06,,"Roberto Carnaghi","Montecristo",
-774,nm0000155,2019-12-06,2019-12-06,,"Whoopi Goldberg","Ghost","13 de noviembre de 1955"
+774,nm0000155,2019-12-06,2019-12-06,,"Whoopi Goldberg","Sister Act","13 de noviembre de 1955"
 775,nm0001856,2019-12-06,2019-12-06,,"Oprah Winfrey","The Oprah Winfrey Show","29 de enero de 1954"
-776,nm0353546,2019-12-08,2019-12-08,,"Julie Hagerty","Marriage Story","15 de junio de 1955"
+776,nm0353546,2019-12-08,2019-12-08,,"Julie Hagerty","Freddy Got Fingered","15 de junio de 1955"
 777,nm0319880,2019-12-09,2019-12-09,,"Susana Giménez","LOL: Last One Laughing Argentina","29 de enero de 1944"
 778,nm0600406,2019-12-09,2019-12-09,,"Carlos Monzón","Il conto è chiuso","7 de agosto de 1942"
 779,nm0001721,2019-12-10,2019-12-10,,"Chloë Sevigny","We Are Who We Are","18 de noviembre de 1974"
-780,nm0001833,2019-12-10,2019-12-10,,"Emily Watson","Breaking the Waves","14 de enero de 1967"
+780,nm0001833,2019-12-10,2019-12-10,,"Emily Watson","Gosford Park","14 de enero de 1967"
 781,nm0634120,2019-12-10,2019-12-10,,"Jean Pierre Noher","Diarios de motocicleta","5 de mayo de 1956"
 782,nm0739810,2019-12-10,2019-12-10,,"Jorge Román","El bonaerense",
 783,nm4247146,2019-12-10,2019-12-10,,"Belén Chavanne","Champs 12","27 de julio de 1989"
@@ -792,10 +792,10 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 791,nm0001993,2019-12-12,2019-12-12,,"Vincent Cassel","Black Swan","23 de noviembre de 1966"
 792,nm0306023,2019-12-12,2019-12-12,,"Charly García","Argentina, 1985","23 de octubre de 1951"
 793,nm0215371,2019-12-12,2019-12-12,,"Andrea Del Boca","Celeste, siempre Celeste","18 de octubre de 1965"
-794,nm1152826,2019-12-12,2019-12-12,,"Oscar Moro","Peperina","24 de enero de 1950"
+794,nm1152826,2019-12-12,2019-12-12,,"Oscar Moro","Helmut - The Ice and the Transitory Eternity","24 de enero de 1950"
 795,nm0598184,2019-12-12,2019-12-12,,"José María Monje","Amor en custodia","22 de marzo de 1967"
-796,nm0636904,2019-12-12,2019-12-12,,"Pablo Novak","1000 millones","13 de diciembre de 1965"
-797,nm0323019,2019-12-12,2019-12-12,,"Divina Gloria","R.R.D.T",
+796,nm0636904,2019-12-12,2019-12-12,,"Pablo Novak","Muñeca brava","13 de diciembre de 1965"
+797,nm0323019,2019-12-12,2019-12-12,,"Divina Gloria","Legión",
 798,nm0720054,2019-12-12,2019-12-12,,"Nicolás Repetto","Cha cha cha","11 de marzo de 1957"
 799,nm1070226,2019-12-12,2019-12-12,,"María Laura Santillán","Aprender a volar",
 800,nm0347435,2019-12-12,2019-12-12,,"Jorge Guinzburg","Chabonas","3 de febrero de 1949"
@@ -808,7 +808,7 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 807,nm5330009,2019-12-12,2019-12-12,,"Soda Stereo","Soda Stereo: Ella usó mi cabeza como un revólver",
 808,nm0844531,2019-12-12,2019-12-12,,"Ernesto Sábato","El poder de las tinieblas","24 de junio de 1911"
 809,nm0863906,2019-12-12,2019-12-12,,"Marcelo Tinelli","Soñando por bailar","1 de abril de 1960"
-810,nm1486528,2019-12-12,2019-12-12,,"Thelma Fardín","Los simuladores","24 de octubre de 1992"
+810,nm1486528,2019-12-12,2019-12-12,,"Thelma Fardín","La estrella roja","24 de octubre de 1992"
 811,nm1475876,2019-12-12,2019-12-12,,"Chino Volpato","Midachi: el regreso del humor",
 812,nm1014363,2019-12-12,2019-12-12,,"Diego Alonso Gómez","Okupas","10 de marzo de 1972"
 813,nm0305817,2019-12-12,2019-12-12,,"Alejo García Pintos","Argentina, 1985","4 de febrero de 1967"
@@ -836,7 +836,7 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 835,nm2205797,2019-12-12,2019-12-12,,"Alejandro Fantino","Escuela Para Maridos","26 de septiembre de 1971"
 836,nm5742792,2019-12-12,2019-12-12,,"Nelson Vivas","Videomatch",
 837,nm1154933,2019-12-12,2019-12-12,,"Jorge Corona","Paraíso relax",
-838,nm4963831,2019-12-12,2019-12-12,,"Kily González","Videomatch","4 de agosto de 1974"
+838,nm4963831,2019-12-12,2019-12-12,,"Kily González","Quilmes: Aliento","4 de agosto de 1974"
 839,nm4594389,2019-12-12,2019-12-12,,"Teto Medina","Medios locos",
 840,nm2430110,2019-12-12,2019-12-12,,"Bambino Veira","Chau Domingo",
 841,nm4669489,2019-12-12,2019-12-12,,"Matias Almeyda","Quilmes: Aliento","21 de diciembre de 1973"
@@ -873,9 +873,9 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 872,nm1496318,2019-12-12,2019-12-12,,"Luciana Salazar","Bañeros III, todopoderosos","7 de noviembre de 1980"
 873,nm2638005,2019-12-12,2019-12-12,,"Locomía","Tu cara me suena",
 874,nm1424407,2019-12-12,2019-12-12,,"Gonzalo Bonadeo","Cars 2","6 de enero de 1963"
-875,nm0005193,2019-12-12,2019-12-12,,"Ricky Martin","Hercules","24 de diciembre de 1971"
+875,nm0005193,2019-12-12,2019-12-12,,"Ricky Martin","Ricky Martin: Livin' la Vida Loca","24 de diciembre de 1971"
 876,nm1102596,2019-12-12,2019-12-12,,"Andrea Frigerio","Rojo","30 de agosto de 1961"
-877,nm0722672,2019-12-12,2019-12-12,,"Jorge Rial","Videomatch","16 de octubre de 1961"
+877,nm0722672,2019-12-12,2019-12-12,,"Jorge Rial","Horizontal Vertical","16 de octubre de 1961"
 878,nm0650903,2019-12-12,2019-12-12,,"Julieta Ortega","El tiempo no para","6 de octubre de 1972"
 879,nm4904982,2019-12-12,2019-12-12,,"Abel Balbo","Videomatch",
 880,nm1654945,2019-12-12,2019-12-12,,"Bon Jovi","Spaceballs",
@@ -884,10 +884,10 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 883,nm4792599,2019-12-12,2019-12-12,,"Esteban Cambiasso","LaLiga","18 de agosto de 1980"
 884,nm4904939,2019-12-12,2019-12-12,,"José Chamot","Videomatch",
 885,nm5323731,2019-12-12,2019-12-12,,"Mariano Closs","Torneo de Verano",
-886,nm0173022,2019-12-12,2019-12-12,,"Paula Colombini","Como vos & yo","7 de febrero de 1976"
+886,nm0173022,2019-12-12,2019-12-12,,"Paula Colombini","Verano del '98","7 de febrero de 1976"
 887,nm0244559,2019-12-12,2019-12-12,,"Roberto Durán","Harlem Nights","16 de junio de 1951"
 888,nm5599753,2019-12-12,2019-12-12,,"Hernán Díaz","Videomatch",
-889,nm0002094,2019-12-12,2019-12-12,,"Vittorio Gassman","Il sorpasso","1 de septiembre de 1922"
+889,nm0002094,2019-12-12,2019-12-12,,"Vittorio Gassman","Sleepers","1 de septiembre de 1922"
 890,nm0316465,2019-12-12,2019-12-12,,"Maurice Gibb","Saturday Night Fever","22 de diciembre de 1949"
 891,nm7053466,2019-12-12,2019-12-12,,"Blas Giunta","Videomatch",
 892,nm1481227,2019-12-12,2019-12-12,,"Mariano Grondona","Videomatch",
@@ -920,7 +920,7 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 919,nm2323561,2019-12-12,2019-12-12,,"Javier Saviola","Secret Tournament","11 de diciembre de 1981"
 920,nm4661782,2019-12-12,2019-12-12,,"Sebastián Abreu","Videomatch","17 de octubre de 1976"
 921,nm4772060,2019-12-12,2019-12-12,,"Carlos Bianchi","LaLiga","26 de abril de 1949"
-922,nm1177672,2019-12-12,2019-12-12,,"Michel Platini","UEFA Euro 2016","21 de junio de 1955"
+922,nm1177672,2019-12-12,2019-12-12,,"Michel Platini","UEFA Champions League","21 de junio de 1955"
 923,nm4703461,2019-12-12,2019-12-12,,"Nicolás Burdisso","Videomatch",
 924,nm2200430,2019-12-12,2019-12-12,,"Marcelo Delgado","Videomatch",
 925,nm1535150,2019-12-12,2019-12-12,,"Juanes","Goal II: Living the Dream","9 de agosto de 1972"
@@ -945,7 +945,7 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 944,nm0002332,2019-12-12,2019-12-12,,"Stephen Lang","Avatar","11 de julio de 1952"
 945,nm4587360,2019-12-13,2019-12-13,,"Gayle Rankin","The Greatest Showman","1 de agosto de 1989"
 946,nm4364448,2019-12-13,2019-12-13,,"Britney Young","GLOW","1 de junio"
-947,nm1999504,2019-12-13,2019-12-13,,"Sydelle Noel","GLOW","16 de julio"
+947,nm1999504,2019-12-13,2019-12-13,,"Sydelle Noel","Reacher","16 de julio"
 948,nm0549505,2019-12-13,2019-12-13,,"Marc Maron","The Order","27 de septiembre de 1963"
 949,nm0000244,2019-12-14,2019-12-14,,"Sigourney Weaver","Alien: Resurrection","8 de octubre de 1949"
 950,nm0000601,2019-12-14,2019-12-14,,"Harold Ramis","Ghostbusters","21 de noviembre de 1944"
@@ -976,12 +976,12 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 975,nm5332160,2019-12-15,2019-12-15,,"Claudio Marrero","The Big Fight Live",
 976,nm5489228,2019-12-15,2019-12-15,,"Pablo López","The Jump! WTF Experience",
 977,nm5489370,2019-12-15,2019-12-15,,"Joao Oliveira","The Jump! WTF Experience",
-978,nm5489316,2019-12-15,2019-12-15,,"Jefferson Otto","The Accomplice",
+978,nm5489316,2019-12-15,2019-12-15,,"Jefferson Otto","The Jump! WTF Experience",
 979,nm5489382,2019-12-15,2019-12-15,,"Enric Peinado","The Jump! WTF Experience",
 980,nm4832915,2019-12-15,2019-12-15,,"Kike Perdomo","Apocalipsis Voodoo",
 981,nm5489374,2019-12-15,2019-12-15,,"Juan R. Berbín","NPR Music Tiny Desk Concert",
 982,nm4403009,2019-12-15,2019-12-15,,"Jordi Rabascall","Dolorosa Gioia",
-983,nm2002473,2019-12-15,2019-12-15,,"Irene Reig Iglesias","Los renglones torcidos de Dios",
+983,nm2002473,2019-12-15,2019-12-15,,"Irene Reig Iglesias","Apocalipsis Z: El principio del fin",
 984,nm2401204,2019-12-15,2019-12-15,,"Armand Sabal-Lecco","Blood Diamond",
 985,nm5489360,2019-12-15,2019-12-15,,"Morten Sandholt","The Jump! WTF Experience",
 986,nm5332075,2019-12-15,2019-12-15,,"Aurelio Santos","A escena",
@@ -1019,7 +1019,7 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 1018,nm0096386,2019-12-28,2019-12-28,,"Tato Bores","La Argentina de Tato","27 de abril de 1927"
 1019,nm0715270,2019-12-28,2019-12-28,,"Reina Reech","102 Dalmatians","19 de febrero de 1958"
 1020,nm0748338,2019-12-29,2019-12-29,,"Ingrid Rubio","Taxi","2 de agosto de 1975"
-1021,nm0060287,2019-12-29,2019-12-29,,"Valentina Bassi","Patrón","13 de noviembre de 1972"
+1021,nm0060287,2019-12-29,2019-12-29,,"Valentina Bassi","El tiempo no para","13 de noviembre de 1972"
 1022,nm0054260,2019-12-29,2019-12-29,,"Emilio Bardi","El elegido","19 de agosto de 1960"
 1023,nm0017366,2019-12-29,2019-12-29,,"Alfredo Alcón","Martín Fierro","3 de marzo de 1930"
 1024,nm0476493,2019-12-29,2019-12-29,,"Silvia Kutika","Luna de Avellaneda","5 de agosto de 1958"
@@ -1139,9 +1139,9 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 1138,nm0148554,2020-06-04,2020-06-04,,"Enrique Cerezo","Las brujas de Zugarramurdi","27 de febrero de 1948"
 1139,nm3972635,2020-06-04,2020-06-04,,"Álvaro Arbeloa","Torrente 4: Lethal Crisis",
 1140,nm2205158,2020-06-04,2020-06-04,,"Cesc Fàbregas","Goal II: Living the Dream","4 de mayo de 1987"
-1141,nm2475669,2020-06-04,2020-06-04,,"Risto Mejide","Al rincón de pensar","1975"
+1141,nm2475669,2020-06-04,2020-06-04,,"Risto Mejide","El Comité","1975"
 1142,nm0251986,2020-06-04,2020-06-04,,"Jesse Eisenberg","A Real Pain","5 de octubre de 1983"
-1143,nm1913734,2020-06-06,2020-06-06,,"Rooney Mara","The Girl with the Dragon Tattoo","17 de abril de 1985"
+1143,nm1913734,2020-06-06,2020-06-06,,"Rooney Mara","Carol","17 de abril de 1985"
 1144,nm0278528,2020-06-17,2020-06-17,,"María Fiorentino","Gasoleros","14 de mayo de 1950"
 1145,nm1046097,2020-06-18,2020-06-18,,"Rachel McAdams","The Notebook","17 de noviembre de 1978"
 1146,nm0000036,2020-07-05,2020-07-05,,"Buster Keaton","The General","4 de octubre de 1895"
@@ -1190,7 +1190,7 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 1189,nm0004486,2020-08-17,2020-08-17,,"Bruno Ganz","Der Untergang","22 de marzo de 1941"
 1190,nm0000454,2020-08-19,2020-08-19,,"Dennis Hopper","Easy Rider","17 de mayo de 1936"
 1191,nm0000099,2020-08-19,2020-08-19,,"Patricia Arquette","True Romance","8 de abril de 1968"
-1192,nm0000225,2020-08-19,2020-08-19,,"Christian Slater","Very Bad Things","18 de agosto de 1969"
+1192,nm0000225,2020-08-19,2020-08-19,,"Christian Slater","True Romance","18 de agosto de 1969"
 1193,nm0000107,2020-08-21,2020-08-21,,"Kim Basinger","L.A. Confidential","8 de diciembre de 1953"
 1194,nm0000304,2020-08-22,2020-08-22,,"Linda Blair","The Exorcist","22 de enero de 1959"
 1195,nm0152638,2020-08-29,2020-08-29,,"Dave Chappelle","Chappelle's Show","24 de agosto de 1973"
@@ -1209,11 +1209,11 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 1208,nm0240325,2020-09-13,2020-09-13,,"Graciela Dufau","La isla","11 de febrero de 1942"
 1209,nm0104723,2020-09-13,2020-09-13,,"Luisina Brando","De eso no se habla","10 de diciembre de 1945"
 1210,nm0495083,2020-09-13,2020-09-13,,"María Leal","Grande Pá!","5 de junio de 1948"
-1211,nm0116875,2020-09-13,2020-09-13,,"Alicia Bruzzo","Alta comedia","29 de septiembre de 1955"
+1211,nm0116875,2020-09-13,2020-09-13,,"Alicia Bruzzo","Una sombra ya pronto serás","29 de septiembre de 1955"
 1212,nm0700175,2020-09-13,2020-09-13,,"Arturo Puig","Primicias","17 de noviembre de 1944"
 1213,nm0000659,2020-09-15,2020-09-15,,"Barbra Streisand","Funny Girl","24 de abril de 1942"
 1214,nm0001845,2020-09-15,2020-09-15,,"Forest Whitaker","The Last King of Scotland","15 de julio de 1961"
-1215,nm0000113,2020-09-15,2020-09-15,,"Sandra Bullock","Miss Congeniality","26 de julio de 1964"
+1215,nm0000113,2020-09-15,2020-09-15,,"Sandra Bullock","The Proposal","26 de julio de 1964"
 1216,nm0000977,2020-09-15,2020-09-15,,"Beau Bridges","The Fabulous Baker Boys","9 de diciembre de 1941"
 1217,nm0000404,2020-09-15,2020-09-15,,"Jane Fonda","Klute","21 de diciembre de 1937"
 1218,nm0005092,2020-09-16,2020-09-16,,"Larry King","Ghostbusters","19 de noviembre de 1933"
@@ -1260,7 +1260,7 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 1259,nm1078686,2021-01-27,2021-01-27,,"Sofía Gala Castiglione","Alanis","24 de enero de 1987"
 1260,nm0001704,2021-01-30,2021-01-30,,"Vincent Schiavelli","Tomorrow Never Dies","11 de noviembre de 1948"
 1261,nm0000563,2021-02-22,2021-02-22,,"Chris O'Donnell","Batman & Robin","26 de junio de 1970"
-1262,nm3114649,2021-03-13,2021-03-13,,"Charlotte Le Bon","Anthropoid","4 de septiembre de 1986"
+1262,nm3114649,2021-03-13,2021-03-13,,"Charlotte Le Bon","The Hundred-Foot Journey","4 de septiembre de 1986"
 1263,nm0669789,2021-03-16,2021-03-16,,"Susú Pecoraro","Camila","1953"
 1264,nm0855199,2021-03-16,2021-03-16,,"Juan Manuel Tenuta","Esperando la carroza","23 de enero de 1924"
 1265,nm0578689,2021-03-26,2021-03-26,,"Peto Menahem","Juntos para siempre",
@@ -1320,7 +1320,7 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 1319,nm1209966,2021-10-02,2021-10-02,,"Oscar Isaac","Ex Machina","9 de marzo de 1979"
 1320,nm0597388,2021-10-02,2021-10-02,,"Jason Momoa","Aquaman","1 de agosto de 1979"
 1321,nm0497631,2021-10-22,2021-10-22,,"Lee Jung-jae","Heon-teu","15 de diciembre de 1972"
-1322,nm9475707,2021-10-22,2021-10-22,,"Hoyeon","Ojing-eo geim","23 de junio de 1994"
+1322,nm9475707,2021-10-22,2021-10-22,,"Hoyeon","Hopeu","23 de junio de 1994"
 1323,nm1126657,2021-10-23,2021-10-23,,"George MacKay","1917","13 de marzo de 1992"
 1324,nm0424216,2021-10-24,2021-10-24,,"Johnny Knoxville","Bad Grandpa","11 de marzo de 1971"
 1325,nm0828177,2021-10-24,2021-10-24,,"Steve-O","Jackass: The Movie","13 de junio de 1974"
@@ -1474,7 +1474,7 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 1473,nm0790688,2023-09-04,2023-09-04,,"Michael Sheen","Masters of Sex","5 de febrero de 1969"
 1474,nm2216549,2023-09-13,2023-09-13,,"Úrsula Corberó","La casa de papel","11 de agosto de 1989"
 1475,nm1486647,2023-09-13,2023-09-13,,"Álvaro Morte","Immaculate","23 de febrero de 1975"
-1476,nm7931969,2023-09-13,2023-09-13,,"Jaime Lorente","El mal hijo","12 de diciembre de 1991"
+1476,nm7931969,2023-09-13,2023-09-13,,"Jaime Lorente","Todos lo saben","12 de diciembre de 1991"
 1477,nm0000945,2023-09-13,2023-09-13,,"Jane Birkin","Evil Under the Sun","14 de diciembre de 1946"
 1478,nm0356017,2023-09-14,2023-09-14,,"Rebecca Hall","Vicky Cristina Barcelona","3 de mayo de 1982"
 1479,nm0005013,2023-10-09,2023-10-09,,"Iben Hjejle","High Fidelity","22 de marzo de 1971"
@@ -1514,7 +1514,7 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 1513,nm1426600,2024-01-31,2024-01-31,,"Diego Fucks","No me puedo quejar, a mí Saravia siempre me bancó",
 1514,nm1670022,2024-01-31,2024-01-31,,"Alejandro Franov","La afinadora de árboles",
 1515,nm1081215,2024-01-31,2024-01-31,,"Juan Carlos Fontana","Cantaniño cuenta un cuento",
-1516,nm5943470,2024-01-31,2024-01-31,,"Lito Epumer","Cha cha cha",
+1516,nm5943470,2024-01-31,2024-01-31,,"Lito Epumer","Perfume",
 1517,nm7857540,2024-01-31,2024-01-31,,"Cristian Judurcha","Cha cha cha",
 1518,nm1147049,2024-01-31,2024-01-31,,"Elizabeth Vernaci","Cha cha cha","24 de septiembre de 1961"
 1519,nm4376215,2024-01-31,2024-01-31,,"Doctor Tangalanga","Cha cha cha","10 de noviembre de 1916"
@@ -1522,7 +1522,7 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 1521,nm0415856,2024-01-31,2024-01-31,,"Jairo","Les fantômes du chapelier","16 de junio de 1949"
 1522,nm1692129,2024-01-31,2024-01-31,,"Silvina Garré","Televisión registrada",
 1523,nm7052741,2024-01-31,2024-01-31,,"Carlos 'Chacho' Alvarez","Cha cha cha",
-1524,nm0492146,2024-01-31,2024-01-31,,"Raúl Lavié","Franco Buenaventura, el profe","22 de agosto de 1937"
+1524,nm0492146,2024-01-31,2024-01-31,,"Raúl Lavié","Todo x 2 pesos","22 de agosto de 1937"
 1525,nm0259564,2024-01-31,2024-01-31,,"Norman Erlich","Catch the Heat","7 de marzo de 1934"
 1526,nm1225305,2024-01-31,2024-01-31,,"Guillermo Andino","Delito de corrupción",
 1527,nm0153124,2024-02-03,2024-02-03,,"Ray Charles","The Blues Brothers","23 de septiembre de 1930"
@@ -1597,12 +1597,12 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 1596,nm5700898,2025-03-11,2025-03-11,,"Mikey Madison","Anora","25 de marzo de 1999"
 1597,nm0004835,2025-03-30,2025-03-30,,"Sean 'Diddy' Combs","Get Him to the Greek","4 de noviembre de 1969"
 1598,nm1258970,2025-03-30,2025-03-30,,"Russell Brand","Arthur","4 de junio de 1975"
-1599,nm7609875,2025-04-04,2025-04-04,,"Naomi Ackie","Blink Twice","22 de agosto de 1991"
+1599,nm7609875,2025-04-04,2025-04-04,,"Naomi Ackie","Sorry, Baby","22 de agosto de 1991"
 1600,nm0814773,2025-04-17,2025-04-17,,"Alberto Sordi","I vitelloni","15 de junio de 1920"
 1601,nm0000007,2025-04-17,2025-04-17,,"Humphrey Bogart","Casablanca","25 de diciembre de 1899"
 1602,nm0000006,2025-04-17,2025-04-17,,"Ingrid Bergman","Casablanca","29 de agosto de 1915"
 1603,nm0001588,2025-05-12,2025-05-12,,"Jack Palance","City Slickers","18 de febrero de 1919"
-1604,nm0075710,2025-05-18,2025-05-18,,"François Berléand","Les choristes","22 de abril de 1952"
+1604,nm0075710,2025-05-18,2025-05-18,,"François Berléand","The Transporter","22 de abril de 1952"
 1605,nm0000809,2025-05-18,2025-05-18,,"Daniel Auteuil","Caché","24 de enero de 1950"
 1606,nm0133002,2025-07-10,2025-07-10,,"Campi","Los Roldán",
 1607,nm3198515,2025-10-17,2025-10-17,,"Pilar Gamboa","La flor","1980"
@@ -1645,13 +1645,13 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 1644,nm1451874,2026-07-14,2026-07-14,,"Jorge Burruchaga","Fútbol de Primera","9 de octubre de 1962"
 1645,nm0793529,2026-07-14,2026-07-14,,"Peter Shilton","Englandneworder: World in Motion","18 de septiembre de 1949"
 1646,nm1450857,2026-07-14,2026-07-14,,"Julio Olarticoechea","1986. La historia detrás de la Copa","18 de octubre de 1958"
-1647,nm1451976,2026-07-14,2026-07-14,,"Ricardo Giusti","El partido","11 de diciembre de 1956"
+1647,nm1451976,2026-07-14,2026-07-14,,"Ricardo Giusti","1986 FIFA World Cup","11 de diciembre de 1956"
 1648,nm9903838,2026-07-22,2026-07-22,,"Sofia Kappel","Pleasure","27 de abril de 1998"
 1649,nm5076257,2026-08-03,2026-08-03,,"Michael Johnston","Obsession","22 de febrero"
 1650,nm9984699,2026-08-03,2026-08-03,,"Inde Navarrette","Obsession","3 de marzo de 2001"
 1651,nm4170484,2026-08-04,2026-08-04,,"Jaafar Jackson","Michael","25 de julio de 1996"
-1652,nm1410940,2026-08-09,2026-08-09,,"Lily Franky","Soshite chichi ni naru","4 de noviembre de 1963"
-1653,nm2747232,2026-08-09,2026-08-09,,"Sakura Andô","Manbiki kazoku","18 de febrero de 1986"
+1652,nm1410940,2026-08-09,2026-08-09,,"Lily Franky","Manbiki kazoku","4 de noviembre de 1963"
+1653,nm2747232,2026-08-09,2026-08-09,,"Sakura Andō","Manbiki kazoku","18 de febrero de 1986"
 1654,nm9437164,2026-08-09,2026-08-09,,"Miyu Sasaki","Manbiki kazoku","21 de junio de 2011"
 1655,nm2155527,2026-08-19,2026-08-19,,"Griselda Siciliani","Envidiosa","2 de abril de 1978"
 1656,nm0194052,2026-09-01,2026-09-01,,"Ivo Cutzarida","Pterodactyl",
@@ -1660,7 +1660,7 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 1659,nm3043279,2026-09-24,2026-09-24,,"Vicky Krieps","Phantom Thread","4 de octubre de 1983"
 1660,nm11205691,2026-10-03,2026-10-03,,"Lola Rodríguez","Veneno",
 1661,nm0145624,2026-10-05,2026-10-05,,"Luciano Castro","Lalola","16 de marzo de 1975"
-1662,nm0575670,2026-10-05,2026-10-05,,"Claribel Medina","Naranja y media","16 de diciembre de 1961"
+1662,nm0575670,2026-10-05,2026-10-05,,"Claribel Medina","Los Roldán","16 de diciembre de 1961"
 1663,nm2177779,2026-10-05,2026-10-05,,"Lionel Messi","2022 FIFA World Cup Qatar","24 de junio de 1987"
 1664,nm4786507,2026-10-05,2026-10-05,,"Nicolas Otamendi","Eliminatorias Rusia 2018","12 de febrero de 1988"
 1665,nm7602808,2026-10-05,2026-10-05,,"Emiliano Martínez","Emi","2 de septiembre de 1992"
@@ -1687,7 +1687,7 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 1686,nm16944029,2026-10-05,2026-10-05,,"Blanca Soroa","Los domingos","2008"
 1687,nm1394133,2026-10-05,2026-10-05,,"Esteban Lamothe","El estudiante","30 de abril de 1977"
 1688,nm5561525,2026-10-05,2026-10-05,,"Adrian Lakerman","Envidiosa",
-1689,nm0018043,2026-10-05,2026-10-05,,"Katja Alemann","De corazón",
+1689,nm0018043,2026-10-05,2026-10-05,,"Katja Alemann","Cris Miró (Ella)",
 1690,nm1364050,2026-10-05,2026-10-05,,"Federico Mizrahi","Tres pájaros",
 1691,nm0233699,2026-10-05,2026-10-05,,"Jorge Dorio","Tango","26 de marzo de 1958"
 1692,nm3249923,2026-10-05,2026-10-05,,"Claudia Disti","El torcan",
@@ -1711,10 +1711,10 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 1710,nm1309553,2026-10-05,2026-10-05,,"Claudio Cardone","Ilusión de movimiento",
 1711,nm12175019,2026-10-05,2026-10-05,,"Marcelo Torres","Spinetta y los Socios del Desierto: Cheques",
 1712,nm0818916,2026-10-05,2026-10-05,,"Catarina Spinetta","Primavera",
-1713,nm11988277,2026-10-06,2026-10-06,,"Guitarricadelafuente","Nada será igual. La película","27 de agosto de 1997"
+1713,nm11988277,2026-10-06,2026-10-06,,"Guitarricadelafuente","La bola negra","27 de agosto de 1997"
 1714,nm1982169,2026-10-06,2026-10-06,,"Javier Ambrossi","La bola negra","24 de junio de 1984"
-1715,nm2566876,2026-10-06,2026-10-06,,"Javier Calvo","La Llamada","21 de enero de 1991"
-1716,nm8149945,2026-10-06,2026-10-06,,"Miguel Bernardeau","Querer","12 de diciembre de 1996"
+1715,nm2566876,2026-10-06,2026-10-06,,"Javier Calvo","La bola negra","21 de enero de 1991"
+1716,nm8149945,2026-10-06,2026-10-06,,"Miguel Bernardeau","La bola negra","12 de diciembre de 1996"
 1717,nm0001018,2026-10-08,2026-10-08,,"Keith Carradine","Nashville","8 de agosto de 1949"
 1718,nm0000631,2026-10-08,2026-10-08,,"Ridley Scott","Blade Runner","30 de noviembre de 1937"
 1719,nm0487166,2026-10-11,2026-10-11,,"Yorgos Lanthimos","The Lobster","23 de septiembre de 1973"
@@ -1728,3 +1728,17 @@ Position,Const,Created,Modified,Description,Name,Known For,Birth Date
 1727,nm0792798,2026-10-15,2026-10-15,,"Brad Sherwood","Whose Line Is It Anyway?","24 de noviembre de 1964"
 1728,nm3463761,2026-10-15,2026-10-15,,"Hadley Delany","Louie","2000"
 1729,nm3425494,2026-10-15,2026-10-15,,"Ursula Parker","Spectral","28 de julio de 2003"
+1730,nm0330974,2026-10-15,2026-10-15,,"Esther Goris","Eva Perón","5 de marzo de 1963"
+1731,nm1689255,2026-10-19,2026-10-19,,"La Veneno","En plena forma","19 de marzo de 1964"
+1732,nm11145770,2026-10-19,2026-10-19,,"Isabel Torres","Veneno","14 de julio de 1969"
+1733,nm9528133,2026-10-19,2026-10-19,,"Paca la Piraña","Veneno","1 de junio de 1962"
+1734,nm11205692,2026-10-19,2026-10-19,,"Marcos Sotkovszki","Veneno",
+1735,nm7716767,2026-10-19,2026-10-19,,"Jedet","Veneno",
+1736,nm5594522,2026-10-19,2026-10-19,,"Desirée Rodríguez","Veneno",
+1737,nm0689259,2026-10-20,2026-10-20,,"Andrea Politti","El amor menos pensado","4 de enero de 1964"
+1738,nm10334528,2026-10-22,2026-10-22,,"Delaney Quinn","Buddy",
+1739,nm2129662,2026-10-22,2026-10-22,,"Cristin Milioti","Palm Springs","16 de agosto de 1985"
+1740,nm0000110,2026-10-23,2026-10-23,,"Kenneth Branagh","Much Ado About Nothing","10 de diciembre de 1960"
+1741,nm0006669,2026-10-31,2026-10-31,,"William Sadler","Bill & Ted's Bogus Journey","13 de abril de 1950"
+1742,nm0110735,2026-10-31,2026-10-31,,"Roy Brocksmith","Total Recall","15 de septiembre de 1945"
+1743,nm1241790,2026-11-04,2026-11-04,,"César Camargo Mariano","Avenida Paulista","19 de septiembre de 1943"
